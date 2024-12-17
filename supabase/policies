@@ -1,0 +1,11 @@
+-- For twitch_users table
+CREATE POLICY "Enable read access for all users" ON "public"."twitch_users"
+AS PERMISSIVE FOR SELECT
+TO public
+USING (true);
+
+-- For social_tree table
+CREATE POLICY "Enable read access for all users" ON "public"."social_tree"
+AS PERMISSIVE FOR SELECT
+TO public
+USING (true); 

@@ -2,20 +2,277 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    
+    --primary: 0 0% 98%;
+    --primary-foreground: 240 5.9% 10%;
+    
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+    
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 240 4.9% 83.9%;
+    
+    --page-background: linear-gradient(
+      to bottom right,
+      hsl(from cyber-darker / 100%),
+      hsl(from cyber-darker / 95%)
+    );
+  }
+
+  .light {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    
+    --primary: 240 5.9% 10%;
+    --primary-foreground: 0 0% 98%;
+    
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+    
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+    
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 240 5.9% 10%;
+    
+    --page-background: linear-gradient(
+      to bottom right,
+      hsl(from cyber-lighter / 100%),
+      hsl(from cyber-lighter / 98%)
+    );
+  }
+
+  body {
+    @apply antialiased transition-colors duration-300;
+    @apply bg-cyber-darker dark:bg-cyber-darker light:bg-cyber-lighter;
+  }
+
+  /* Remove any existing background classes that might interfere */
+  .dark body {
+    background: var(--page-background);
+  }
+
+  .light body {
+    background: var(--page-background);
   }
 }
 
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+@layer components {
+  .glass-panel {
+    @apply bg-background/5 backdrop-blur-md
+           border border-white/10;
+  }
+
+  .glass-panel-hover {
+    @apply hover:bg-glass-hover hover:shadow-ethereal transition-all duration-300;
+  }
+
+  .nav-container {
+    @apply fixed top-0 left-0 right-0 h-14
+           bg-glass backdrop-blur-xl border-b border-white/5
+           z-50 px-4;
+  }
+
+  .nav-content {
+    @apply max-w-7xl h-full mx-auto 
+           flex items-center justify-between;
+  }
+
+  .nav-link {
+    @apply px-3 py-1.5 text-sm font-medium 
+           rounded-md transition-all duration-200
+           text-foreground/70 hover:text-foreground;
+  }
+
+  .nav-link-active {
+    @apply relative z-10 text-white;
+  }
+
+  .nav-link-inactive {
+    @apply relative z-10 text-foreground/70 hover:text-foreground 
+           transition-colors duration-200;
+  }
+
+  .ethereal-button {
+    @apply relative overflow-hidden rounded-2xl px-6 py-3 
+           bg-cyber-gradient text-white
+           shadow-cyber hover:shadow-cyber-hover
+           transition-all duration-300 hover:scale-[1.02]
+           before:absolute before:inset-0
+           before:bg-[radial-gradient(circle_at_center,_rgba(255,255,255,0.2)_0%,_transparent_100%)]
+           before:opacity-0 hover:before:opacity-100 before:transition-opacity;
+  }
+
+  .ethereal-card {
+    @apply rounded-2xl p-6 relative overflow-visible transition-all duration-300
+           bg-background/5 backdrop-blur-md
+           border border-white/10;
+  }
+}
+
+/* Cards with group hover effects */
+.ethereal-card {
+  @apply rounded-2xl glass-panel p-6 relative overflow-visible
+         transition-all duration-300;
+}
+
+/* Remove the old ethereal-glow styles */
+
+/* Add new hover effect styles */
+.ethereal-card {
+  isolation: isolate;
+  background: linear-gradient(115deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+  pointer-events: none;
+}
+
+.ethereal-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  padding: 1px;
+  border-radius: 1rem;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.1) 0%,
+    rgba(145, 70, 255, 0.2) 50%,
+    rgba(0, 240, 255, 0.1) 100%
+  );
+  -webkit-mask: 
+    linear-gradient(#fff 0 0) content-box, 
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.ethereal-card:hover::before {
+  opacity: 1;
+}
+
+/* Optional: Add a subtle shadow on hover */
+.ethereal-card:hover {
+  box-shadow: 0 0 30px -5px rgba(145, 70, 255, 0.15);
+}
+
+.gradient-text {
+  @apply bg-gradient-to-r from-cyber-cyan via-cyber-purple to-cyber-pink
+         bg-clip-text text-transparent animate-pulse-slow;
+}
+
+.gradient-brand {
+  @apply bg-gradient-to-r from-twitch via-twitch-glow to-twitch
+         bg-clip-text text-transparent;
+}
+
+/* Add a subtle texture overlay */
+.texture-overlay {
+  @apply absolute inset-0 opacity-10;
+  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M54.627 0l.83.828-1.415 1.415L51.8 0h2.827zM5.373 0l-.83.828L5.96 2.243 8.2 0H5.374zM48.97 0l3.657 3.657-1.414 1.414L46.143 0h2.828zM11.03 0L7.372 3.657 8.787 5.07 13.857 0H11.03zm32.284 0L49.8 6.485 48.384 7.9l-7.9-7.9h2.83zM16.686 0L10.2 6.485 11.616 7.9l7.9-7.9h-2.83zM22.344 0L13.858 8.485 15.272 9.9l7.9-7.9h-.828zm5.656 0L19.515 8.485 17.343 10.657 28 0h-2.83zM32.656 0L41.142 8.485 39.728 9.9l-7.9-7.9h.828zm5.657 0l8.485 8.485-1.414 1.414L38.8 2.315 37.384.9 32 0h6.313zM41.97 0l8.485 8.485-1.414 1.414L41.142 2H41.97zm-9.657 0l8.485 8.485L39.384 9.9l-7.9-7.9h.828zm9.657 0l8.485 8.485-1.414 1.414L41.142 2H41.97zm-9.657 0l8.485 8.485L39.384 9.9l-7.9-7.9h.828zm9.657 0l8.485 8.485-1.414 1.414L41.142 2H41.97z' fill='%23FFFFFF' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E");
+}
+
+/* Custom scrollbar styles */
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    @apply bg-foreground/10 rounded-full;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    @apply bg-foreground/20;
+  }
+}
+
+/* Add a new class for interactive elements if needed */
+.interactive-element {
+  @apply relative z-10;
+}
+
+/* Allow pointer events on the card content */
+.ethereal-card > * {
+  pointer-events: auto;
+}
+
+/* Live status indicators */
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.95);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(1.05);
+    opacity: 0;
+  }
+}
+
+.live-ring {
+  @apply absolute -inset-0.5 rounded-full;
+  background: linear-gradient(
+    to right,
+    rgb(239, 68, 68),
+    rgb(248, 113, 113)
+  );
+}
+
+.live-ring::after {
+  content: '';
+  @apply absolute inset-0 rounded-full;
+  background: inherit;
+  animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.live-badge {
+  @apply absolute -bottom-2 left-1/2 -translate-x-1/2 px-2 py-0.5 text-xs font-bold
+         rounded-full bg-red-500 text-white
+         flex items-center gap-1 shadow-lg;
+}
+
+.live-dot {
+  @apply w-1.5 h-1.5 rounded-full bg-white;
+  animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }

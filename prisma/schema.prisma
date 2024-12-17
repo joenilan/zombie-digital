@@ -1,0 +1,16 @@
+model SocialLink {
+  id        String   @id @default(cuid())
+  title     String
+  url       String
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model User {
+  // ... other fields
+  social_links SocialLink[]
+} 
