@@ -1,6 +1,23 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
+/**
+ * @swagger
+ * /api/social-links/{id}:
+ *   delete:
+ *     summary: Delete a social link
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Social link deleted successfully
+ *       500:
+ *         description: Error deleting social link
+ */
 export async function DELETE(
   req: Request,
   { params }: { params: { id: string } }

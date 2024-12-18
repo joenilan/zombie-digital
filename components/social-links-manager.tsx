@@ -315,29 +315,35 @@ export function SocialLinksManager({ initialLinks = [], twitchUserId }: SocialLi
     }
   }, [supabase, twitchUserId, isDragging])
 
-  const updateLinksOrder = async (newOrder: SocialLink[]) => {
-    const updates = newOrder.map((link, index) => ({
-      ...link,
-      order_index: index
-    }))
-
-    const { error } = await supabase
-      .from('social_tree')
-      .upsert(updates, {
-        onConflict: 'id',
-        defaultToNull: false
-      })
-
-    if (error) {
-      console.error('Error updating order:', error)
-      setLinks(initialLinks)
+  const reorderMutation = useMutation({
+    mutationKey: ['social-links', 'reorder'],
+    mutationFn: async (links: SocialLink[]) => {
+      const response = await fetch('/api/social-links/reorder', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ links }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['social-links', twitchUserId] });
+    },
+    onError: (error) => {
+      console.error('Error reordering links:', error);
     }
-  }
+  });
 
   const handleReorder = (newOrder: SocialLink[]) => {
-    setLinks(newOrder)
-    updateLinksOrder(newOrder)
-  }
+    queryClient.setQueryData(['social-links', twitchUserId], newOrder);
+    reorderMutation.mutate(newOrder);
+  };
 
   const deleteMutation = useMutation({
     mutationKey: ['social-links', 'delete'],

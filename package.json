@@ -6,7 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "postinstall": "prisma generate",
+    "test": "bun test",
+    "test:watch": "bun test --watch",
+    "prepare": "husky install"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -20,10 +24,12 @@
     "@radix-ui/react-dialog": "^1.1.4",
     "@radix-ui/react-select": "^2.1.4",
     "@radix-ui/react-slot": "^1.1.1",
+    "@scalar/api-reference": "^1.25.90",
     "@supabase/auth-helpers-nextjs": "0.8.7",
     "@supabase/supabase-js": "2.39.3",
     "@tanstack/react-query": "^5.62.8",
     "@tanstack/react-query-devtools": "^5.62.8",
+    "ajv": "^8.17.1",
     "autoprefixer": "^10.4.20",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -33,6 +39,7 @@
     "lodash": "^4.17.21",
     "lucide-react": "^0.468.0",
     "next": "14.1.0",
+    "next-swagger-doc": "^0.4.1",
     "next-themes": "^0.4.4",
     "react": "18.2.0",
     "react-dom": "18.2.0",
@@ -44,11 +51,20 @@
     "@types/node": "20.11.5",
     "@types/react": "18.2.48",
     "@types/react-dom": "18.2.18",
+    "bun-types": "^1.1.39",
     "eslint": "^9",
     "eslint-config-next": "15.1.0",
+    "husky": "^8.0.0",
+    "lint-staged": "^15.2.11",
     "postcss": "^8.4.49",
     "prisma": "^6.1.0",
     "tailwindcss": "^3.4.16",
     "typescript": "5.3.3"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "bun test",
+      "bun run lint"
+    ]
   }
 }
