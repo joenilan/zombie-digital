@@ -1,6 +1,6 @@
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
-import { SocialLinksManager } from '@/components/social-links-manager'
+import { SocialLinksManager, type SocialLink } from '@/components/social-links-manager'
 import { redirect } from 'next/navigation'
 
 export default async function SocialLinksPage() {
@@ -41,7 +41,10 @@ export default async function SocialLinksPage() {
             Manage your social media links that appear on your profile.
           </p>
         </div>
-        <SocialLinksManager initialLinks={links} />
+        <SocialLinksManager 
+          initialLinks={links as SocialLink[]} 
+          twitchUserId={twitchUser.id}
+        />
       </div>
     </div>
   )

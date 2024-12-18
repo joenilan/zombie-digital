@@ -1,28 +1,50 @@
-import { auth } from "@/lib/auth";
-import { db } from "@/lib/db";
+import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
   try {
-    const session = await auth();
+    const body = await req.json();
+    const { user_id, platform, url, title } = body;
 
-    if (!session?.user) {
-      return new NextResponse("Unauthorized", { status: 401 });
-    }
-
-    const { title, url } = await req.json();
-
-    const socialLink = await db.socialLink.create({
+    const link = await prisma.social_tree.create({
       data: {
-        title,
+        user_id,
+        platform,
         url,
-        userId: session.user.id,
+        title: title || platform,
+        order_index: 999,
+      },
+      include: {
+        twitch_user: true,
       },
     });
 
-    return NextResponse.json(socialLink);
+    return NextResponse.json(link);
   } catch (error) {
-    console.error("[SOCIAL_LINKS_POST]", error);
-    return new NextResponse("Internal Error", { status: 500 });
+    console.error("Error creating social link:", error);
+    return NextResponse.json(
+      { error: "Error creating social link" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(req: Request) {
+  try {
+    const { id } = await req.json();
+
+    const link = await prisma.social_tree.delete({
+      where: {
+        id,
+      },
+    });
+
+    return NextResponse.json(link);
+  } catch (error) {
+    console.error("Error deleting social link:", error);
+    return NextResponse.json(
+      { error: "Error deleting social link" },
+      { status: 500 }
+    );
   }
 }

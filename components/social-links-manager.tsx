@@ -54,6 +54,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query"
 
 const platformIcons: Record<string, any> = {
   // Social Media
@@ -122,17 +123,21 @@ function getPlatformColor(platform: string) {
   return platformColors[normalizedPlatform] || 'currentColor'
 }
 
-interface SocialLink {
+export interface SocialLink {
   id: string
   user_id: string
   platform: string
   url: string
   title: string
   order_index: number
+  twitch_users?: {
+    id: string
+  }
 }
 
 interface SocialLinksManagerProps {
   initialLinks?: SocialLink[]
+  twitchUserId: string
 }
 
 function AddLinkDialog({ userId, onAdd }: { 
@@ -142,36 +147,56 @@ function AddLinkDialog({ userId, onAdd }: {
   const [platform, setPlatform] = useState("")
   const [url, setUrl] = useState("")
   const [title, setTitle] = useState("")
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const supabase = createClientComponentClient()
+  const queryClient = useQueryClient()
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsSubmitting(true)
-
-    try {
-      const { error } = await supabase
-        .from('social_tree')
-        .insert([
-          {
-            user_id: userId,
-            platform,
-            url,
-            title: title || platform,
-            order_index: 999 // Will be reordered by drag and drop
-          }
-        ])
-
-      if (error) throw error
+  const mutation = useMutation({
+    mutationKey: ['social-links', 'create'],
+    mutationFn: async (data: {
+      user_id: string
+      platform: string
+      url: string
+      title: string
+    }) => {
+      const response = await fetch('/api/social-links', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      })
+      
+      if (!response.ok) {
+        throw new Error('Network response was not ok')
+      }
+      
+      return response.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['social-links', userId] })
       onAdd()
       setPlatform("")
       setUrl("")
       setTitle("")
-    } catch (error) {
+    },
+    onError: (error) => {
       console.error('Error adding link:', error)
-    } finally {
-      setIsSubmitting(false)
     }
+  })
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+
+    if (!userId || userId === '') {
+      console.error('Invalid user ID:', userId)
+      return
+    }
+
+    mutation.mutate({
+      user_id: userId,
+      platform,
+      url,
+      title: title || platform
+    })
   }
 
   return (
@@ -221,7 +246,7 @@ function AddLinkDialog({ userId, onAdd }: {
             </DialogTrigger>
             <Button 
               type="submit" 
-              disabled={!platform || !url || isSubmitting}
+              disabled={!platform || !url}
             >
               Add Link
             </Button>
@@ -232,10 +257,63 @@ function AddLinkDialog({ userId, onAdd }: {
   )
 }
 
-export function SocialLinksManager({ initialLinks = [] }: SocialLinksManagerProps) {
-  const [links, setLinks] = useState(initialLinks)
+export function SocialLinksManager({ initialLinks = [], twitchUserId }: SocialLinksManagerProps) {
   const [isDragging, setIsDragging] = useState(false)
+  const queryClient = useQueryClient()
+
+  const { data: links = initialLinks } = useQuery({
+    queryKey: ['social-links', twitchUserId],
+    queryFn: async () => {
+      const response = await fetch(`/api/social-links?userId=${twitchUserId}`)
+      if (!response.ok) {
+        throw new Error('Network response was not ok')
+      }
+      return response.json()
+    },
+    initialData: initialLinks,
+  })
+
+  const setLinks = (newLinks: SocialLink[]) => {
+    queryClient.setQueryData(['social-links', twitchUserId], newLinks)
+  }
+
   const supabase = createClientComponentClient()
+
+  useEffect(() => {
+    console.log('Twitch User ID:', twitchUserId)
+  }, [twitchUserId])
+
+  useEffect(() => {
+    if (!twitchUserId) return
+
+    const channel = supabase
+      .channel(`social_tree_${twitchUserId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'social_tree',
+          filter: `user_id=eq.${twitchUserId}`
+        },
+        async () => {
+          if (!isDragging) {
+            const { data: freshLinks } = await supabase
+              .from('social_tree')
+              .select('*, twitch_users(*)')
+              .eq('user_id', twitchUserId)
+              .order('order_index', { ascending: true })
+
+            if (freshLinks) setLinks(freshLinks)
+          }
+        }
+      )
+      .subscribe()
+
+    return () => {
+      channel.unsubscribe()
+    }
+  }, [supabase, twitchUserId, isDragging])
 
   const updateLinksOrder = async (newOrder: SocialLink[]) => {
     const updates = newOrder.map((link, index) => ({
@@ -256,68 +334,42 @@ export function SocialLinksManager({ initialLinks = [] }: SocialLinksManagerProp
     }
   }
 
-  useEffect(() => {
-    if (!initialLinks.length) return
-    const userId = initialLinks[0].user_id
-
-    const channel = supabase
-      .channel(`social_tree_${userId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'social_tree',
-          filter: `user_id=eq.${userId}`
-        },
-        async () => {
-          if (!isDragging) {
-            const { data: freshLinks } = await supabase
-              .from('social_tree')
-              .select('*')
-              .eq('user_id', userId)
-              .order('order_index', { ascending: true })
-
-            if (freshLinks) setLinks(freshLinks)
-          }
-        }
-      )
-      .subscribe()
-
-    return () => {
-      channel.unsubscribe()
-    }
-  }, [supabase, initialLinks, isDragging])
-
   const handleReorder = (newOrder: SocialLink[]) => {
     setLinks(newOrder)
     updateLinksOrder(newOrder)
   }
 
-  const deleteLink = async (id: string) => {
-    try {
-      setLinks((currentLinks) => currentLinks.filter(link => link.id !== id))
-
-      const { error } = await supabase
-        .from('social_tree')
-        .delete()
-        .eq('id', id)
-
-      if (error) {
-        console.error('Error deleting link:', error)
-        setLinks(initialLinks)
-        throw error
+  const deleteMutation = useMutation({
+    mutationKey: ['social-links', 'delete'],
+    mutationFn: async (id: string) => {
+      const response = await fetch(`/api/social-links/${id}`, {
+        method: 'DELETE',
+      })
+      
+      if (!response.ok) {
+        throw new Error('Network response was not ok')
       }
-    } catch (error) {
+      
+      return response.json()
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['social-links', twitchUserId] })
+    },
+    onError: (error) => {
       console.error('Error deleting link:', error)
     }
+  })
+
+  const deleteLink = (id: string) => {
+    setLinks((currentLinks) => currentLinks.filter(link => link.id !== id))
+    deleteMutation.mutate(id)
   }
 
   return (
     <div className="space-y-4">
       <AddLinkDialog 
-        userId={initialLinks[0]?.user_id} 
-        onAdd={() => {}} // Realtime will handle the update
+        userId={twitchUserId}
+        onAdd={() => {}}
       />
 
       <Reorder.Group
