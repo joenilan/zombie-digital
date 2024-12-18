@@ -5,11 +5,8 @@ import type { TwitchUser } from "@/types/database";
 import { UserStats } from "./UserStats";
 import { DataOverview } from "./DataOverview";
 import { ChevronDownIcon } from "@/components/icons";
-import { useState, useEffect, createContext } from "react";
+import { useState, useEffect } from "react";
 import { LoadingSpinner } from '@/components/LoadingSpinner';
-
-// Add UserContext
-export const UserContext = createContext<TwitchUser | null>(null);
 
 interface DashboardClientProps {
   user: TwitchUser;
@@ -76,66 +73,64 @@ export default function DashboardClient({ user }: DashboardClientProps) {
   };
 
   return (
-    <UserContext.Provider value={user}>
-      <AnimatePresence mode="wait">
-        <div className="space-y-6">
-          <div className={isInitialLoading ? 'hidden' : ''}>
-            <UserStats 
-              user={user} 
-              onLoadComplete={handleStatsLoaded}
-            />
-          </div>
-          {isInitialLoading ? (
-            <LoadingSpinner text="Loading dashboard..." />
-          ) : (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="space-y-6"
-            >
-              {isStatsLoaded && isSystemUser && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.2 }}
-                  className="w-full"
-                >
-                  <div className="ethereal-card relative">
-                    <button 
-                      onClick={() => setIsSystemExpanded(!isSystemExpanded)}
-                      className="flex items-center justify-between w-full p-4 hover:bg-white/5 transition-colors rounded-lg"
-                    >
-                      <h2 className="text-xl font-semibold">System Data</h2>
-                      <motion.div
-                        animate={{ rotate: isSystemExpanded ? 180 : 0 }}
-                        transition={{ duration: 0.2 }}
-                      >
-                        <ChevronDownIcon className="w-6 h-6 opacity-60" />
-                      </motion.div>
-                    </button>
-                    
-                    <AnimatePresence>
-                      {isSystemExpanded && (
-                        <motion.div
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: "auto", opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          transition={{ duration: 0.2 }}
-                          className="overflow-hidden"
-                        >
-                          <div className="space-y-4 p-4 pt-0">
-                            <DataCard title="User Data" data={user} />
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                </motion.div>
-              )}
-            </motion.div>
-          )}
+    <AnimatePresence mode="wait">
+      <div className="space-y-6">
+        <div className={isInitialLoading ? 'hidden' : ''}>
+          <UserStats 
+            user={user} 
+            onLoadComplete={handleStatsLoaded}
+          />
         </div>
-      </AnimatePresence>
-    </UserContext.Provider>
+        {isInitialLoading ? (
+          <LoadingSpinner text="Loading dashboard..." />
+        ) : (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-6"
+          >
+            {isStatsLoaded && isSystemUser && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.2 }}
+                className="w-full"
+              >
+                <div className="ethereal-card relative">
+                  <button 
+                    onClick={() => setIsSystemExpanded(!isSystemExpanded)}
+                    className="flex items-center justify-between w-full p-4 hover:bg-white/5 transition-colors rounded-lg"
+                  >
+                    <h2 className="text-xl font-semibold">System Data</h2>
+                    <motion.div
+                      animate={{ rotate: isSystemExpanded ? 180 : 0 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <ChevronDownIcon className="w-6 h-6 opacity-60" />
+                    </motion.div>
+                  </button>
+                  
+                  <AnimatePresence>
+                    {isSystemExpanded && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: "auto", opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="space-y-4 p-4 pt-0">
+                          <DataCard title="User Data" data={user} />
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </motion.div>
+            )}
+          </motion.div>
+        )}
+      </div>
+    </AnimatePresence>
   );
 } 

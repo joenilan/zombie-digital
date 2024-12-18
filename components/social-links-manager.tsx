@@ -132,7 +132,14 @@ interface SocialLink {
 }
 
 interface SocialLinksManagerProps {
-  initialLinks?: SocialLink[]
+  initialLinks: SocialLink[];
+  user: {
+    id: string;
+    twitch_user_id: string;
+    username: string;
+    display_name: string;
+    avatar_url: string;
+  };
 }
 
 function AddLinkDialog({ userId, onAdd }: { 
@@ -147,6 +154,7 @@ function AddLinkDialog({ userId, onAdd }: {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    console.log('Adding link with userId:', userId);
     setIsSubmitting(true)
 
     try {
@@ -232,7 +240,19 @@ function AddLinkDialog({ userId, onAdd }: {
   )
 }
 
-export function SocialLinksManager({ initialLinks = [] }: SocialLinksManagerProps) {
+export function SocialLinksManager({ initialLinks = [], user }: SocialLinksManagerProps) {
+  console.log('SocialLinksManager render:', { initialLinks, user });
+  
+  if (!user) {
+    console.error('User object is undefined');
+    return <div>Error: Missing user data</div>;
+  }
+
+  if (!user.twitch_user_id) {
+    console.error('Missing twitch_user_id in user object:', user);
+    return <div>Error: Missing Twitch user data</div>;
+  }
+
   const [links, setLinks] = useState(initialLinks)
   const [isDragging, setIsDragging] = useState(false)
   const supabase = createClientComponentClient()
@@ -257,25 +277,24 @@ export function SocialLinksManager({ initialLinks = [] }: SocialLinksManagerProp
   }
 
   useEffect(() => {
-    if (!initialLinks.length) return
-    const userId = initialLinks[0].user_id
+    if (!user.twitch_user_id) return;
 
     const channel = supabase
-      .channel(`social_tree_${userId}`)
+      .channel(`social_tree_${user.twitch_user_id}`)
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
           table: 'social_tree',
-          filter: `user_id=eq.${userId}`
+          filter: `user_id=eq.${user.twitch_user_id}`
         },
         async () => {
           if (!isDragging) {
             const { data: freshLinks } = await supabase
               .from('social_tree')
               .select('*')
-              .eq('user_id', userId)
+              .eq('user_id', user.twitch_user_id)
               .order('order_index', { ascending: true })
 
             if (freshLinks) setLinks(freshLinks)
@@ -287,7 +306,7 @@ export function SocialLinksManager({ initialLinks = [] }: SocialLinksManagerProp
     return () => {
       channel.unsubscribe()
     }
-  }, [supabase, initialLinks, isDragging])
+  }, [supabase, user.twitch_user_id, isDragging])
 
   const handleReorder = (newOrder: SocialLink[]) => {
     setLinks(newOrder)
@@ -316,7 +335,7 @@ export function SocialLinksManager({ initialLinks = [] }: SocialLinksManagerProp
   return (
     <div className="space-y-4">
       <AddLinkDialog 
-        userId={initialLinks[0]?.user_id} 
+        userId={user.twitch_user_id}
         onAdd={() => {}} // Realtime will handle the update
       />
 
