@@ -11,9 +11,9 @@ export async function middleware(req: NextRequest) {
     data: { session },
   } = await supabase.auth.getSession();
 
-  // If accessing a protected route and no session exists, redirect to login
+  // Redirect to root instead of /login
   if (!session && req.nextUrl.pathname.startsWith("/dashboard")) {
-    return NextResponse.redirect(new URL("/login", req.url));
+    return NextResponse.redirect(new URL("/", req.url));
   }
 
   return res;

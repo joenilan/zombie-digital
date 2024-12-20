@@ -9,6 +9,7 @@ import UserMenu from "./UserMenu";
 import ThemeToggle from "./ThemeToggle";
 import { motion } from "framer-motion";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "./ui/dropdown-menu";
+import { SiteNotification } from "./SiteNotification";
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -31,39 +32,42 @@ export default function Navbar() {
   }, [supabase.auth]);
 
   return (
-    <nav className="nav-container">
-      <div className="nav-content">
-        <div className="flex items-center gap-6">
-          <Link 
-            href="/" 
-            className="text-lg font-bold"
-          >
-            <span className="gradient-brand">Zombie</span>
-            <span className="text-foreground/80">.Digital</span>
-          </Link>
-          
-          <div className="hidden sm:flex items-center gap-1">
-            <NavLink href="/" current={pathname === "/"}>
-              Home
-            </NavLink>
-            {user && (
-              <NavLink href="/dashboard" current={pathname === "/dashboard"}>
-                Dashboard
+    <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl">
+      <nav className="nav-container px-4">
+        <div className="nav-content">
+          <div className="flex items-center gap-6">
+            <Link 
+              href="/" 
+              className="text-lg font-bold"
+            >
+              <span className="gradient-brand">Zombie</span>
+              <span className="text-foreground/80">.Digital</span>
+            </Link>
+            
+            <div className="hidden sm:flex items-center gap-1">
+              <NavLink href="/" current={pathname === "/"}>
+                Home
               </NavLink>
+              {user && (
+                <NavLink href="/dashboard" current={pathname === "/dashboard"}>
+                  Dashboard
+                </NavLink>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            {user ? (
+              <UserMenu user={user} />
+            ) : (
+              <TwitchLoginButton />
             )}
           </div>
         </div>
-
-        <div className="flex items-center gap-3">
-          <ThemeToggle />
-          {user ? (
-            <UserMenu user={user} />
-          ) : (
-            <TwitchLoginButton />
-          )}
-        </div>
-      </div>
-    </nav>
+      </nav>
+      <SiteNotification user={user} />
+    </header>
   );
 }
 

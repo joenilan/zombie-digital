@@ -4,6 +4,8 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { TWITCH_SCOPES } from "@/utils/twitch-constants";
 
+const DEBUG = false;
+
 // Add UUID generation function
 function generateUUID() {
   return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
@@ -17,7 +19,9 @@ export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
 
-  console.log("Auth callback started", { hasCode: !!code });
+  if (DEBUG) {
+    console.log("Auth callback started", { hasCode: !!code });
+  }
 
   // Verify environment variables
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -60,16 +64,12 @@ export async function GET(request: Request) {
 
       if (sessionError) {
         console.error("Session error:", sessionError);
-        return NextResponse.redirect(
-          `${requestUrl.origin}/login?error=session`
-        );
+        return NextResponse.redirect(`${requestUrl.origin}/?error=session`);
       }
 
       if (!session?.user) {
         console.error("No session or user");
-        return NextResponse.redirect(
-          `${requestUrl.origin}/login?error=no_session`
-        );
+        return NextResponse.redirect(`${requestUrl.origin}/?error=no_session`);
       }
 
       // Get user metadata from session
@@ -189,6 +189,26 @@ export async function GET(request: Request) {
           twitch_id: verifyUser.twitch_id,
           operation: existingTwitchUser ? "updated" : "inserted",
           email: verifyUser.email,
+        });
+
+        // Get user's role from twitch_users
+        const { data: userRole } = await serviceClient
+          .from("twitch_users")
+          .select("site_role")
+          .eq("twitch_id", metadata.provider_id)
+          .single();
+
+        // Update user metadata to include site_role
+        await supabase.auth.updateUser({
+          data: {
+            ...metadata,
+            site_role: userRole?.site_role || "user",
+          },
+        });
+
+        console.log("Updated user metadata:", {
+          role: userRole?.site_role,
+          metadata: metadata,
         });
 
         // Only redirect to dashboard after successful user creation/update

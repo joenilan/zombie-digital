@@ -14,7 +14,7 @@ export function withRole(requiredLevel: UserLevel) {
     } = await supabase.auth.getSession();
 
     if (!session) {
-      return NextResponse.redirect(new URL("/login", req.url));
+      return NextResponse.redirect(new URL("/", req.url));
     }
 
     const { data: user } = await supabase

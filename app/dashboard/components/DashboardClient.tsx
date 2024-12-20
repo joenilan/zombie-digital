@@ -70,6 +70,10 @@ export default function DashboardClient({ user }: DashboardClientProps) {
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const isSystemUser = user.site_role === "owner" || user.site_role === "admin";
 
+  const isAffiliate = user.raw_user_meta_data.custom_claims.broadcaster_type === "affiliate";
+  const isPartner = user.raw_user_meta_data.custom_claims.broadcaster_type === "partner";
+  const hasAffiliatePerks = isAffiliate || isPartner || isSystemUser;
+
   const handleStatsLoaded = () => {
     setIsStatsLoaded(true);
     setIsInitialLoading(false);
@@ -79,6 +83,45 @@ export default function DashboardClient({ user }: DashboardClientProps) {
     <UserContext.Provider value={user}>
       <AnimatePresence mode="wait">
         <div className="space-y-6">
+          {!hasAffiliatePerks && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="ethereal-card p-6"
+            >
+              <h2 className="text-2xl font-bold mb-4">Welcome to Your Dashboard!</h2>
+              <div className="space-y-4">
+                <p className="text-foreground/80">
+                  Hi {user.display_name}! You're now part of our community. While some features are currently limited to Twitch Affiliates and Partners, you can still:
+                </p>
+                <ul className="list-disc list-inside space-y-2 text-foreground/70 ml-4">
+                  <li>Manage your social media links</li>
+                  <li>Customize your profile</li>
+                  <li>Track your growth towards affiliate status</li>
+                </ul>
+                <div className="mt-6 p-4 bg-background/20 rounded-lg">
+                  <h3 className="text-lg font-semibold mb-2">Want to become a Twitch Affiliate?</h3>
+                  <p className="text-foreground/70">
+                    Reach these goals to qualify:
+                  </p>
+                  <ul className="list-disc list-inside space-y-2 text-foreground/70 ml-4 mt-2">
+                    <li>Reach 50 followers</li>
+                    <li>Stream for 8 hours total</li>
+                    <li>Stream on 7 different days</li>
+                    <li>Average 3 viewers per stream</li>
+                  </ul>
+                  <a 
+                    href="https://help.twitch.tv/s/article/joining-the-affiliate-program"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-block mt-4 text-cyber-cyan hover:text-cyber-pink transition-colors"
+                  >
+                    Learn more about the Affiliate Program →
+                  </a>
+                </div>
+              </div>
+            </motion.div>
+          )}
           <div className={isInitialLoading ? 'hidden' : ''}>
             <UserStats 
               user={user} 

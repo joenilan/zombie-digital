@@ -2,7 +2,7 @@
 
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
@@ -36,9 +36,26 @@ const menuVariants = {
 
 export default function UserMenu({ user }: { user: any }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const router = useRouter();
   const supabase = createClientComponentClient();
   const [isSigningOut, setIsSigningOut] = useState(false);
+
+  useEffect(() => {
+    async function checkRole() {
+      const { data: userData, error } = await supabase
+        .from("twitch_users")
+        .select("site_role")
+        .eq("twitch_id", user.user_metadata.provider_id)
+        .single();
+
+      if (!error && userData) {
+        setIsAdmin(['owner', 'admin'].includes(userData.site_role));
+      }
+    }
+
+    checkRole();
+  }, [user.user_metadata.provider_id, supabase]);
 
   const displayName = user.user_metadata.nickname || 
                      user.user_metadata.name || 
@@ -118,10 +135,18 @@ export default function UserMenu({ user }: { user: any }) {
             exit="exit"
             className="absolute right-0 mt-2 w-48 py-2 bg-glass-dark backdrop-blur-xl border border-white/10 rounded-lg shadow-lg"
           >
-            <div className="px-4 py-2 border-b border-white/10">
-              <p className="text-sm font-medium">{displayName}</p>
-              <p className="text-xs text-foreground/60 truncate">{user.email}</p>
-            </div>
+            {isAdmin && (
+              <>
+                <Link
+                  href="/admin"
+                  className="block px-4 py-2 text-sm hover:bg-white/5 transition-colors"
+                  onClick={() => setIsOpen(false)}
+                >
+                  Admin
+                </Link>
+                <div className="my-2 border-t border-white/10" />
+              </>
+            )}
             
             <Link
               href="/dashboard"

@@ -101,9 +101,7 @@
   }
 
   .nav-container {
-    @apply fixed top-0 left-0 right-0 h-14
-           bg-glass backdrop-blur-xl border-b border-white/5
-           z-50 px-4;
+    @apply h-14 bg-glass backdrop-blur-xl border-b border-white/5;
   }
 
   .nav-content {
@@ -190,13 +188,11 @@
 }
 
 .gradient-text {
-  @apply bg-gradient-to-r from-cyber-cyan via-cyber-purple to-cyber-pink
-         bg-clip-text text-transparent animate-pulse-slow;
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-purple-500 to-cyber-cyan;
 }
 
 .gradient-brand {
-  @apply bg-gradient-to-r from-twitch via-twitch-glow to-twitch
-         bg-clip-text text-transparent;
+  @apply bg-clip-text text-transparent bg-gradient-to-r from-cyber-pink to-purple-500;
 }
 
 /* Add a subtle texture overlay */

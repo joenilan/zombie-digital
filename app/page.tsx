@@ -55,7 +55,7 @@ export default function HomePage() {
           <motion.div variants={itemVariants} className="space-y-4">
             <h1 className="text-5xl md:text-7xl font-bold">
               <span className="gradient-brand">Zombie</span>
-              <span className="gradient-text">.Digital</span>
+              <span className="text-foreground/80">.Digital</span>
             </h1>
             <p className="text-2xl text-foreground/90">
               Twitch Management Platform

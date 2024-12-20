@@ -34,7 +34,7 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
           {/* Navbar */}
           <div className="relative flex flex-col min-h-screen">
             <Navbar />
-            <main className="flex-1 pt-14">
+            <main className="flex-1">
               {children}
             </main>
           </div>

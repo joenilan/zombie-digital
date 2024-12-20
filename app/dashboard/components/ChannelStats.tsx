@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { TwitchUser } from "@/types/database";
 import { fetchTwitchStats } from "@/utils/twitch-api";
+import { refreshSession } from "@/utils/auth";
 
 const itemVariants = {
   hidden: { opacity: 0, y: 20 },
@@ -130,7 +131,20 @@ export function ChannelStats({ user }: { user: TwitchUser }) {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const data = await fetchTwitchStats(user.provider_token, user.twitch_id);
+        if (!user.provider_token) {
+          const session = await refreshSession();
+          if (!session?.provider_token) {
+            setError("Session expired. Please log in again.");
+            return;
+          }
+          user.provider_token = session.provider_token;
+        }
+
+        const data = await fetchTwitchStats(
+          user.twitch_id,
+          user.provider_token,
+          user.raw_user_meta_data.custom_claims.broadcaster_type
+        );
         setStats(data);
       } catch (error) {
         console.error("Error fetching stats:", error);

@@ -553,6 +553,7 @@ model twitch_users {
   is_anonymous           Boolean?      @default(false)
   site_role              user_level    @default(user)
   social_tree            social_tree[]
+  notifications          Notification[]
 
   @@index([email])
   @@index([provider_id])
@@ -615,5 +616,22 @@ enum user_level {
   moderator
   user
 
+  @@schema("public")
+}
+
+model Notification {
+  id            String      @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  message       String
+  type          String      // "info" | "warning" | "error" | "success"
+  showOnlyToAuth Boolean    @default(false)
+  expiresAt     DateTime?
+  active        Boolean     @default(true)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  createdBy     String      @db.Uuid // Reference to twitch_user.id
+  creator       twitch_users @relation(fields: [createdBy], references: [id])
+
+  @@index([active])
+  @@index([createdBy])
   @@schema("public")
 }

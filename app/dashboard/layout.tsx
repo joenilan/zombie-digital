@@ -18,7 +18,7 @@ export default async function DashboardLayout({
   } = await supabase.auth.getSession();
 
   if (!session) {
-    redirect('/login');
+    redirect('/');
   }
 
   const provider_id = session.user.user_metadata?.sub || 
@@ -31,7 +31,7 @@ export default async function DashboardLayout({
     .single();
 
   if (!user) {
-    redirect('/login');
+    redirect('/');
   }
 
   return (

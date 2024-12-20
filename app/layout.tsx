@@ -6,8 +6,8 @@ import { LayoutWrapper } from "./layout-wrapper";
 import QueryProvider from "@/providers/query-provider"
 
 export const metadata: Metadata = {
-  title: "Zombie.Digital | Twitch Management Platform",
-  description: "Professional Twitch channel management and analytics platform",
+  title: "Zombie.Digital - Twitch Management Platform",
+  description: "Take control of your Twitch presence with professional management tools.",
 };
 
 export default function RootLayout({

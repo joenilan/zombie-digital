@@ -97,7 +97,13 @@ export default async function ProfilePage({ params }: PageProps) {
 
           {/* Footer */}
           <div className="text-center text-sm text-muted-foreground/60 pt-8">
-            <p>Powered by Twitch App</p>
+            <p>
+              Powered by{" "}
+              <span className="font-bold">
+                <span className="gradient-brand">Zombie</span>
+                <span className="text-foreground/80">.Digital</span>
+              </span>
+            </p>
           </div>
         </div>
       </div>

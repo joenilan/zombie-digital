@@ -1,3 +1,5 @@
+import { refreshSession } from "./auth";
+
 const TWITCH_API_URL = "https://api.twitch.tv/helix";
 
 interface TwitchStats {
@@ -42,7 +44,18 @@ export async function fetchTwitchStats(
     );
 
     if (!validateResponse.ok) {
-      throw new Error("Invalid token");
+      // Token is invalid, try to refresh
+      const session = await refreshSession();
+      if (!session?.provider_token) {
+        throw new Error("Failed to refresh token");
+      }
+
+      // Retry with new token
+      return fetchTwitchStats(
+        broadcasterId,
+        session.provider_token,
+        broadcasterType
+      );
     }
 
     // Initialize stats with default values
