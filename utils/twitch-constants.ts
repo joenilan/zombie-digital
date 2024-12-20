@@ -14,6 +14,8 @@ export const TWITCH_SCOPES = [
   "chat:edit",
   "channel:manage:broadcast",
   "channel:manage:redemptions",
+  "channel:read:vips",
+  "moderation:read",
 ] as const;
 
 // Type for the scopes
@@ -34,6 +36,8 @@ export const TWITCH_ENDPOINTS = {
   CHANNELS: "/channels",
   STREAMS: "/streams",
   CHAT: "/chat",
-  MODERATORS: "/moderators",
+  MODERATORS: "/moderation/moderators",
   FOLLOWERS: "/followers",
+  VIPS: "/channels/vips",
+  SUBSCRIBERS: "/subscriptions",
 } as const;

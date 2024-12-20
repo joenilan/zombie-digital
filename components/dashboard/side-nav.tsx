@@ -4,9 +4,18 @@ import { UserHeader } from "./user-header"
 import type { TwitchUser } from "@/types/database"
 import { useState, useEffect } from "react"
 import { fetchTwitchStats } from "@/utils/twitch-api"
-import { UsersIcon, StarIcon, PointsIcon } from "@/components/icons"
+import { 
+  UsersIcon, 
+  StarIcon, 
+  PointsIcon, 
+  ShieldIcon, 
+  CrownIcon, 
+  SparklesIcon 
+} from "@/components/icons"
 import Image from "next/image"
 import { motion, useSpring, useMotionValue, useTransform } from "framer-motion";
+import { ChevronDownIcon } from "@/components/icons"
+import { TWITCH_API_URL, TWITCH_ENDPOINTS } from "@/utils/twitch-constants";
 
 function RoleBadge({ role }: { role: string }) {
   const colors = {
@@ -107,6 +116,95 @@ interface SideNavProps {
   user: TwitchUser
 }
 
+interface RoleStats {
+  moderators: Array<{
+    user_id: string;
+    user_name: string;
+    user_login: string;
+    profile_image_url?: string;
+  }>;
+  vips: Array<{
+    user_id: string;
+    user_name: string;
+    user_login: string;
+    profile_image_url?: string;
+  }>;
+  subscribers: number;
+}
+
+function RoleCard({ 
+  icon, 
+  title, 
+  users, 
+  count 
+}: { 
+  icon: React.ReactNode; 
+  title: string; 
+  users?: Array<{ 
+    user_name: string;
+    profile_image_url?: string;
+  }>;
+  count?: number;
+}) {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  return (
+    <div className="flex flex-col p-6 rounded-xl bg-glass shadow-glass transition-all duration-300 hover:shadow-cyber">
+      <button 
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="flex items-center gap-3 mb-2 w-full text-left"
+      >
+        <div className="text-2xl">{icon}</div>
+        <h3 className="font-medium text-lg">{title}</h3>
+        <ChevronDownIcon className={`ml-auto transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
+      </button>
+
+      <div className="mt-2">
+        <div className="text-2xl font-bold">
+          {users ? `${users.length} users` : `${count?.toLocaleString() ?? 0}`}
+        </div>
+      </div>
+
+      {isExpanded && users && users.length > 0 && (
+        <motion.div
+          initial={{ height: 0, opacity: 0 }}
+          animate={{ height: 'auto', opacity: 1 }}
+          exit={{ height: 0, opacity: 0 }}
+          className="overflow-hidden mt-4"
+        >
+          <div className="max-h-[200px] overflow-y-auto custom-scrollbar -mx-6 px-6">
+            <div className="space-y-3 divide-y divide-white/10">
+              {users.map((user) => (
+                <div 
+                  key={user.user_name}
+                  className="flex items-center gap-3 py-3"
+                >
+                  {user.profile_image_url ? (
+                    <Image
+                      src={user.profile_image_url}
+                      alt={user.user_name}
+                      width={32}
+                      height={32}
+                      className="rounded-full"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
+                      <span className="text-sm text-white/70">
+                        {user.user_name[0].toUpperCase()}
+                      </span>
+                    </div>
+                  )}
+                  <span className="text-sm font-medium">{user.user_name}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </motion.div>
+      )}
+    </div>
+  );
+}
+
 export function SideNav({ user }: SideNavProps) {
   const [stats, setStats] = useState({
     followers: 0,
@@ -117,6 +215,12 @@ export function SideNav({ user }: SideNavProps) {
     },
     isLive: false,
     isAffiliate: false
+  });
+
+  const [roleStats, setRoleStats] = useState<RoleStats>({
+    moderators: [],
+    vips: [],
+    subscribers: 0
   });
 
   const isSystemUser = user.site_role === "owner" || user.site_role === "admin";
@@ -143,6 +247,70 @@ export function SideNav({ user }: SideNavProps) {
 
     fetchStats();
   }, [user.twitch_id, user.provider_token, user.raw_user_meta_data.custom_claims.broadcaster_type]);
+
+  useEffect(() => {
+    const fetchRoleStats = async () => {
+      try {
+        // Fetch moderators
+        const modsResponse = await fetch(
+          `${TWITCH_API_URL}${TWITCH_ENDPOINTS.MODERATORS}?broadcaster_id=${user.twitch_id}&first=100`,
+          {
+            headers: {
+              'Authorization': `Bearer ${user.provider_token}`,
+              'Client-Id': process.env.NEXT_PUBLIC_TWITCH_CLIENT_ID!
+            }
+          }
+        );
+        const modsData = await modsResponse.json();
+
+        // Fetch VIPs
+        const vipsResponse = await fetch(
+          `${TWITCH_API_URL}${TWITCH_ENDPOINTS.VIPS}?broadcaster_id=${user.twitch_id}&first=100`,
+          {
+            headers: {
+              'Authorization': `Bearer ${user.provider_token}`,
+              'Client-Id': process.env.NEXT_PUBLIC_TWITCH_CLIENT_ID!
+            }
+          }
+        );
+        const vipsData = await vipsResponse.json();
+
+        // Fetch user profiles for mods and VIPs
+        const userIds = [...modsData.data, ...vipsData.data].map(u => u.user_id);
+        const usersResponse = await fetch(
+          `${TWITCH_API_URL}${TWITCH_ENDPOINTS.USERS}?id=${userIds.join('&id=')}`,
+          {
+            headers: {
+              'Authorization': `Bearer ${user.provider_token}`,
+              'Client-Id': process.env.NEXT_PUBLIC_TWITCH_CLIENT_ID!
+            }
+          }
+        );
+        const usersData = await usersResponse.json();
+        const userProfiles = Object.fromEntries(
+          usersData.data.map((u: any) => [u.id, u.profile_image_url])
+        );
+
+        setRoleStats({
+          moderators: modsData.data.map((mod: any) => ({
+            ...mod,
+            profile_image_url: userProfiles[mod.user_id]
+          })) || [],
+          vips: vipsData.data.map((vip: any) => ({
+            ...vip,
+            profile_image_url: userProfiles[vip.user_id]
+          })) || [],
+          subscribers: stats.subscribers || 0
+        });
+      } catch (error) {
+        console.error("Error fetching role stats:", error);
+      }
+    };
+
+    if (user.provider_token) {
+      fetchRoleStats();
+    }
+  }, [user.twitch_id, user.provider_token, stats.subscribers]);
 
   // Calculate grid columns based on number of visible stats
   const visibleStatsCount = showAffiliateStats ? 3 : 1;
@@ -214,6 +382,24 @@ export function SideNav({ user }: SideNavProps) {
             />
           </>
         )}
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <RoleCard
+          icon={<ShieldIcon />}
+          title="Moderators"
+          users={roleStats.moderators}
+        />
+        <RoleCard
+          icon={<SparklesIcon />}
+          title="VIPs"
+          users={roleStats.vips}
+        />
+        <RoleCard
+          icon={<CrownIcon />}
+          title="Subscribers"
+          count={roleStats.subscribers}
+        />
       </div>
     </div>
   )
