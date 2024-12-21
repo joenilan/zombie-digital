@@ -36,12 +36,14 @@ import {
   SiThreads,
   SiSubstack,
   SiMedium,
+  SiBluesky,
 } from '@icons-pack/react-simple-icons'
 import { motion, AnimatePresence } from 'framer-motion'
 
 const platformIcons: Record<string, any> = {
   // Social Media
   twitter: Twitter,
+  bluesky: SiBluesky,
   youtube: Youtube,
   twitch: Twitch,
   instagram: Instagram,
@@ -83,6 +85,7 @@ const platformIcons: Record<string, any> = {
 // Custom color mapping for icons
 const platformColors: Record<string, string> = {
   twitter: '#1DA1F2',
+  bluesky: '#0085FF',
   youtube: '#FF0000',
   twitch: '#9146FF',
   instagram: '#E4405F',

@@ -38,10 +38,11 @@ import {
   SiThreads,
   SiSubstack,
   SiMedium,
+  SiBluesky,
 } from '@icons-pack/react-simple-icons'
 import { Reorder, motion } from "framer-motion"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectLabel, SelectSeparator, SelectGroup } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import {
@@ -60,16 +61,17 @@ import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query"
 const platformIcons: Record<string, any> = {
   // Social Media
   twitter: Twitter,
-  youtube: Youtube,
-  twitch: Twitch,
+  bluesky: SiBluesky,
+  threads: SiThreads,
   instagram: Instagram,
   facebook: Facebook,
-  github: Github,
-  linkedin: Linkedin,
+  youtube: Youtube,
+  twitch: Twitch,
   discord: SiDiscord,
   tiktok: SiTiktok,
   kick: SiKick,
-  threads: SiThreads,
+  github: Github,
+  linkedin: Linkedin,
 
   // Content Creation
   streamelements: Rocket,
@@ -100,8 +102,7 @@ const platformIcons: Record<string, any> = {
 
 const platformColors: Record<string, string> = {
   twitter: '#1DA1F2',
-  youtube: '#FF0000',
-  twitch: '#9146FF',
+  bluesky: '#0085FF',
   instagram: '#E4405F',
   discord: '#5865F2',
   tiktok: '#000000',
@@ -231,25 +232,130 @@ function AddLinkDialog({ userId, onAdd }: {
               </SelectValue>
             </SelectTrigger>
             <SelectContent>
-              {Object.keys(platformIcons).map((platform) => {
-                const Icon = platformIcons[platform];
-                const iconColor = platformColors[platform] || 'currentColor';
-                
-                return (
-                  <SelectItem 
-                    key={platform} 
-                    value={platform}
-                  >
-                    <div className="flex items-center gap-2">
-                      <Icon 
-                        className="w-4 h-4" 
-                        style={{ color: iconColor }}
-                      />
-                      <span>{platform.charAt(0).toUpperCase() + platform.slice(1)}</span>
-                    </div>
-                  </SelectItem>
-                );
-              })}
+              {/* Social Media */}
+              <SelectGroup>
+                <SelectLabel>Social Media</SelectLabel>
+                {[
+                  'twitter',
+                  'bluesky',
+                  'threads',
+                  'instagram',
+                  'facebook',
+                  'youtube',
+                  'twitch',
+                  'discord',
+                  'tiktok',
+                  'kick',
+                  'github',
+                  'linkedin'
+                ].filter(platform => platformIcons[platform]).map((platform) => {
+                  const Icon = platformIcons[platform];
+                  const iconColor = platformColors[platform] || 'currentColor';
+                  
+                  return (
+                    <SelectItem key={platform} value={platform}>
+                      <div className="flex items-center gap-2">
+                        <Icon className="w-4 h-4" style={{ color: iconColor }} />
+                        <span>{platform.charAt(0).toUpperCase() + platform.slice(1)}</span>
+                      </div>
+                    </SelectItem>
+                  );
+                })}
+              </SelectGroup>
+
+              <SelectSeparator />
+              
+              {/* Content Creation */}
+              <SelectGroup>
+                <SelectLabel>Content Creation</SelectLabel>
+                {[
+                  'streamelements',
+                  'kofi',
+                  'fourthwall',
+                  'patreon',
+                  'onlyfans'
+                ].map((platform) => {
+                  const Icon = platformIcons[platform];
+                  const iconColor = platformColors[platform] || 'currentColor';
+                  return (
+                    <SelectItem key={platform} value={platform}>
+                      <div className="flex items-center gap-2">
+                        <Icon className="w-4 h-4" style={{ color: iconColor }} />
+                        <span>{platform.charAt(0).toUpperCase() + platform.slice(1)}</span>
+                      </div>
+                    </SelectItem>
+                  );
+                })}
+              </SelectGroup>
+
+              <SelectSeparator />
+
+              {/* Payment/Support */}
+              <SelectGroup>
+                <SelectLabel>Payment & Support</SelectLabel>
+                {[
+                  'cashapp',
+                  'venmo',
+                  'paypal'
+                ].map((platform) => {
+                  const Icon = platformIcons[platform];
+                  const iconColor = platformColors[platform] || 'currentColor';
+                  return (
+                    <SelectItem key={platform} value={platform}>
+                      <div className="flex items-center gap-2">
+                        <Icon className="w-4 h-4" style={{ color: iconColor }} />
+                        <span>{platform.charAt(0).toUpperCase() + platform.slice(1)}</span>
+                      </div>
+                    </SelectItem>
+                  );
+                })}
+              </SelectGroup>
+
+              <SelectSeparator />
+
+              {/* Music/Audio */}
+              <SelectGroup>
+                <SelectLabel>Music & Audio</SelectLabel>
+                {[
+                  'spotify',
+                  'soundcloud',
+                  'bandcamp',
+                  'music'
+                ].map((platform) => {
+                  const Icon = platformIcons[platform];
+                  const iconColor = platformColors[platform] || 'currentColor';
+                  return (
+                    <SelectItem key={platform} value={platform}>
+                      <div className="flex items-center gap-2">
+                        <Icon className="w-4 h-4" style={{ color: iconColor }} />
+                        <span>{platform.charAt(0).toUpperCase() + platform.slice(1)}</span>
+                      </div>
+                    </SelectItem>
+                  );
+                })}
+              </SelectGroup>
+
+              <SelectSeparator />
+
+              {/* Writing/Blogs */}
+              <SelectGroup>
+                <SelectLabel>Writing & Blogs</SelectLabel>
+                {[
+                  'substack',
+                  'medium'
+                ].map((platform) => {
+                  const Icon = platformIcons[platform];
+                  const iconColor = platformColors[platform] || 'currentColor';
+                  return (
+                    <SelectItem key={platform} value={platform}>
+                      <div className="flex items-center gap-2">
+                        <Icon className="w-4 h-4" style={{ color: iconColor }} />
+                        <span>{platform.charAt(0).toUpperCase() + platform.slice(1)}</span>
+                      </div>
+                    </SelectItem>
+                  );
+                })}
+              </SelectGroup>
             </SelectContent>
           </Select>
 
