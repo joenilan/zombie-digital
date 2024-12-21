@@ -1,5 +1,6 @@
 "use client"
 
+import React from "react";
 import { useState, useEffect } from "react"
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
 import { 
@@ -217,14 +218,38 @@ function AddLinkDialog({ userId, onAdd }: {
             onValueChange={setPlatform}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Select Platform" />
+              <SelectValue placeholder="Select Platform">
+                {platform && (
+                  <div className="flex items-center gap-2">
+                    {React.createElement(platformIcons[platform], { 
+                      className: "w-4 h-4",
+                      style: { color: platformColors[platform] || 'currentColor' }
+                    })}
+                    <span>{platform.charAt(0).toUpperCase() + platform.slice(1)}</span>
+                  </div>
+                )}
+              </SelectValue>
             </SelectTrigger>
             <SelectContent>
-              {Object.keys(platformIcons).map((platform) => (
-                <SelectItem key={platform} value={platform}>
-                  {platform.charAt(0).toUpperCase() + platform.slice(1)}
-                </SelectItem>
-              ))}
+              {Object.keys(platformIcons).map((platform) => {
+                const Icon = platformIcons[platform];
+                const iconColor = platformColors[platform] || 'currentColor';
+                
+                return (
+                  <SelectItem 
+                    key={platform} 
+                    value={platform}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Icon 
+                        className="w-4 h-4" 
+                        style={{ color: iconColor }}
+                      />
+                      <span>{platform.charAt(0).toUpperCase() + platform.slice(1)}</span>
+                    </div>
+                  </SelectItem>
+                );
+              })}
             </SelectContent>
           </Select>
 
