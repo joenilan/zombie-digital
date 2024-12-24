@@ -305,3 +305,65 @@
 .scrollbar-thin:hover {
   scrollbar-width: thin; /* Show on hover */
 }
+
+/* Override background for canvas page */
+.canvas-transparent {
+  background: transparent !important;
+}
+
+/* Force transparent background for logged out canvas */
+body:has(.canvas-page:not(.logged-in)) {
+  background: transparent !important;
+}
+
+/* Canvas page background overrides */
+.canvas-page[data-logged-in="false"] {
+  background: none !important;
+}
+
+.canvas-page[data-logged-in="false"] body,
+.canvas-page[data-logged-in="false"] main,
+.canvas-page[data-logged-in="false"] div {
+  background: none !important;
+  background-image: none !important;
+}
+
+/* Override any gradients or backgrounds */
+body:has(.canvas-page[data-logged-in="false"]) {
+  background: none !important;
+  background-image: none !important;
+}
+
+/* Ensure all parent containers are also transparent */
+html:has(.canvas-page[data-logged-in="false"]),
+body:has(.canvas-page[data-logged-in="false"]) * {
+  background: none !important;
+  background-image: none !important;
+}
+
+/* OBS Canvas View Overrides */
+html:has(.canvas-page[data-logged-in="false"]),
+html:has(.canvas-page[data-logged-in="false"]) > body,
+html:has(.canvas-page[data-logged-in="false"]) > body > div,
+html:has(.canvas-page[data-logged-in="false"]) > body > main,
+html:has(.canvas-page[data-logged-in="false"]) > body > div > div {
+  background: none !important;
+  background-image: none !important;
+  background-color: transparent !important;
+  --page-background: none !important;
+}
+
+/* Reset any Tailwind backgrounds */
+[class*="bg-"] {
+  .canvas-page[data-logged-in="false"] & {
+    background: none !important;
+    background-image: none !important;
+    background-color: transparent !important;
+  }
+}
+
+/* Force transparent root */
+:root:has(.canvas-page[data-logged-in="false"]) {
+  --page-background: none !important;
+  background: none !important;
+}

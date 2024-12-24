@@ -33,7 +33,6 @@ export default async function SocialLinksPage() {
     .order('order_index', { ascending: true })
 
   return (
-    <div className="bg-glass rounded-xl shadow-glass p-6 transition-all duration-300 hover:shadow-cyber">
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold">Social Links</h1>
@@ -46,6 +45,5 @@ export default async function SocialLinksPage() {
           twitchUserId={twitchUser.id}
         />
       </div>
-    </div>
   )
 } 

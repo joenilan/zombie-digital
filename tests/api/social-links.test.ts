@@ -12,7 +12,7 @@ describe("Social Links API", () => {
   // Create test twitch user before tests
   beforeAll(async () => {
     // Create twitch user and get its ID
-    const twitchUser = await prisma.twitch_users.create({
+    const twitchUser = await prisma.twitchUser.create({
       data: {
         username: "testuser",
         display_name: "Test User",
@@ -33,7 +33,7 @@ describe("Social Links API", () => {
     await prisma.social_tree.deleteMany({
       where: { user_id: testUser.id },
     });
-    await prisma.twitch_users.delete({
+    await prisma.twitchUser.delete({
       where: { id: testUser.id },
     });
   });

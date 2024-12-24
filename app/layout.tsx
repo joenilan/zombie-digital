@@ -1,19 +1,19 @@
-import type { Metadata } from "next";
-import { GeistSans } from 'geist/font';
-import "./globals.css";
-import { ThemeProvider } from "next-themes";
-import { LayoutWrapper } from "./layout-wrapper";
+import type { Metadata } from "next"
+import { GeistSans } from 'geist/font'
+import "./globals.css"
+import { ThemeProvider } from "next-themes"
+import { LayoutWrapper } from "./layout-wrapper"
 import QueryProvider from "@/providers/query-provider"
 
 export const metadata: Metadata = {
   title: "Zombie.Digital - Twitch Management Platform",
   description: "Take control of your Twitch presence with professional management tools.",
-};
+}
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: React.ReactNode
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
@@ -32,5 +32,5 @@ export default function RootLayout({
         </QueryProvider>
       </body>
     </html>
-  );
+  )
 }

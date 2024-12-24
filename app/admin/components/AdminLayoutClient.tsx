@@ -1,18 +1,22 @@
 "use client";
 
-import { Navbar } from "@/components/Navbar";
+import { AdminSidebar } from './AdminSidebar';
 
-export function AdminLayoutClient({ children }: { children: React.ReactNode }) {
+export function AdminLayoutClient({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
-    <>
-      <Navbar />
-      <div className="min-h-screen bg-ethereal-dark">
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex gap-8">
-            {children}
-          </div>
+    <div className="min-h-screen bg-ethereal-dark">
+      <div className="flex flex-col lg:flex-row">
+        <div className="w-full lg:w-64 lg:min-h-screen p-4">
+          <AdminSidebar />
         </div>
+        <main className="flex-1 p-4">
+          {children}
+        </main>
       </div>
-    </>
+    </div>
   );
 } 

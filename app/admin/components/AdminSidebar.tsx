@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { motion } from "framer-motion";
 import { 
   BellIcon, 
   UsersIcon, 
@@ -29,11 +28,6 @@ const adminRoutes = [
     icon: UsersIcon
   },
   {
-    href: "/admin/roles",
-    label: "Role Management",
-    icon: ShieldIcon
-  },
-  {
     href: "/admin/settings",
     label: "Settings",
     icon: SettingsIcon
@@ -51,7 +45,7 @@ export function AdminSidebar() {
   };
 
   return (
-    <nav className="w-64 space-y-2">
+    <nav className="space-y-2 sticky top-4">
       {adminRoutes.map((route) => {
         const isActive = isRouteActive(route);
         const Icon = route.icon;

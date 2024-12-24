@@ -9,7 +9,12 @@ const nextConfig = {
         hostname: "static-cdn.jtvnw.net",
         pathname: "/**",
       },
-    ],
+      {
+        protocol: "https",
+        hostname: "tcommvmrmgtdqnxoagve.supabase.co",
+        pathname: "/storage/v1/object/public/**",
+      }
+    ]
   },
 };
 

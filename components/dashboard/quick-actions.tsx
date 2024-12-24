@@ -7,7 +7,16 @@ interface QuickActionsProps {
   username?: string
 }
 
-const actions = [
+interface Action {
+  title: string
+  href: string | ((username: string) => string)
+  icon: string
+  description: string
+  requiresUsername?: boolean
+  external?: boolean
+}
+
+const actions: Action[] = [
   {
     title: "Dashboard",
     href: "/dashboard",
@@ -19,6 +28,13 @@ const actions = [
     href: "/dashboard/social-links",
     icon: "🔗",
     description: "Manage your links"
+  },
+  {
+    title: "Canvas",
+    href: "/dashboard/canvas",
+    icon: "🎨",
+    description: "Configure your stream canvas",
+    requiresUsername: false
   }
 ]
 
