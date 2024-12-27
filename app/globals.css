@@ -32,61 +32,51 @@
     --input: 240 3.7% 15.9%;
     --ring: 240 4.9% 83.9%;
     
-    --page-background: linear-gradient(
-      to bottom right,
-      hsl(from cyber-darker / 100%),
-      hsl(from cyber-darker / 95%)
-    );
-  }
-
-  .light {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
-    
-    --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
-    
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    
-    --primary: 240 5.9% 10%;
-    --primary-foreground: 0 0% 98%;
-    
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
-    
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
-    
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 240 5.9% 10%;
-    
-    --page-background: linear-gradient(
-      to bottom right,
-      hsl(from cyber-lighter / 100%),
-      hsl(from cyber-lighter / 98%)
+    --cyber-gradient: linear-gradient(
+      135deg,
+      hsl(326, 100%, 74%) 0%,
+      hsl(265, 89%, 78%) 50%,
+      hsl(190, 100%, 74%) 100%
     );
   }
 
   body {
     @apply antialiased transition-colors duration-300;
-    @apply bg-cyber-darker dark:bg-cyber-darker light:bg-cyber-lighter;
   }
 
-  /* Remove any existing background classes that might interfere */
-  .dark body {
-    background: var(--page-background);
+  /* Apply gradient background to all pages except canvas */
+  body:not(.canvas-page) {
+    background: var(--cyber-gradient);
   }
 
-  .light body {
-    background: var(--page-background);
+  /* Theme overlays */
+  body:not(.canvas-page)::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: rgb(255 255 255 / 0.9);
+    opacity: 1;
+    transition: background-color 0.3s ease, opacity 0.3s ease;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Dark theme: darker overlay */
+  .dark body:not(.canvas-page)::before {
+    background: rgb(10 10 15 / 0.9);
+  }
+
+  /* Add radial gradient overlays for extra depth */
+  body:not(.canvas-page)::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: 
+      radial-gradient(circle at top, rgba(145, 70, 255, 0.15) 0%, transparent 50%),
+      radial-gradient(circle at bottom right, rgba(0, 240, 255, 0.1) 0%, transparent 50%),
+      radial-gradient(circle at bottom left, rgba(255, 46, 147, 0.1) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
   }
 }
 

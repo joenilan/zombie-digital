@@ -4,6 +4,8 @@ import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import PageTransitionLayout from '@/components/PageTransitionLayout'
 import { RealtimeLinks } from './realtime-links'
+import { BackgroundManager } from '@/components/background-manager'
+import { RealtimeBackground } from './realtime-background'
 
 interface PageProps {
   params: {
@@ -18,16 +20,18 @@ export default async function ProfilePage({ params }: PageProps) {
   // Get the current user's session
   const { data: { session } } = await supabase.auth.getSession()
 
-  // Get public profile data
+  // Get user data from public_profiles view
   const { data: profile, error: profileError } = await supabase
     .from('public_profiles')
     .select(`
+      user_id,
       username,
       display_name,
       profile_image_url,
       description,
       created_at,
-      user_id
+      background_media_url,
+      background_media_type
     `)
     .eq('username', username)
     .single()
@@ -62,40 +66,74 @@ export default async function ProfilePage({ params }: PageProps) {
 
   return (
     <PageTransitionLayout>
-      <div className="min-h-screen bg-ethereal-dark py-12 px-4">
-        <div className="max-w-2xl mx-auto space-y-8">
-          {/* Profile Header */}
-          <div className="flex flex-col items-center text-center">
-            <div className="relative mb-6">
-              <div className="absolute inset-0 rounded-full bg-gradient-to-r from-cyber-pink to-cyber-cyan animate-pulse blur-xl opacity-50"></div>
-              <Image
-                src={profile.profile_image_url}
-                alt={profile.display_name}
-                width={130}
-                height={130}
-                className="rounded-full relative border-4 border-background/50"
-                priority
-              />
+      <div className="min-h-screen py-12 px-4">
+        {/* Main Content Card */}
+        <div className="max-w-2xl mx-auto relative">
+          <div className="bg-background/20 backdrop-blur-xl rounded-xl shadow-glass overflow-hidden border border-white/10">
+            {/* Card Background */}
+            <RealtimeBackground 
+              userId={profile.user_id}
+              initialBackground={{
+                url: profile.background_media_url,
+                type: profile.background_media_type
+              }}
+            />
+
+            {/* Glass Overlay */}
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+
+            {/* Content */}
+            <div className="relative space-y-8 p-6">
+              {/* Profile Header */}
+              <div className="flex flex-col items-center text-center">
+                <div className="relative mb-6">
+                  <div className="absolute inset-0 rounded-full bg-gradient-to-r from-cyber-pink to-cyber-cyan animate-pulse blur-xl opacity-50"></div>
+                  <Image
+                    src={profile.profile_image_url}
+                    alt={profile.display_name}
+                    width={130}
+                    height={130}
+                    className="rounded-full relative border-4 border-background/50"
+                    priority
+                  />
+                </div>
+                <h1 className="text-4xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-cyber-pink to-cyber-cyan">
+                  {profile.display_name}
+                </h1>
+                <p className="text-lg text-muted-foreground mb-8">@{profile.username}</p>
+                {profile.description && (
+                  <p className="text-muted-foreground max-w-lg">
+                    {profile.description}
+                  </p>
+                )}
+              </div>
+
+              {/* Background Manager (only shown to profile owner) */}
+              {isOwner && (
+                <div>
+                  <h2 className="text-xl font-semibold mb-4">Profile Background</h2>
+                  <BackgroundManager 
+                    userId={profile.user_id}
+                    currentBackground={{
+                      url: profile.background_media_url,
+                      type: profile.background_media_type
+                    }}
+                  />
+                </div>
+              )}
+
+              {/* Social Links */}
+              <div>
+                <RealtimeLinks 
+                  userId={profile.user_id} 
+                  initialLinks={initialLinks || []} 
+                  isOwner={isOwner}
+                />
+              </div>
             </div>
-            <h1 className="text-4xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-cyber-pink to-cyber-cyan">
-              {profile.display_name}
-            </h1>
-            <p className="text-lg text-muted-foreground mb-8">@{profile.username}</p>
-            {profile.description && (
-              <p className="text-muted-foreground max-w-lg">
-                {profile.description}
-              </p>
-            )}
           </div>
 
-          {/* Social Links with Realtime Updates */}
-          <RealtimeLinks 
-            userId={profile.user_id} 
-            initialLinks={initialLinks || []} 
-            isOwner={isOwner}
-          />
-
-          {/* Footer */}
+          {/* Footer (outside the card) */}
           <div className="text-center text-sm text-muted-foreground/60 pt-8">
             <p>
               Powered by{" "}

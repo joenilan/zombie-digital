@@ -66,6 +66,11 @@ const ImageNode = memo(({ data, selected, id, onResize, onRotate }: {
     setStartDims({ width, height })
     document.addEventListener('mousemove', handleMouseMove)
     document.addEventListener('mouseup', handleMouseUp)
+
+    // Set pointer-events to none on the parent node to prevent dragging
+    if (nodeRef.current?.parentElement) {
+      nodeRef.current.parentElement.style.pointerEvents = 'none'
+    }
   }
 
   const handleRotateStart = (e: React.MouseEvent) => {
@@ -84,14 +89,20 @@ const ImageNode = memo(({ data, selected, id, onResize, onRotate }: {
     }
     document.addEventListener('mousemove', handleMouseMove)
     document.addEventListener('mouseup', handleMouseUp)
+
+    // Set pointer-events to none on the parent node to prevent dragging
+    if (nodeRef.current?.parentElement) {
+      nodeRef.current.parentElement.style.pointerEvents = 'none'
+    }
   }
 
-  const handleMouseMove = (e: MouseEvent) => {
-    if (isResizing) {
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    if (isResizing && nodeRef.current) {
       const dx = e.clientX - startPos.x
       const dy = e.clientY - startPos.y
       const newWidth = Math.max(50, startDims.width + dx)
       const newHeight = Math.max(50, startDims.height + dy)
+      setDimensions({ width: newWidth, height: newHeight })
       onResize?.(newWidth, newHeight)
     }
     
@@ -106,53 +117,70 @@ const ImageNode = memo(({ data, selected, id, onResize, onRotate }: {
       const newRotation = (startRotation + currentAngle + 360) % 360
       onRotate?.(newRotation)
     }
-  }
+  }, [isResizing, isRotating, startPos, startDims, startRotation, onResize, onRotate])
 
-  const handleMouseUp = () => {
+  const handleMouseUp = useCallback(() => {
     setIsResizing(false)
     setIsRotating(false)
     document.removeEventListener('mousemove', handleMouseMove)
     document.removeEventListener('mouseup', handleMouseUp)
-  }
+
+    // Restore pointer-events on the parent node
+    if (nodeRef.current?.parentElement) {
+      nodeRef.current.parentElement.style.pointerEvents = 'auto'
+    }
+  }, [handleMouseMove])
+
+  useEffect(() => {
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+    }
+  }, [handleMouseMove, handleMouseUp])
 
   return (
     <div 
       ref={nodeRef}
-      className="relative"
+      className="relative group"
       style={{
         width: `${width}px`,
         height: `${height}px`,
         transform: `rotate(${rotation}deg)`,
-        transformOrigin: 'center center'
+        transformOrigin: 'center center',
+        cursor: isResizing || isRotating ? 'grabbing' : 'grab',
+        touchAction: 'none'
       }}
     >
-      <div className="w-full h-full relative">
-        <img 
-          ref={imageRef}
-          src={data.url} 
-          alt="media" 
-          className="absolute inset-0 w-full h-full object-fill" 
-        />
-      </div>
+      <img 
+        ref={imageRef}
+        src={data.url} 
+        alt="media" 
+        className="absolute inset-0 w-full h-full object-fill" 
+        draggable={false}
+      />
       
       {/* Resize handles - only show when selected and not rotating */}
       {selected && !isRotating && width > 0 && height > 0 && (
         <>
           <div 
-            className="absolute w-3 h-3 bg-blue-500 rounded-full -top-1.5 -left-1.5 cursor-nw-resize z-10" 
+            className="absolute w-3 h-3 bg-blue-500 rounded-full -top-1.5 -left-1.5 cursor-nw-resize z-10 hover:scale-125 transition-transform" 
             onMouseDown={(e) => handleResizeStart(e, 'nw')}
+            onTouchStart={(e) => e.stopPropagation()}
           />
           <div 
-            className="absolute w-3 h-3 bg-blue-500 rounded-full -top-1.5 -right-1.5 cursor-ne-resize z-10"
+            className="absolute w-3 h-3 bg-blue-500 rounded-full -top-1.5 -right-1.5 cursor-ne-resize z-10 hover:scale-125 transition-transform"
             onMouseDown={(e) => handleResizeStart(e, 'ne')}
+            onTouchStart={(e) => e.stopPropagation()}
           />
           <div 
-            className="absolute w-3 h-3 bg-blue-500 rounded-full -bottom-1.5 -left-1.5 cursor-sw-resize z-10"
+            className="absolute w-3 h-3 bg-blue-500 rounded-full -bottom-1.5 -left-1.5 cursor-sw-resize z-10 hover:scale-125 transition-transform"
             onMouseDown={(e) => handleResizeStart(e, 'sw')}
+            onTouchStart={(e) => e.stopPropagation()}
           />
           <div 
-            className="absolute w-3 h-3 bg-blue-500 rounded-full -bottom-1.5 -right-1.5 cursor-se-resize z-10"
+            className="absolute w-3 h-3 bg-blue-500 rounded-full -bottom-1.5 -right-1.5 cursor-se-resize z-10 hover:scale-125 transition-transform"
             onMouseDown={(e) => handleResizeStart(e, 'se')}
+            onTouchStart={(e) => e.stopPropagation()}
           />
         </>
       )}
@@ -160,8 +188,9 @@ const ImageNode = memo(({ data, selected, id, onResize, onRotate }: {
       {/* Rotate handle - only show when selected and not resizing */}
       {selected && !isResizing && width > 0 && height > 0 && (
         <div 
-          className="absolute w-4 h-4 bg-blue-500 rounded-full -top-8 left-1/2 -translate-x-1/2 cursor-pointer z-10"
+          className="absolute w-4 h-4 bg-blue-500 rounded-full -top-8 left-1/2 -translate-x-1/2 cursor-pointer z-10 hover:scale-125 transition-transform"
           onMouseDown={handleRotateStart}
+          onTouchStart={(e) => e.stopPropagation()}
         >
           <svg
             className="w-full h-full text-white"
@@ -170,7 +199,7 @@ const ImageNode = memo(({ data, selected, id, onResize, onRotate }: {
             stroke="currentColor"
             strokeWidth="2"
           >
-            <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            <path d="M12 2v4m0 12v4M2 12h4m12 0h4" />
           </svg>
         </div>
       )}
@@ -290,19 +319,6 @@ const OBSViewport = () => {
   )
 }
 
-// Create a stable nodeTypes object at module level
-const nodeTypes = {
-  imageNode: memo(({ id, data, selected, onResize, onRotate }: any) => (
-    <div style={{ zIndex: data.zIndex || 0 }}>
-      <ImageNode 
-        {...{ id, data, selected }}
-        onResize={onResize}
-        onRotate={onRotate}
-      />
-    </div>
-  ))
-}
-
 function Flow({ canvasId, isOwner, userId }: FlowCanvasV2Props) {
   const supabase = createClientComponentClient()
   const [nodes, setNodes, onNodesChange] = useNodesState([])
@@ -326,7 +342,6 @@ function Flow({ canvasId, isOwner, userId }: FlowCanvasV2Props) {
   // Add dragId ref at the top of the component with other refs
   const dragIdRef = useRef<string | null>(null)
 
-  // Create handlers object
   const handlers = useMemo(() => ({
     onResize: async (nodeId: string, width: number, height: number) => {
       // Update local state
@@ -343,6 +358,21 @@ function Flow({ canvasId, isOwner, userId }: FlowCanvasV2Props) {
         }
         return node
       }))
+
+      // Broadcast through Supabase Realtime
+      const now = Date.now()
+      if (now - lastBroadcastRef.current >= BROADCAST_THROTTLE) {
+        channelRef.current?.send({
+          type: 'broadcast',
+          event: 'resize',
+          payload: {
+            id: nodeId,
+            width,
+            height
+          }
+        })
+        lastBroadcastRef.current = now
+      }
 
       // Save to database
       try {
@@ -372,6 +402,20 @@ function Flow({ canvasId, isOwner, userId }: FlowCanvasV2Props) {
         return node
       }))
 
+      // Broadcast through Supabase Realtime
+      const now = Date.now()
+      if (now - lastBroadcastRef.current >= BROADCAST_THROTTLE) {
+        channelRef.current?.send({
+          type: 'broadcast',
+          event: 'rotate',
+          payload: {
+            id: nodeId,
+            rotation
+          }
+        })
+        lastBroadcastRef.current = now
+      }
+
       // Save to database
       try {
         await supabase
@@ -385,6 +429,19 @@ function Flow({ canvasId, isOwner, userId }: FlowCanvasV2Props) {
       }
     }
   }), [setNodes, supabase])
+
+  // Create nodeTypes with access to handlers
+  const nodeTypes = useMemo(() => ({
+    imageNode: (props: any) => (
+      <div style={{ zIndex: props.data.zIndex || 0 }}>
+        <ImageNode
+          {...props}
+          onResize={(width, height) => handlers.onResize(props.id, width, height)}
+          onRotate={(rotation) => handlers.onRotate(props.id, rotation)}
+        />
+      </div>
+    )
+  }), [handlers])
 
   // Handle node click for layer ordering
   const handleNodeClick = useCallback(async (event: React.MouseEvent, node: Node) => {
@@ -421,7 +478,7 @@ function Flow({ canvasId, isOwner, userId }: FlowCanvasV2Props) {
     }
   }, [nodes, canvasId, isOwner, supabase])
 
-  // Update handleNodesChange to store the dragId
+  // Update handleNodesChange to properly cleanup after dragging ends
   const handleNodesChange = useCallback(
     async (changes: NodeChange[]) => {
       console.log('Node changes received:', changes)
@@ -432,15 +489,32 @@ function Flow({ canvasId, isOwner, userId }: FlowCanvasV2Props) {
       // Process position changes
       for (const change of changes) {
         if (change.type === 'position') {
-          // Only save to database when dragging ends
-          if ('dragging' in change && change.dragging === false) {
-            dragIdRef.current = null // Reset dragId when dragging ends
-            // Get the current node to get its position
-            const node = nodes.find(n => n.id === change.id)
-            if (!node) continue
+          const node = nodes.find(n => n.id === change.id)
+          if (!node) continue
 
+          // Handle drag end
+          if ('dragging' in change && change.dragging === false) {
             try {
               console.log('Saving final position to database...')
+              
+              // First, send a final position update with dragId to ensure all clients are in sync
+              if (dragIdRef.current) {
+                channelRef.current?.send({
+                  type: 'broadcast',
+                  event: 'position',
+                  payload: {
+                    id: node.id,
+                    position: {
+                      x: Math.round(node.position.x),
+                      y: Math.round(node.position.y)
+                    },
+                    dragId: dragIdRef.current,
+                    final: true
+                  }
+                })
+              }
+
+              // Save to database
               const { error } = await supabase
                 .from('canvas_media_objects')
                 .update({
@@ -452,6 +526,22 @@ function Flow({ canvasId, isOwner, userId }: FlowCanvasV2Props) {
               if (error) {
                 console.error('Error saving position to database:', error)
               }
+
+              // Reset dragId and remove any transition styles
+              dragIdRef.current = null
+              setNodes((nds) => nds.map(n => {
+                if (n.id === change.id) {
+                  const { style, ...rest } = n
+                  return {
+                    ...rest,
+                    style: {
+                      ...style,
+                      transition: 'none'
+                    }
+                  }
+                }
+                return n
+              }))
             } catch (error) {
               console.error('Error updating position in database:', error)
             }
@@ -459,9 +549,6 @@ function Flow({ canvasId, isOwner, userId }: FlowCanvasV2Props) {
 
           // During dragging, broadcast position through Supabase Realtime
           if ('dragging' in change && change.dragging === true) {
-            const node = nodes.find(n => n.id === change.id)
-            if (!node) continue
-
             const now = Date.now()
             if (now - lastBroadcastRef.current >= BROADCAST_THROTTLE) {
               // Generate a unique ID for this dragging session if we don't have one
@@ -479,7 +566,8 @@ function Flow({ canvasId, isOwner, userId }: FlowCanvasV2Props) {
                     x: Math.round(node.position.x),
                     y: Math.round(node.position.y)
                   },
-                  dragId: dragIdRef.current
+                  dragId: dragIdRef.current,
+                  final: false
                 }
               })
               lastBroadcastRef.current = now
@@ -491,8 +579,11 @@ function Flow({ canvasId, isOwner, userId }: FlowCanvasV2Props) {
     [canvasId, onNodesChange, supabase, nodes]
   )
 
-  // Load initial nodes and subscribe to changes
+  // Update useEffect for subscription handling
   useEffect(() => {
+    let channel: ReturnType<typeof supabase.channel> | null = null
+    let isSubscribed = false
+
     const loadNodes = async () => {
       const { data: mediaObjects, error } = await supabase
         .from('canvas_media_objects')
@@ -523,114 +614,163 @@ function Flow({ canvasId, isOwner, userId }: FlowCanvasV2Props) {
       setNodes(loadedNodes)
     }
 
-    loadNodes()
+    const setupChannel = async () => {
+      try {
+        // Clean up any existing channel
+        if (channelRef.current) {
+          await channelRef.current.unsubscribe()
+          channelRef.current = null
+        }
 
-    // Create and store the channel reference
-    const channel = supabase.channel(`canvas_${canvasId}`)
-    channelRef.current = channel
+        // Create new channel
+        channel = supabase.channel(`canvas_${canvasId}`)
+        channelRef.current = channel
 
-    // Subscribe to both database changes and real-time broadcasts
-    channel
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'canvas_media_objects',
-          filter: `canvas_id=eq.${canvasId}`
-        },
-        (payload) => {
-          console.log('Received database update:', payload)
-          
-          switch (payload.eventType) {
-            case 'INSERT':
-              const newNode = {
-                id: payload.new.id,
-                type: 'imageNode',
-                position: { x: payload.new.position_x, y: payload.new.position_y },
-                data: {
-                  url: payload.new.url,
-                  width: payload.new.width,
-                  height: payload.new.height,
-                  rotation: payload.new.rotation,
-                  zIndex: payload.new.z_index || 0
-                },
-                draggable: isOwner,
-                selectable: isOwner
-              }
-              setNodes((nds) => nds.concat(newNode))
-              break
-            case 'DELETE':
-              // Handle deletion for both owner and non-owner views
-              if (!isOwner) {
-                // For non-owner views, also remove the DOM element directly
-                const node = document.querySelector(`[data-id="${payload.old.id}"]`)
-                if (node) {
-                  node.remove()
-                }
-              }
-              // Update React state for both views
-              setNodes((nds) => nds.filter(node => node.id !== payload.old.id))
-              break
-            case 'UPDATE':
-              setNodes((nds) => nds.map(node => {
-                if (node.id === payload.new.id) {
-                  return {
-                    ...node,
-                    position: { 
-                      x: payload.new.position_x, 
-                      y: payload.new.position_y 
-                    },
+        // Set up channel handlers
+        channel
+          .on(
+            'postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'canvas_media_objects',
+              filter: `canvas_id=eq.${canvasId}`
+            },
+            (payload) => {
+              if (!isSubscribed) return
+              console.log('Received database update:', payload)
+              
+              switch (payload.eventType) {
+                case 'INSERT':
+                  const newNode = {
+                    id: payload.new.id,
+                    type: 'imageNode',
+                    position: { x: payload.new.position_x, y: payload.new.position_y },
                     data: {
-                      ...node.data,
+                      url: payload.new.url,
                       width: payload.new.width,
                       height: payload.new.height,
                       rotation: payload.new.rotation,
                       zIndex: payload.new.z_index || 0
+                    },
+                    draggable: isOwner,
+                    selectable: isOwner
+                  }
+                  setNodes((nds) => nds.concat(newNode))
+                  break
+                case 'DELETE':
+                  setNodes((nds) => nds.filter(node => node.id !== payload.old.id))
+                  break
+                case 'UPDATE':
+                  setNodes((nds) => nds.map(node => {
+                    if (node.id === payload.new.id) {
+                      return {
+                        ...node,
+                        position: { 
+                          x: payload.new.position_x, 
+                          y: payload.new.position_y 
+                        },
+                        data: {
+                          ...node.data,
+                          width: payload.new.width,
+                          height: payload.new.height,
+                          rotation: payload.new.rotation,
+                          zIndex: payload.new.z_index || 0
+                        }
+                      }
+                    }
+                    return node
+                  }))
+                  break
+              }
+            }
+          )
+          .on(
+            'broadcast',
+            { event: 'position' },
+            ({ payload }) => {
+              if (!isSubscribed) return
+              // Update all views except the one doing the dragging
+              if (payload.dragId !== dragIdRef.current) {
+                setNodes((nds) => nds.map(node => {
+                  if (node.id === payload.id) {
+                    return {
+                      ...node,
+                      position: payload.position,
+                      style: {
+                        ...node.style,
+                        transition: payload.final ? 'none' : 'transform 100ms cubic-bezier(0.4, 0, 0.2, 1)'
+                      }
+                    }
+                  }
+                  return node
+                }))
+              }
+            }
+          )
+          .on(
+            'broadcast',
+            { event: 'resize' },
+            ({ payload }) => {
+              if (!isSubscribed) return
+              setNodes((nds) => nds.map(node => {
+                if (node.id === payload.id) {
+                  return {
+                    ...node,
+                    data: {
+                      ...node.data,
+                      width: payload.width,
+                      height: payload.height
                     }
                   }
                 }
                 return node
               }))
-              break
-          }
-        }
-      )
-      .on(
-        'broadcast',
-        { event: 'delete' },
-        ({ payload }) => {
-          // Only update React state, let React handle the DOM
-          setNodes((nds) => nds.filter(node => node.id !== payload.id))
-        }
-      )
-      .on(
-        'broadcast',
-        { event: 'position' },
-        ({ payload }) => {
-          // Update all views except the one doing the dragging
-          if (payload.dragId !== dragIdRef.current) {
-            setNodes((nds) => nds.map(node => {
-              if (node.id === payload.id) {
-                return {
-                  ...node,
-                  position: payload.position,
-                  style: {
-                    ...node.style,
-                    transition: 'transform 100ms cubic-bezier(0.4, 0, 0.2, 1)'
+            }
+          )
+          .on(
+            'broadcast',
+            { event: 'rotate' },
+            ({ payload }) => {
+              if (!isSubscribed) return
+              setNodes((nds) => nds.map(node => {
+                if (node.id === payload.id) {
+                  return {
+                    ...node,
+                    data: {
+                      ...node.data,
+                      rotation: payload.rotation
+                    }
                   }
                 }
-              }
-              return node
-            }))
-          }
-        }
-      )
-      .subscribe()
+                return node
+              }))
+            }
+          )
 
+        // Subscribe to channel
+        await channel.subscribe()
+        isSubscribed = true
+      } catch (error) {
+        console.error('Error setting up channel:', error)
+      }
+    }
+
+    // Initial setup
+    loadNodes()
+    setupChannel()
+
+    // Cleanup function
     return () => {
-      channel.unsubscribe()
-      channelRef.current = null
+      isSubscribed = false
+      if (channel) {
+        channel.unsubscribe()
+      }
+      if (channelRef.current) {
+        channelRef.current.unsubscribe()
+        channelRef.current = null
+      }
+      dragIdRef.current = null
     }
   }, [canvasId, setNodes, isOwner, supabase])
 

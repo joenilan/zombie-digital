@@ -4,6 +4,7 @@ import "./globals.css"
 import { ThemeProvider } from "next-themes"
 import { LayoutWrapper } from "./layout-wrapper"
 import QueryProvider from "@/providers/query-provider"
+import { Toaster } from 'sonner'
 
 export const metadata: Metadata = {
   title: "Zombie.Digital - Twitch Management Platform",
@@ -30,6 +31,14 @@ export default function RootLayout({
             </LayoutWrapper>
           </ThemeProvider>
         </QueryProvider>
+        <Toaster 
+          position="bottom-right" 
+          duration={15000} 
+          richColors
+          expand={true}
+          closeButton={true}
+          theme="dark"
+        />
       </body>
     </html>
   )

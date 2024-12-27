@@ -27,26 +27,12 @@ interface LayoutWrapperProps {
 export function LayoutWrapper({ children }: LayoutWrapperProps) {
   const pathname = usePathname()
   const isProfile = isProfilePage(pathname)
-  const isCanvasPage = pathname?.startsWith('/canvas/')
+  const isCanvasPage = pathname?.includes('/canvas/')
 
   return (
-    <div className="relative min-h-screen bg-cyber-lighter dark:bg-cyber-darker transition-colors duration-300">
+    <div className={`relative min-h-screen ${isCanvasPage ? 'bg-cyber-lighter dark:bg-cyber-darker' : ''} transition-colors duration-300`}>
       {!isProfile && (
         <>
-          {/* Gradient overlays - Dark Theme */}
-          <div className="absolute inset-0 dark:block hidden">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(145,70,255,0.15)_0%,_transparent_50%)]" />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_right,_rgba(0,240,255,0.1)_0%,_transparent_50%)]" />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,_rgba(255,46,147,0.1)_0%,_transparent_50%)]" />
-          </div>
-
-          {/* Gradient overlays - Light Theme */}
-          <div className="absolute inset-0 dark:hidden">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(145,70,255,0.1)_0%,_transparent_50%)]" />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_right,_rgba(0,240,255,0.05)_0%,_transparent_50%)]" />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,_rgba(255,46,147,0.05)_0%,_transparent_50%)]" />
-          </div>
-
           {/* Navbar */}
           <div className="relative flex flex-col min-h-screen">
             {!isCanvasPage && <Navbar />}

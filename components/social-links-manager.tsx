@@ -57,6 +57,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query"
+import { toast } from 'sonner'
 
 const platformIcons: Record<string, any> = {
   // Social Media
@@ -149,6 +150,7 @@ function AddLinkDialog({ userId, onAdd }: {
   const [platform, setPlatform] = useState("")
   const [url, setUrl] = useState("")
   const [title, setTitle] = useState("")
+  const [open, setOpen] = useState(false)
   const queryClient = useQueryClient()
 
   const mutation = useMutation({
@@ -179,9 +181,12 @@ function AddLinkDialog({ userId, onAdd }: {
       setPlatform("")
       setUrl("")
       setTitle("")
+      setOpen(false)
+      toast.success('Link added successfully')
     },
     onError: (error) => {
       console.error('Error adding link:', error)
+      toast.error('Failed to add link')
     }
   })
 
@@ -190,6 +195,12 @@ function AddLinkDialog({ userId, onAdd }: {
 
     if (!userId || userId === '') {
       console.error('Invalid user ID:', userId)
+      toast.error('Invalid user ID')
+      return
+    }
+
+    if (!platform || !url) {
+      toast.error('Platform and URL are required')
       return
     }
 
@@ -202,7 +213,7 @@ function AddLinkDialog({ userId, onAdd }: {
   }
 
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="outline" className="w-full">
           <Plus className="w-4 h-4 mr-2" />
@@ -248,138 +259,40 @@ function AddLinkDialog({ userId, onAdd }: {
                   'kick',
                   'github',
                   'linkedin'
-                ].filter(platform => platformIcons[platform]).map((platform) => {
-                  const Icon = platformIcons[platform];
-                  const iconColor = platformColors[platform] || 'currentColor';
-                  
-                  return (
-                    <SelectItem key={platform} value={platform}>
-                      <div className="flex items-center gap-2">
-                        <Icon className="w-4 h-4" style={{ color: iconColor }} />
-                        <span>{platform.charAt(0).toUpperCase() + platform.slice(1)}</span>
-                      </div>
-                    </SelectItem>
-                  );
-                })}
-              </SelectGroup>
-
-              <SelectSeparator />
-              
-              {/* Content Creation */}
-              <SelectGroup>
-                <SelectLabel>Content Creation</SelectLabel>
-                {[
-                  'streamelements',
-                  'kofi',
-                  'fourthwall',
-                  'patreon',
-                  'onlyfans'
-                ].map((platform) => {
-                  const Icon = platformIcons[platform];
-                  const iconColor = platformColors[platform] || 'currentColor';
-                  return (
-                    <SelectItem key={platform} value={platform}>
-                      <div className="flex items-center gap-2">
-                        <Icon className="w-4 h-4" style={{ color: iconColor }} />
-                        <span>{platform.charAt(0).toUpperCase() + platform.slice(1)}</span>
-                      </div>
-                    </SelectItem>
-                  );
-                })}
-              </SelectGroup>
-
-              <SelectSeparator />
-
-              {/* Payment/Support */}
-              <SelectGroup>
-                <SelectLabel>Payment & Support</SelectLabel>
-                {[
-                  'cashapp',
-                  'venmo',
-                  'paypal'
-                ].map((platform) => {
-                  const Icon = platformIcons[platform];
-                  const iconColor = platformColors[platform] || 'currentColor';
-                  return (
-                    <SelectItem key={platform} value={platform}>
-                      <div className="flex items-center gap-2">
-                        <Icon className="w-4 h-4" style={{ color: iconColor }} />
-                        <span>{platform.charAt(0).toUpperCase() + platform.slice(1)}</span>
-                      </div>
-                    </SelectItem>
-                  );
-                })}
-              </SelectGroup>
-
-              <SelectSeparator />
-
-              {/* Music/Audio */}
-              <SelectGroup>
-                <SelectLabel>Music & Audio</SelectLabel>
-                {[
-                  'spotify',
-                  'soundcloud',
-                  'bandcamp',
-                  'music'
-                ].map((platform) => {
-                  const Icon = platformIcons[platform];
-                  const iconColor = platformColors[platform] || 'currentColor';
-                  return (
-                    <SelectItem key={platform} value={platform}>
-                      <div className="flex items-center gap-2">
-                        <Icon className="w-4 h-4" style={{ color: iconColor }} />
-                        <span>{platform.charAt(0).toUpperCase() + platform.slice(1)}</span>
-                      </div>
-                    </SelectItem>
-                  );
-                })}
-              </SelectGroup>
-
-              <SelectSeparator />
-
-              {/* Writing/Blogs */}
-              <SelectGroup>
-                <SelectLabel>Writing & Blogs</SelectLabel>
-                {[
-                  'substack',
-                  'medium'
-                ].map((platform) => {
-                  const Icon = platformIcons[platform];
-                  const iconColor = platformColors[platform] || 'currentColor';
-                  return (
-                    <SelectItem key={platform} value={platform}>
-                      <div className="flex items-center gap-2">
-                        <Icon className="w-4 h-4" style={{ color: iconColor }} />
-                        <span>{platform.charAt(0).toUpperCase() + platform.slice(1)}</span>
-                      </div>
-                    </SelectItem>
-                  );
-                })}
+                ].map((platform) => (
+                  <SelectItem key={platform} value={platform}>
+                    <div className="flex items-center gap-2">
+                      {React.createElement(platformIcons[platform], { 
+                        className: "w-4 h-4",
+                        style: { color: platformColors[platform] || 'currentColor' }
+                      })}
+                      <span>{platform.charAt(0).toUpperCase() + platform.slice(1)}</span>
+                    </div>
+                  </SelectItem>
+                ))}
               </SelectGroup>
             </SelectContent>
           </Select>
 
           <Input
+            type="url"
             placeholder="URL"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
           />
 
           <Input
-            placeholder="Display Title (optional)"
+            placeholder="Title (optional)"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
           />
 
           <div className="flex justify-end gap-2">
-            <DialogTrigger asChild>
-              <Button variant="outline">Cancel</Button>
-            </DialogTrigger>
-            <Button 
-              type="submit" 
-              disabled={!platform || !url}
-            >
-              Add Link
+            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={mutation.isPending}>
+              {mutation.isPending ? 'Adding...' : 'Add Link'}
             </Button>
           </div>
         </form>
@@ -471,10 +384,31 @@ export function SocialLinksManager({ initialLinks = [], twitchUserId }: SocialLi
     }
   });
 
-  const handleReorder = (newOrder: SocialLink[]) => {
-    queryClient.setQueryData(['social-links', twitchUserId], newOrder);
-    reorderMutation.mutate(newOrder);
-  };
+  const handleReorder = async (newOrder: SocialLink[]) => {
+    setLinks(newOrder)
+
+    try {
+      // Update order_index for each link
+      const updates = newOrder.map((link, index) => ({
+        id: link.id,
+        user_id: link.user_id,
+        platform: link.platform,
+        url: link.url,
+        title: link.title,
+        order_index: index
+      }))
+
+      const { error } = await supabase
+        .from('social_tree')
+        .upsert(updates)
+
+      if (error) throw error
+      toast.success('Links reordered successfully')
+    } catch (error) {
+      console.error('Error updating order:', error)
+      toast.error('Failed to update link order')
+    }
+  }
 
   const deleteMutation = useMutation({
     mutationKey: ['social-links', 'delete'],
@@ -497,9 +431,21 @@ export function SocialLinksManager({ initialLinks = [], twitchUserId }: SocialLi
     }
   })
 
-  const deleteLink = (id: string) => {
-    setLinks((currentLinks) => currentLinks.filter(link => link.id !== id))
-    deleteMutation.mutate(id)
+  const deleteLink = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('social_tree')
+        .delete()
+        .eq('id', id)
+
+      if (error) throw error
+
+      setLinks(links.filter(link => link.id !== id))
+      toast.success('Social link deleted successfully')
+    } catch (error) {
+      console.error('Error deleting link:', error)
+      toast.error('Failed to delete social link')
+    }
   }
 
   return (
