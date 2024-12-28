@@ -1,6 +1,23 @@
-import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+
+async function getAppAccessToken() {
+  const clientId = process.env.NEXT_PUBLIC_TWITCH_CLIENT_ID;
+  const clientSecret = process.env.TWITCH_CLIENT_SECRET;
+
+  const response = await fetch(
+    `https://id.twitch.tv/oauth2/token?client_id=${clientId}&client_secret=${clientSecret}&grant_type=client_credentials`,
+    {
+      method: "POST",
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to get Twitch app access token");
+  }
+
+  const data = await response.json();
+  return data.access_token;
+}
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -13,28 +30,37 @@ export async function GET(request: Request) {
     );
   }
 
-  try {
-    // Get user's Twitch token from Supabase
-    const supabase = createServerComponentClient({ cookies });
-    const { data: twitchUser } = await supabase
-      .from("twitch_users")
-      .select("provider_token")
-      .eq("username", username)
-      .single();
+  const clientId = process.env.NEXT_PUBLIC_TWITCH_CLIENT_ID;
+  if (!clientId) {
+    return NextResponse.json(
+      { error: "Twitch client ID not configured" },
+      { status: 500 }
+    );
+  }
 
-    if (!twitchUser?.provider_token) {
-      throw new Error("No Twitch token available");
-    }
+  try {
+    // Get a fresh app access token for each request
+    const accessToken = await getAppAccessToken();
 
     const response = await fetch(
       `https://api.twitch.tv/helix/streams?user_login=${username}`,
       {
         headers: {
-          Authorization: `Bearer ${twitchUser.provider_token}`,
-          "Client-Id": process.env.NEXT_PUBLIC_TWITCH_CLIENT_ID!,
+          Authorization: `Bearer ${accessToken}`,
+          "Client-Id": clientId,
         },
       }
     );
+
+    if (!response.ok) {
+      console.error("Twitch API error:", {
+        status: response.status,
+        statusText: response.statusText,
+      });
+      throw new Error(
+        `Twitch API error: ${response.status} ${response.statusText}`
+      );
+    }
 
     const data = await response.json();
     return NextResponse.json({
@@ -44,7 +70,10 @@ export async function GET(request: Request) {
   } catch (error) {
     console.error("Error checking Twitch status:", error);
     return NextResponse.json(
-      { error: "Failed to check status" },
+      {
+        error:
+          error instanceof Error ? error.message : "Failed to check status",
+      },
       { status: 500 }
     );
   }

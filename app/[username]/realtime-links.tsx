@@ -117,27 +117,41 @@ interface RealtimeLinksProps {
 }
 
 function TwitchLink({ link, username }: { link: SocialLink; username: string }) {
+  console.log('TwitchLink mounted for:', username);
   const [isExpanded, setIsExpanded] = useState(false)
   const [isLive, setIsLive] = useState(false)
   const [streamInfo, setStreamInfo] = useState<any>(null)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     async function checkTwitchStatus() {
+      console.log('Checking Twitch status for:', username);
       try {
         const response = await fetch(`/api/twitch/status?username=${username}`)
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`)
+        }
         const data = await response.json()
+        console.log('Twitch status response:', data);
         setIsLive(data.isLive)
         setStreamInfo(data.stream)
+        setError(null)
       } catch (error) {
         console.error('Error checking Twitch status:', error)
+        setError(error instanceof Error ? error.message : 'Unknown error')
       }
     }
 
     const interval = setInterval(checkTwitchStatus, 60000) // Check every minute
     checkTwitchStatus() // Initial check
 
-    return () => clearInterval(interval)
+    return () => {
+      console.log('TwitchLink cleanup for:', username);
+      clearInterval(interval)
+    }
   }, [username])
+
+  console.log('TwitchLink rendering with state:', { isLive, streamInfo, error });
 
   return (
     <div className="w-full">
@@ -147,12 +161,7 @@ function TwitchLink({ link, username }: { link: SocialLink; username: string }) 
         rel="noopener noreferrer"
         className={`block w-full p-4 bg-glass shadow-glass 
                  hover:shadow-cyber transition-all duration-300
-                 text-center group relative overflow-hidden
-                 ${!isLive ? 'rounded-xl' : 'rounded-t-xl'}`}
-        style={isLive ? {
-          borderBottomLeftRadius: isExpanded ? 0 : '0.75rem',
-          borderBottomRightRadius: isExpanded ? 0 : '0.75rem'
-        } : undefined}
+                 text-center group relative overflow-hidden rounded-xl`}
       >
         <div className="absolute inset-0 bg-gradient-to-r from-cyber-pink/10 to-cyber-cyan/10 
                       opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -161,7 +170,11 @@ function TwitchLink({ link, username }: { link: SocialLink; username: string }) 
           <span className="font-medium text-lg">
             {link.title || link.platform}
           </span>
-          {isLive && (
+          {error ? (
+            <span className="text-xs text-red-500">
+              (Status check failed)
+            </span>
+          ) : isLive ? (
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
               <span className="text-sm font-medium text-red-500">LIVE</span>
@@ -171,6 +184,10 @@ function TwitchLink({ link, username }: { link: SocialLink; username: string }) 
                 </span>
               )}
             </div>
+          ) : (
+            <span className="text-xs text-muted-foreground">
+              (Offline)
+            </span>
           )}
         </div>
         {isLive && streamInfo && (
@@ -309,12 +326,56 @@ export function RealtimeLinks({ userId, initialLinks, isOwner }: RealtimeLinksPr
   return (
     <div className="space-y-4 w-full">
       {links.map((link) => {
+        // Debug logging
+        console.log('Link:', {
+          id: link.id,
+          platform: link.platform,
+          platformLower: link.platform.toLowerCase(),
+          isTwitch: link.platform.toLowerCase() === 'twitch',
+          url: link.url
+        })
+
         // Special handling for Twitch links
         if (link.platform.toLowerCase() === 'twitch') {
-          return <TwitchLink key={link.id} link={link} username={link.url.split('/').pop() || ''} />
+          console.log('Rendering TwitchLink for:', link.url);
+          try {
+            const username = link.url.split('/').pop() || '';
+            console.log('Extracted username:', username);
+            if (!username) {
+              console.error('Failed to extract username from URL:', link.url);
+              throw new Error('Invalid Twitch URL');
+            }
+            return <TwitchLink key={link.id} link={link} username={username} />;
+          } catch (error) {
+            console.error('Error rendering TwitchLink:', error);
+            // Fallback to regular link if TwitchLink fails
+            const Icon = getPlatformIcon(link.platform);
+            const iconColor = getPlatformColor(link.platform);
+            return (
+              <a
+                key={link.id}
+                href={link.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block w-full p-4 rounded-xl bg-glass shadow-glass 
+                         hover:shadow-cyber transition-all duration-300 transform hover:-translate-y-1
+                         text-center group relative overflow-hidden"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-cyber-pink/10 to-cyber-cyan/10 
+                              opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <div className="relative flex items-center justify-center gap-3">
+                  <Icon className="w-6 h-6" style={{ color: iconColor }} />
+                  <span className="font-medium text-lg">
+                    {link.title || link.platform}
+                  </span>
+                </div>
+              </a>
+            );
+          }
         }
 
         // Regular links remain the same
+        console.log('Rendering regular link for:', link.platform);
         const Icon = getPlatformIcon(link.platform)
         const iconColor = getPlatformColor(link.platform)
         

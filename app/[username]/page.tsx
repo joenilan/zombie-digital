@@ -6,7 +6,6 @@ import PageTransitionLayout from '@/components/PageTransitionLayout'
 import { RealtimeLinks } from './realtime-links'
 import { BackgroundManager } from '@/components/background-manager'
 import { RealtimeBackground } from './realtime-background'
-import { TwitchStreamStatus } from '@/components/twitch-stream-status'
 
 interface PageProps {
   params: {
@@ -109,12 +108,6 @@ export default async function ProfilePage({ params }: PageProps) {
                   </p>
                 )}
               </div>
-
-              {/* Twitch Stream Status */}
-              <TwitchStreamStatus 
-                twitchId={profile.twitch_id}
-                username={profile.username}
-              />
 
               {/* Background Manager (only shown to profile owner) */}
               {isOwner && (

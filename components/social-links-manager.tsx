@@ -199,16 +199,45 @@ function AddLinkDialog({ userId, onAdd }: {
       return
     }
 
-    if (!platform || !url) {
-      toast.error('Platform and URL are required')
+    if (!url) {
+      toast.error('URL is required')
+      return
+    }
+
+    // Check if the URL is a Twitch channel URL and normalize it
+    try {
+      const urlObj = new URL(url)
+      if (urlObj.hostname === 'twitch.tv' || urlObj.hostname === 'www.twitch.tv') {
+        // Set platform to 'twitch' if it's a Twitch URL
+        setPlatform('twitch')
+        
+        // Normalize the URL to ensure consistent format
+        const pathParts = urlObj.pathname.split('/').filter(Boolean)
+        if (pathParts.length > 0) {
+          const username = pathParts[0]
+          // Update URL to canonical format
+          setUrl(`https://twitch.tv/${username}`)
+        } else {
+          toast.error('Invalid Twitch channel URL')
+          return
+        }
+      }
+    } catch (error) {
+      console.error('Invalid URL:', error)
+      toast.error('Please enter a valid URL')
+      return
+    }
+
+    if (!platform) {
+      toast.error('Platform is required')
       return
     }
 
     mutation.mutate({
       user_id: userId,
-      platform,
+      platform: platform.toLowerCase(),
       url,
-      title: title || platform
+      title: title || platform.charAt(0).toUpperCase() + platform.slice(1)
     })
   }
 
@@ -227,7 +256,7 @@ function AddLinkDialog({ userId, onAdd }: {
         <form onSubmit={handleSubmit} className="space-y-4">
           <Select
             value={platform}
-            onValueChange={setPlatform}
+            onValueChange={(value) => setPlatform(value.toLowerCase())}
           >
             <SelectTrigger>
               <SelectValue placeholder="Select Platform">
@@ -259,14 +288,14 @@ function AddLinkDialog({ userId, onAdd }: {
                   'kick',
                   'github',
                   'linkedin'
-                ].map((platform) => (
-                  <SelectItem key={platform} value={platform}>
+                ].map((p) => (
+                  <SelectItem key={p} value={p}>
                     <div className="flex items-center gap-2">
-                      {React.createElement(platformIcons[platform], { 
+                      {React.createElement(platformIcons[p], { 
                         className: "w-4 h-4",
-                        style: { color: platformColors[platform] || 'currentColor' }
+                        style: { color: platformColors[p] || 'currentColor' }
                       })}
-                      <span>{platform.charAt(0).toUpperCase() + platform.slice(1)}</span>
+                      <span>{p.charAt(0).toUpperCase() + p.slice(1)}</span>
                     </div>
                   </SelectItem>
                 ))}
