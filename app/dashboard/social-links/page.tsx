@@ -2,7 +2,8 @@
 
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { useEffect, useState } from 'react'
-import { SocialLinksManager, type SocialLink } from '@/components/social-links-manager'
+import { SocialLinksManagerV2 } from '@/components/social-links-manager-v2'
+import type { SocialLink } from '@/components/social-links-manager-v2'
 import { BackgroundManager } from '@/components/background-manager'
 import { redirect } from 'next/navigation'
 import { Input } from '@/components/ui/input'
@@ -158,7 +159,7 @@ export default function SocialLinksPage() {
               Manage your social media links that appear on your profile.
             </p>
           </div>
-          <SocialLinksManager 
+          <SocialLinksManagerV2 
             initialLinks={links} 
             twitchUserId={twitchUser.id}
           />

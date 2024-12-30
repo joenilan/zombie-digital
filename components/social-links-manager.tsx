@@ -330,8 +330,9 @@ function AddLinkDialog({ userId, onAdd }: {
   )
 }
 
+export { AddLinkDialog }
+
 export function SocialLinksManager({ initialLinks = [], twitchUserId }: SocialLinksManagerProps) {
-  const [isDragging, setIsDragging] = useState(false)
   const queryClient = useQueryClient()
 
   const { data: links = initialLinks } = useQuery({
@@ -353,10 +354,6 @@ export function SocialLinksManager({ initialLinks = [], twitchUserId }: SocialLi
   const supabase = createClientComponentClient()
 
   useEffect(() => {
-    console.log('Twitch User ID:', twitchUserId)
-  }, [twitchUserId])
-
-  useEffect(() => {
     if (!twitchUserId) return
 
     const channel = supabase
@@ -370,15 +367,13 @@ export function SocialLinksManager({ initialLinks = [], twitchUserId }: SocialLi
           filter: `user_id=eq.${twitchUserId}`
         },
         async () => {
-          if (!isDragging) {
-            const { data: freshLinks } = await supabase
-              .from('social_tree')
-              .select('*, twitch_users(*)')
-              .eq('user_id', twitchUserId)
-              .order('order_index', { ascending: true })
+          const { data: freshLinks } = await supabase
+            .from('social_tree')
+            .select('*, twitch_users(*)')
+            .eq('user_id', twitchUserId)
+            .order('order_index', { ascending: true })
 
-            if (freshLinks) setLinks(freshLinks)
-          }
+          if (freshLinks) setLinks(freshLinks)
         }
       )
       .subscribe()
@@ -386,7 +381,7 @@ export function SocialLinksManager({ initialLinks = [], twitchUserId }: SocialLi
     return () => {
       channel.unsubscribe()
     }
-  }, [supabase, twitchUserId, isDragging])
+  }, [supabase, twitchUserId])
 
   const reorderMutation = useMutation({
     mutationKey: ['social-links', 'reorder'],
@@ -469,7 +464,7 @@ export function SocialLinksManager({ initialLinks = [], twitchUserId }: SocialLi
 
       if (error) throw error
 
-      setLinks(links.filter(link => link.id !== id))
+      setLinks(links.filter((link: SocialLink) => link.id !== id))
       toast.success('Social link deleted successfully')
     } catch (error) {
       console.error('Error deleting link:', error)
@@ -490,7 +485,7 @@ export function SocialLinksManager({ initialLinks = [], twitchUserId }: SocialLi
         onReorder={handleReorder}
         className="space-y-2"
       >
-        {links.map((link) => {
+        {links.map((link: SocialLink) => {
           const Icon = getPlatformIcon(link.platform)
           const iconColor = getPlatformColor(link.platform)
           
@@ -500,6 +495,12 @@ export function SocialLinksManager({ initialLinks = [], twitchUserId }: SocialLi
               value={link}
               className="bg-glass rounded-xl shadow-glass hover:shadow-cyber 
                        transition-all duration-300"
+              whileDrag={{
+                scale: 1.02,
+                cursor: "grabbing",
+                zIndex: 1
+              }}
+              dragSnapToOrigin
             >
               <div className="flex items-center gap-4 p-4">
                 <div className="cursor-grab active:cursor-grabbing">
