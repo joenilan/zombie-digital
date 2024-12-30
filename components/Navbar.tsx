@@ -33,10 +33,10 @@ export default function Navbar() {
   }, [supabase.auth]);
 
   return (
-    <header className={isCanvasPage ? "fixed top-4 left-4 right-4 z-50" : "sticky top-0 z-50 bg-background/80 backdrop-blur-xl"}>
+    <header className={isCanvasPage ? "fixed top-4 left-4 right-4 z-50 pointer-events-none" : "sticky top-0 z-50 bg-background/80 backdrop-blur-xl"}>
       <nav className={isCanvasPage ? "h-14 px-4 bg-transparent" : "nav-container px-4"}>
         <div className={isCanvasPage ? "h-full flex items-center justify-between" : "nav-content"}>
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-6 pointer-events-auto">
             <Link 
               href="/" 
               className="text-lg font-bold"
@@ -57,7 +57,7 @@ export default function Navbar() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 pointer-events-auto">
             <ThemeToggle />
             {user ? (
               <UserMenu user={user} />
