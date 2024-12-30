@@ -52,9 +52,9 @@ export async function GET() {
     if (permissionError) throw permissionError;
 
     // Redirect to the canvas settings page
-    return redirect(`/dashboard/canvas/${canvas.id}`);
+    return redirect(`/dashboard/canvas/${canvas.id}/settings?status=created`);
   } catch (error) {
     console.error("Error creating canvas:", error);
-    return redirect("/dashboard/canvas?error=failed-to-create");
+    return redirect("/dashboard/canvas?status=failed-to-create");
   }
 }

@@ -3,10 +3,9 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { CanvasSettingsForm } from '@/components/canvas/CanvasSettingsForm'
-import { Button } from '@/components/ui/button'
-import { Loader2, Gamepad2, Trash2 } from 'lucide-react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { Database } from '@/lib/database.types'
+import { Loader2 } from 'lucide-react'
 
 export default function CanvasSettingsPage() {
   const params = useParams()
@@ -15,7 +14,6 @@ export default function CanvasSettingsPage() {
   const [loading, setLoading] = useState(true)
   const [canvasSettings, setCanvasSettings] = useState<any>(null)
   const [error, setError] = useState<string>()
-  const [isDeleting, setIsDeleting] = useState(false)
   const supabase = createClientComponentClient<Database>()
 
   useEffect(() => {
@@ -72,29 +70,6 @@ export default function CanvasSettingsPage() {
     fetchCanvasSettings()
   }, [canvasId, supabase])
 
-  const handleDelete = async () => {
-    if (!window.confirm('Are you sure you want to delete this canvas? This action cannot be undone.')) {
-      return
-    }
-
-    setIsDeleting(true)
-    try {
-      const response = await fetch(`/api/canvas/${canvasId}/delete`, {
-        method: 'DELETE'
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to delete canvas')
-      }
-
-      router.push('/dashboard')
-    } catch (err) {
-      console.error('Error deleting canvas:', err)
-      setError('Failed to delete canvas')
-      setIsDeleting(false)
-    }
-  }
-
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -129,27 +104,6 @@ export default function CanvasSettingsPage() {
     <div className="container max-w-2xl py-6">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">Canvas Settings</h1>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={() => router.push(`/canvas/${canvasId}`)}
-          >
-            <Gamepad2 className="h-4 w-4 mr-2" />
-            View Canvas
-          </Button>
-          <Button
-            variant="destructive"
-            onClick={handleDelete}
-            disabled={isDeleting}
-          >
-            {isDeleting ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            ) : (
-              <Trash2 className="h-4 w-4 mr-2" />
-            )}
-            Delete
-          </Button>
-        </div>
       </div>
 
       <CanvasSettingsForm
