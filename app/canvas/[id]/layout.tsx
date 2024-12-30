@@ -14,17 +14,21 @@ export default async function CanvasLayout({
 
   if (!session) {
     return (
-      <html style={{ background: 'none' }}>
-        <body style={{ background: 'none' }}>
-          <div style={{ 
-            background: 'none',
-            backgroundImage: 'none',
-            backgroundColor: 'transparent'
-          }}>
-            {children}
-          </div>
-        </body>
-      </html>
+      <div style={{ 
+        all: 'unset',
+        display: 'block',
+        position: 'fixed',
+        inset: 0,
+        background: 'none',
+        backgroundColor: 'transparent',
+        margin: 0,
+        padding: 0,
+        height: '100%',
+        width: '100%',
+        isolation: 'isolate'
+      }}>
+        {children}
+      </div>
     )
   }
 

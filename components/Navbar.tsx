@@ -15,6 +15,7 @@ export default function Navbar() {
   const pathname = usePathname();
   const [user, setUser] = useState<any>(null);
   const supabase = createClientComponentClient();
+  const isCanvasPage = pathname.startsWith('/canvas/');
 
   useEffect(() => {
     const getUser = async () => {
@@ -32,9 +33,9 @@ export default function Navbar() {
   }, [supabase.auth]);
 
   return (
-    <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl">
-      <nav className="nav-container px-4">
-        <div className="nav-content">
+    <header className={isCanvasPage ? "fixed top-4 left-4 right-4 z-50" : "sticky top-0 z-50 bg-background/80 backdrop-blur-xl"}>
+      <nav className={isCanvasPage ? "h-14 px-4 bg-transparent" : "nav-container px-4"}>
+        <div className={isCanvasPage ? "h-full flex items-center justify-between" : "nav-content"}>
           <div className="flex items-center gap-6">
             <Link 
               href="/" 

@@ -31,13 +31,6 @@
     --border: 240 3.7% 15.9%;
     --input: 240 3.7% 15.9%;
     --ring: 240 4.9% 83.9%;
-    
-    --cyber-gradient: linear-gradient(
-      135deg,
-      hsl(326, 100%, 74%) 0%,
-      hsl(265, 89%, 78%) 50%,
-      hsl(190, 100%, 74%) 100%
-    );
   }
 
   body {
@@ -45,12 +38,17 @@
   }
 
   /* Apply gradient background to all pages except canvas */
-  body:not(.canvas-page) {
-    background: var(--cyber-gradient);
+  body:not(:has(.canvas-page)) {
+    background: linear-gradient(
+      135deg,
+      hsl(326, 100%, 74%) 0%,
+      hsl(265, 89%, 78%) 50%,
+      hsl(190, 100%, 74%) 100%
+    );
   }
 
-  /* Theme overlays */
-  body:not(.canvas-page)::before {
+  /* Theme overlays for non-canvas pages */
+  body:not(:has(.canvas-page))::before {
     content: '';
     position: fixed;
     inset: 0;
@@ -61,13 +59,13 @@
     z-index: 0;
   }
 
-  /* Dark theme: darker overlay */
-  .dark body:not(.canvas-page)::before {
+  /* Dark theme: darker overlay for non-canvas pages */
+  .dark body:not(:has(.canvas-page))::before {
     background: rgb(10 10 15 / 0.9);
   }
 
-  /* Add radial gradient overlays for extra depth */
-  body:not(.canvas-page)::after {
+  /* Add radial gradient overlays for extra depth to non-canvas pages */
+  body:not(:has(.canvas-page))::after {
     content: '';
     position: fixed;
     inset: 0;
@@ -296,64 +294,61 @@
   scrollbar-width: thin; /* Show on hover */
 }
 
-/* Override background for canvas page */
+/* Canvas Page Transparency Rules */
+/* Force transparent background for canvas pages */
+.canvas-page {
+  background: none !important;
+}
+
+/* Special handling for non-logged-in canvas */
+.canvas-page[data-logged-in="false"],
 .canvas-transparent {
   background: transparent !important;
 }
 
-/* Force transparent background for logged out canvas */
-body:has(.canvas-page:not(.logged-in)) {
+/* Ensure all parent elements are transparent for canvas pages */
+html:has(.canvas-page),
+body:has(.canvas-page),
+main:has(.canvas-page),
+div:has(.canvas-page),
+.canvas-page,
+.canvas-page > *,
+.canvas-page > * > * {
   background: transparent !important;
-}
-
-/* Canvas page background overrides */
-.canvas-page[data-logged-in="false"] {
-  background: none !important;
-}
-
-.canvas-page[data-logged-in="false"] body,
-.canvas-page[data-logged-in="false"] main,
-.canvas-page[data-logged-in="false"] div {
-  background: none !important;
   background-image: none !important;
+  background-color: transparent !important;
+  --background: transparent !important;
 }
 
-/* Override any gradients or backgrounds */
-body:has(.canvas-page[data-logged-in="false"]) {
-  background: none !important;
-  background-image: none !important;
+/* Remove any overlays or gradients for canvas pages */
+html:has(.canvas-page)::before,
+html:has(.canvas-page)::after,
+body:has(.canvas-page)::before,
+body:has(.canvas-page)::after,
+main:has(.canvas-page)::before,
+main:has(.canvas-page)::after,
+div:has(.canvas-page)::before,
+div:has(.canvas-page)::after {
+  display: none !important;
 }
 
-/* Ensure all parent containers are also transparent */
-html:has(.canvas-page[data-logged-in="false"]),
-body:has(.canvas-page[data-logged-in="false"]) * {
-  background: none !important;
-  background-image: none !important;
-}
-
-/* OBS Canvas View Overrides */
-html:has(.canvas-page[data-logged-in="false"]),
-html:has(.canvas-page[data-logged-in="false"]) > body,
-html:has(.canvas-page[data-logged-in="false"]) > body > div,
-html:has(.canvas-page[data-logged-in="false"]) > body > main,
-html:has(.canvas-page[data-logged-in="false"]) > body > div > div {
+/* Override any Tailwind backgrounds in canvas pages */
+.canvas-page [class*="bg-"],
+html:has(.canvas-page) [class*="bg-"],
+body:has(.canvas-page) [class*="bg-"] {
   background: none !important;
   background-image: none !important;
   background-color: transparent !important;
-  --page-background: none !important;
 }
 
-/* Reset any Tailwind backgrounds */
-[class*="bg-"] {
-  .canvas-page[data-logged-in="false"] & {
-    background: none !important;
-    background-image: none !important;
-    background-color: transparent !important;
-  }
-}
-
-/* Force transparent root */
-:root:has(.canvas-page[data-logged-in="false"]) {
-  --page-background: none !important;
-  background: none !important;
+/* Force transparency on dark theme */
+.dark .canvas-page,
+.dark html:has(.canvas-page),
+.dark body:has(.canvas-page),
+.dark main:has(.canvas-page),
+.dark div:has(.canvas-page) {
+  background: transparent !important;
+  background-image: none !important;
+  background-color: transparent !important;
+  --background: transparent !important;
 }

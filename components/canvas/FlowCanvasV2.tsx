@@ -225,11 +225,16 @@ interface NodeContextMenuProps extends BaseContextMenuProps {
 // Canvas context menu (for uploading)
 const CanvasContextMenu = ({ x, y, onUpload, onClose }: CanvasContextMenuProps) => (
   <div 
-    className="fixed bg-background/80 backdrop-blur-sm rounded-lg shadow-lg py-1 z-50"
-    style={{ top: y, left: x }}
+    className="fixed border border-white/10 rounded-lg shadow-lg py-1 z-50"
+    style={{ 
+      position: 'fixed',
+      top: `${y}px`,
+      left: `${x}px`,
+      backgroundColor: 'rgb(24 24 27)'
+    }}
   >
     <button
-      className="w-full px-4 py-2 text-sm text-left hover:bg-muted/50"
+      className="w-full px-4 py-2 text-sm text-left transition-colors hover:bg-zinc-800"
       onClick={() => {
         onUpload()
         onClose()
@@ -243,11 +248,16 @@ const CanvasContextMenu = ({ x, y, onUpload, onClose }: CanvasContextMenuProps) 
 // Node context menu (for deleting)
 const NodeContextMenu = ({ x, y, onDelete, onClose }: NodeContextMenuProps) => (
   <div 
-    className="fixed bg-background/80 backdrop-blur-sm rounded-lg shadow-lg py-1 z-50"
-    style={{ top: y, left: x }}
+    className="fixed border border-white/10 rounded-lg shadow-lg py-1 z-50"
+    style={{ 
+      position: 'fixed',
+      top: `${y}px`,
+      left: `${x}px`,
+      backgroundColor: 'rgb(24 24 27)'
+    }}
   >
     <button
-      className="w-full px-4 py-2 text-sm text-left text-red-500 hover:bg-red-500/10"
+      className="w-full px-4 py-2 text-sm text-left text-red-500 transition-colors hover:bg-zinc-800"
       onClick={() => {
         onDelete()
         onClose()
@@ -266,25 +276,36 @@ interface ConfirmDialogProps {
 }
 
 const ConfirmDialog = ({ onConfirm, onCancel, count }: ConfirmDialogProps) => (
-  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-    <div className="bg-background rounded-lg shadow-lg p-6 max-w-md mx-4">
-      <h3 className="text-lg font-semibold mb-4">Delete {count > 1 ? `${count} Images` : 'Image'}</h3>
-      <p className="text-muted-foreground mb-6">
-        Are you sure you want to delete {count > 1 ? 'these images' : 'this image'}? This action cannot be undone.
-      </p>
-      <div className="flex justify-end gap-3">
-        <button
-          className="px-4 py-2 rounded hover:bg-muted"
-          onClick={onCancel}
-        >
-          Cancel
-        </button>
-        <button
-          className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-          onClick={onConfirm}
-        >
-          Delete
-        </button>
+  <div className="fixed inset-0 z-50">
+    <div 
+      className="fixed inset-0" 
+      style={{ backgroundColor: 'rgba(0, 0, 0, 0.8)' }}
+      onClick={onCancel} 
+    />
+    <div className="fixed inset-0 flex items-center justify-center">
+      <div 
+        className="border border-white/10 rounded-lg shadow-lg p-6 max-w-md mx-4"
+        style={{ backgroundColor: 'rgb(24 24 27)' }}
+      >
+        <h3 className="text-lg font-semibold mb-4">Delete {count > 1 ? `${count} Images` : 'Image'}</h3>
+        <p className="text-zinc-400 mb-6">
+          Are you sure you want to delete {count > 1 ? 'these images' : 'this image'}? This action cannot be undone.
+        </p>
+        <div className="flex justify-end gap-3">
+          <button
+            className="px-4 py-2 rounded transition-colors hover:bg-zinc-800"
+            onClick={onCancel}
+          >
+            Cancel
+          </button>
+          <button
+            className="px-4 py-2 text-white rounded transition-colors hover:bg-red-600"
+            style={{ backgroundColor: 'rgb(239 68 68)' }}
+            onClick={onConfirm}
+          >
+            Delete
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -319,6 +340,36 @@ const OBSViewport = () => {
   )
 }
 
+// Update BoundaryBox component to match OBS viewport style
+const BoundaryBox = () => {
+  const transform = useStore((state) => state.transform)
+  const scale = transform[2] || 1
+  const [x, y] = transform
+
+  // Increase padding to create a roughly 10000x10000 canvas
+  const PADDING = 4000
+  const width = 1920 + (PADDING * 2)  // 9920px total width
+  const height = 1080 + (PADDING * 2)  // 9080px total height
+
+  return (
+    <div
+      className="absolute border-2 border-purple-500/50 pointer-events-none"
+      style={{
+        width: `${width * scale}px`,
+        height: `${height * scale}px`,
+        position: 'absolute',
+        left: `${x - PADDING * scale}px`,
+        top: `${y - PADDING * scale}px`,
+        transformOrigin: '0 0'
+      }}
+    >
+      <div className="absolute -top-6 left-1/2 -translate-x-1/2 bg-purple-500/50 text-white px-2 py-1 rounded text-sm whitespace-nowrap">
+        Boundary ({width}x{height})
+      </div>
+    </div>
+  )
+}
+
 function Flow({ canvasId, isOwner, userId }: FlowCanvasV2Props) {
   const supabase = createClientComponentClient()
   const [nodes, setNodes, onNodesChange] = useNodesState([])
@@ -341,6 +392,15 @@ function Flow({ canvasId, isOwner, userId }: FlowCanvasV2Props) {
 
   // Add dragId ref at the top of the component with other refs
   const dragIdRef = useRef<string | null>(null)
+
+  // Update canvas bounds with larger padding
+  const PADDING = 4000
+  const CANVAS_BOUNDS = {
+    minX: -PADDING,
+    maxX: 1920 + PADDING,
+    minY: -PADDING,
+    maxY: 1080 + PADDING
+  }
 
   const handlers = useMemo(() => ({
     onResize: async (nodeId: string, width: number, height: number) => {
@@ -478,16 +538,36 @@ function Flow({ canvasId, isOwner, userId }: FlowCanvasV2Props) {
     }
   }, [nodes, canvasId, isOwner, supabase])
 
-  // Update handleNodesChange to properly cleanup after dragging ends
+  // Update handleNodesChange to account for node dimensions
   const handleNodesChange = useCallback(
     async (changes: NodeChange[]) => {
-      console.log('Node changes received:', changes)
+      // Process changes and enforce boundaries
+      const boundedChanges = changes.map(change => {
+        if (change.type === 'position' && 'position' in change && change.position) {
+          const node = nodes.find(n => n.id === change.id)
+          if (!node) return change
+
+          // Get node dimensions
+          const nodeWidth = node.data.width || 0
+          const nodeHeight = node.data.height || 0
+
+          // Calculate bounds accounting for node dimensions
+          return {
+            ...change,
+            position: {
+              x: Math.max(CANVAS_BOUNDS.minX, Math.min(CANVAS_BOUNDS.maxX - nodeWidth, change.position.x)),
+              y: Math.max(CANVAS_BOUNDS.minY, Math.min(CANVAS_BOUNDS.maxY - nodeHeight, change.position.y))
+            }
+          }
+        }
+        return change
+      })
       
       // Always update React Flow state immediately for smooth movement
-      onNodesChange(changes)
+      onNodesChange(boundedChanges)
 
       // Process position changes
-      for (const change of changes) {
+      for (const change of boundedChanges) {
         if (change.type === 'position') {
           const node = nodes.find(n => n.id === change.id)
           if (!node) continue
@@ -999,8 +1079,13 @@ function Flow({ canvasId, isOwner, userId }: FlowCanvasV2Props) {
         className={`${!isOwner ? 'pointer-events-none !bg-transparent' : ''}`}
         style={{ background: isOwner ? undefined : 'transparent' }}
         proOptions={{ hideAttribution: true }}
+        translateExtent={[
+          [CANVAS_BOUNDS.minX, CANVAS_BOUNDS.minY],
+          [CANVAS_BOUNDS.maxX, CANVAS_BOUNDS.maxY]
+        ]}
       >
         {isOwner && <Background />}
+        {isOwner && <BoundaryBox />}
         {isOwner && (
           <div className="absolute right-4 bottom-4 z-[60]">
             <Controls 
@@ -1016,15 +1101,16 @@ function Flow({ canvasId, isOwner, userId }: FlowCanvasV2Props) {
 
       {contextMenu && contextMenuType === 'canvas' && (
         <div 
-          className="fixed bg-background/80 backdrop-blur-sm rounded-lg shadow-lg py-1 z-50"
+          className="fixed border border-white/10 rounded-lg shadow-lg py-1 z-50"
           style={{ 
             position: 'fixed',
             top: `${contextMenu.y}px`,
-            left: `${contextMenu.x}px`
+            left: `${contextMenu.x}px`,
+            backgroundColor: 'rgb(24 24 27)'
           }}
         >
           <button
-            className="w-full px-4 py-2 text-sm text-left hover:bg-muted/50"
+            className="w-full px-4 py-2 text-sm text-left transition-colors hover:bg-zinc-800"
             onClick={() => {
               fileInputRef.current?.click()
               setContextMenu(null)
@@ -1038,15 +1124,16 @@ function Flow({ canvasId, isOwner, userId }: FlowCanvasV2Props) {
 
       {contextMenu && contextMenuType === 'node' && contextMenuNodeId && (
         <div 
-          className="fixed bg-background/80 backdrop-blur-sm rounded-lg shadow-lg py-1 z-50"
+          className="fixed border border-white/10 rounded-lg shadow-lg py-1 z-50"
           style={{ 
             position: 'fixed',
             top: `${contextMenu.y}px`,
-            left: `${contextMenu.x}px`
+            left: `${contextMenu.x}px`,
+            backgroundColor: 'rgb(24 24 27)'
           }}
         >
           <button
-            className="w-full px-4 py-2 text-sm text-left text-red-500 hover:bg-red-500/10"
+            className="w-full px-4 py-2 text-sm text-left text-red-500 transition-colors hover:bg-zinc-800"
             onClick={() => {
               setSelectedNodeForDelete(contextMenuNodeId)
               setContextMenu(null)

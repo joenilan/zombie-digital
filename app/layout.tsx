@@ -1,33 +1,36 @@
-import type { Metadata } from "next"
-import { GeistSans } from 'geist/font'
-import "./globals.css"
+import { GeistSans } from 'geist/font/sans'
+import { Metadata } from "next"
 import { ThemeProvider } from "next-themes"
-import { LayoutWrapper } from "./layout-wrapper"
 import QueryProvider from "@/providers/query-provider"
 import { Toaster } from 'sonner'
+import { createServerComponentClient } from "@supabase/auth-helpers-nextjs"
+import { cookies } from "next/headers"
+import { cn } from "@/lib/utils"
+import { LayoutWrapper } from './layout-wrapper'
+import "./globals.css"
 
 export const metadata: Metadata = {
-  title: "Zombie.Digital - Twitch Management Platform",
-  description: "Take control of your Twitch presence with professional management tools.",
+  title: 'Zombie.Digital',
+  description: 'Your Digital Presence, Simplified',
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const supabase = createServerComponentClient({ cookies })
+  const { data: { session } } = await supabase.auth.getSession()
+
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={GeistSans.className}>
+      <body className={cn("min-h-screen font-sans antialiased", GeistSans.className)}>
         <QueryProvider>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="dark"
-            enableSystem
-            disableTransitionOnChange
-          >
+          <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
             <LayoutWrapper>
-              {children}
+              <main className="min-h-screen">
+                {children}
+              </main>
             </LayoutWrapper>
           </ThemeProvider>
         </QueryProvider>
