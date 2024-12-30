@@ -2,17 +2,18 @@
 
 import Link from "next/link";
 import TwitchLoginButton from "./TwitchLoginButton";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { useEffect, useState } from "react";
 import UserMenu from "./UserMenu";
 import ThemeToggle from "./ThemeToggle";
 import { motion } from "framer-motion";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "./ui/dropdown-menu";
 import { SiteNotification } from "./SiteNotification";
+import { authService } from "@/lib/auth";
 
 export default function Navbar() {
   const pathname = usePathname();
+  const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const supabase = createClientComponentClient();
   const isCanvasPage = pathname.startsWith('/canvas/');
@@ -21,16 +22,31 @@ export default function Navbar() {
     const getUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       setUser(session?.user ?? null);
+
+      // Validate session in background
+      if (session) {
+        const isValid = await authService.validateAndRefreshSession();
+        if (!isValid && !pathname.startsWith('/auth/')) {
+          router.push('/auth/signin');
+        }
+      }
     };
 
+    // Initial check
     getUser();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    // Set up interval to validate session every minute
+    const interval = setInterval(getUser, 60000);
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null);
     });
 
-    return () => subscription.unsubscribe();
-  }, [supabase.auth]);
+    return () => {
+      subscription.unsubscribe();
+      clearInterval(interval);
+    };
+  }, [supabase.auth, pathname, router]);
 
   return (
     <header className={isCanvasPage ? "fixed top-4 left-4 right-4 z-50 pointer-events-none" : "sticky top-0 z-50 bg-background/80 backdrop-blur-xl"}>

@@ -1,4 +1,4 @@
-import { refreshSession } from "./auth";
+import { authService } from "@/lib/auth";
 
 const TWITCH_API_URL = "https://api.twitch.tv/helix";
 
@@ -45,9 +45,17 @@ export async function fetchTwitchStats(
 
     if (!validateResponse.ok) {
       // Token is invalid, try to refresh
-      const session = await refreshSession();
-      if (!session?.provider_token) {
+      const isValid = await authService.validateAndRefreshSession();
+      if (!isValid) {
         throw new Error("Failed to refresh token");
+      }
+
+      // Get new session after refresh
+      const {
+        data: { session },
+      } = await authService.getCurrentSession();
+      if (!session?.provider_token) {
+        throw new Error("No provider token after refresh");
       }
 
       // Retry with new token
