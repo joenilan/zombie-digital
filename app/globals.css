@@ -4,6 +4,36 @@
 
 @layer base {
   :root {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    
+    --primary: 240 5.9% 10%;
+    --primary-foreground: 0 0% 98%;
+    
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+    
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+    
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 240 5.9% 10%;
+  }
+
+  .dark {
     --background: 240 10% 3.9%;
     --foreground: 0 0% 98%;
     
@@ -43,17 +73,12 @@
 
   /* Global link styling */
   a:not([class]) {
-    @apply text-cyber-cyan hover:text-cyber-pink transition-colors;
+    @apply text-cyber-cyan dark:text-cyber-cyan hover:text-cyber-pink dark:hover:text-cyber-pink transition-colors;
   }
 
   /* Apply gradient background to all pages except canvas and overlay */
   body:not(:has(.canvas-page, [data-overlay-page])) {
-    background: linear-gradient(
-      135deg,
-      hsl(326, 100%, 74%) 0%,
-      hsl(265, 89%, 78%) 50%,
-      hsl(190, 100%, 74%) 100%
-    );
+    @apply bg-gradient-to-br from-cyber-pink/20 via-cyber-purple/20 to-cyber-cyan/20;
   }
 
   /* Theme overlays for non-canvas/overlay pages */
@@ -61,16 +86,11 @@
     content: '';
     position: fixed;
     inset: 0;
-    background: rgb(255 255 255 / 0.9);
+    @apply bg-white/90 dark:bg-cyber-darker/90;
     opacity: 1;
     transition: background-color 0.3s ease, opacity 0.3s ease;
     pointer-events: none;
     z-index: 0;
-  }
-
-  /* Dark theme: darker overlay for non-canvas/overlay pages */
-  .dark body:not(:has(.canvas-page, [data-overlay-page]))::before {
-    background: rgb(10 10 15 / 0.9);
   }
 
   /* Add radial gradient overlays for extra depth to non-canvas/overlay pages */
@@ -89,7 +109,7 @@
 
 @layer components {
   .glass-panel {
-    @apply bg-background/5 backdrop-blur-md
+    @apply bg-white/5 dark:bg-background/5 backdrop-blur-md
            border border-white/10;
   }
 
@@ -113,7 +133,7 @@
   }
 
   .nav-link-active {
-    @apply relative z-10 text-white;
+    @apply relative z-10 text-foreground;
   }
 
   .nav-link-inactive {
@@ -122,7 +142,7 @@
   }
 
   .cyber-link {
-    @apply text-cyber-cyan hover:text-cyber-pink transition-colors;
+    @apply text-cyber-cyan dark:text-cyber-cyan hover:text-cyber-pink dark:hover:text-cyber-pink transition-colors;
   }
 
   .ethereal-button {
@@ -137,7 +157,7 @@
 
   .ethereal-card {
     @apply rounded-2xl p-6 relative overflow-visible transition-all duration-300
-           bg-background/5 backdrop-blur-md
+           bg-white/5 dark:bg-background/5 backdrop-blur-md
            border border-white/10;
   }
 }
