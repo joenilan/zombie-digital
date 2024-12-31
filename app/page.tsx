@@ -7,6 +7,15 @@ import Link from "next/link";
 import PageTransitionLayout from "@/components/PageTransitionLayout";
 import { useRouter } from "next/navigation";
 
+function FeatureCard({ title, description }: { title: string; description: string }) {
+  return (
+    <div className="p-6 rounded-xl bg-glass/50 backdrop-blur-xl border border-white/5 transition-all duration-300 hover:shadow-cyber">
+      <h3 className="text-xl font-semibold mb-2">{title}</h3>
+      <p className="text-muted-foreground">{description}</p>
+    </div>
+  );
+}
+
 export default function HomePage() {
   const [user, setUser] = useState<any>(undefined);
   const [loading, setLoading] = useState(true);
@@ -15,14 +24,10 @@ export default function HomePage() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        router.push('/dashboard');
-      } else {
-        setUser(null);
-      }
+      setUser(session?.user ?? null);
       setLoading(false);
     });
-  }, [supabase, router]);
+  }, [supabase]);
 
   if (user === undefined) {
     return null; // Initial loading state
@@ -92,14 +97,5 @@ export default function HomePage() {
         </div>
       </div>
     </PageTransitionLayout>
-  );
-}
-
-function FeatureCard({ title, description }: { title: string; description: string }) {
-  return (
-    <div className="ethereal-card">
-      <h3 className="text-lg font-bold mb-2">{title}</h3>
-      <p className="text-foreground/70">{description}</p>
-    </div>
   );
 }

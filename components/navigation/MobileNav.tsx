@@ -48,45 +48,31 @@ export function MobileNav({ user, pathname }: MobileNavProps) {
   const isHome = pathname === '/' || pathname === '/home';
   const isDashboardMain = isDashboardSection && !isDashboardSocialLinks && !isDashboardCanvas && !isCanvasSettings;
 
+  // Determine which nav items to show
+  const navItems = [
+    { href: "/", icon: <Home className="w-6 h-6" />, label: "Home", isActive: isHome },
+    ...(user ? [
+      { href: "/dashboard", icon: <LayoutDashboard className="w-6 h-6" />, label: "Dashboard", isActive: isDashboardMain },
+      { href: "/dashboard/social-links", icon: <LinkIcon className="w-6 h-6" />, label: "Links", isActive: isDashboardSocialLinks },
+      { href: "/dashboard/canvas", icon: <Paintbrush className="w-6 h-6" />, label: "Canvas", isActive: isDashboardCanvas && !isCanvasSettings },
+      ...(isCanvasSettings ? [
+        { href: pathname, icon: <Settings className="w-6 h-6" />, label: "Settings", isActive: isCanvasSettings }
+      ] : [])
+    ] : [])
+  ];
+
   return (
     <div className="sm:hidden fixed bottom-0 left-0 right-0 bg-glass/50 backdrop-blur-xl border-t border-white/5 z-50">
-      <div className="flex items-center justify-around px-4 py-2">
-        <NavItem
-          href="/"
-          icon={<Home className="w-6 h-6" />}
-          label="Home"
-          isActive={isHome}
-        />
-        {user && (
-          <>
-            <NavItem
-              href="/dashboard"
-              icon={<LayoutDashboard className="w-6 h-6" />}
-              label="Dashboard"
-              isActive={isDashboardMain}
-            />
-            <NavItem
-              href="/dashboard/social-links"
-              icon={<LinkIcon className="w-6 h-6" />}
-              label="Links"
-              isActive={isDashboardSocialLinks}
-            />
-            <NavItem
-              href="/dashboard/canvas"
-              icon={<Paintbrush className="w-6 h-6" />}
-              label="Canvas"
-              isActive={isDashboardCanvas && !isCanvasSettings}
-            />
-            {isCanvasSettings && (
-              <NavItem
-                href={pathname}
-                icon={<Settings className="w-6 h-6" />}
-                label="Settings"
-                isActive={isCanvasSettings}
-              />
-            )}
-          </>
-        )}
+      <div className="flex items-center justify-evenly px-4 py-2">
+        {navItems.map((item, index) => (
+          <NavItem
+            key={item.href}
+            href={item.href}
+            icon={item.icon}
+            label={item.label}
+            isActive={item.isActive}
+          />
+        ))}
       </div>
     </div>
   );
