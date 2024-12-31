@@ -61,8 +61,8 @@ export function MobileNav({ user, pathname }: MobileNavProps) {
   ];
 
   return (
-    <div className="sm:hidden fixed bottom-0 left-0 right-0 bg-glass/50 backdrop-blur-xl border-t border-white/5 z-50">
-      <div className="flex items-center justify-evenly">
+    <div className="sm:hidden fixed bottom-0 left-0 right-0 bg-glass/50 backdrop-blur-xl border-t border-white/5 z-50 pb-safe">
+      <div className="flex items-center justify-evenly py-2">
         {navItems.map((item, index) => (
           <NavItem
             key={item.href}
