@@ -21,21 +21,20 @@ function NavItem({ href, icon, label, isActive }: NavItemProps) {
     <Link
       href={href}
       className={cn(
-        "flex flex-col items-center gap-1 p-2 relative",
-        isActive ? "text-foreground" : "text-muted-foreground"
+        "flex flex-col items-center justify-center gap-1 p-3 relative w-16 h-16 transition-all duration-300",
+        isActive 
+          ? "dark:text-cyber-cyan dark:drop-shadow-[0_0_8px_rgba(103,232,249,0.5)] text-cyber-pink drop-shadow-[0_0_8px_rgba(236,72,153,0.5)]" 
+          : "text-muted-foreground hover:text-cyber-pink/80 dark:hover:text-cyber-cyan/80"
       )}
     >
-      <div className="relative">
-        {isActive && (
-          <motion.div
-            layoutId="mobile-nav-highlight"
-            className="absolute inset-0 -m-2 bg-gradient-to-r from-cyber-pink/20 to-cyber-cyan/20 rounded-xl"
-            transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
-          />
-        )}
-        <span className="relative">{icon}</span>
-      </div>
-      <span className="text-xs font-medium">{label}</span>
+      <motion.div 
+        className="relative w-5 h-5 flex items-center justify-center"
+        animate={{ scale: isActive ? 1.1 : 1 }}
+        transition={{ type: "spring", bounce: 0.5, duration: 0.5 }}
+      >
+        {icon}
+      </motion.div>
+      <span className="relative text-xs font-medium">{label}</span>
     </Link>
   );
 }
@@ -50,20 +49,20 @@ export function MobileNav({ user, pathname }: MobileNavProps) {
 
   // Determine which nav items to show
   const navItems = [
-    { href: "/", icon: <Home className="w-6 h-6" />, label: "Home", isActive: isHome },
+    { href: "/", icon: <Home className="w-4 h-4" />, label: "Home", isActive: isHome },
     ...(user ? [
-      { href: "/dashboard", icon: <LayoutDashboard className="w-6 h-6" />, label: "Dashboard", isActive: isDashboardMain },
-      { href: "/dashboard/social-links", icon: <LinkIcon className="w-6 h-6" />, label: "Links", isActive: isDashboardSocialLinks },
-      { href: "/dashboard/canvas", icon: <Paintbrush className="w-6 h-6" />, label: "Canvas", isActive: isDashboardCanvas && !isCanvasSettings },
+      { href: "/dashboard", icon: <LayoutDashboard className="w-4 h-4" />, label: "Dashboard", isActive: isDashboardMain },
+      { href: "/dashboard/social-links", icon: <LinkIcon className="w-4 h-4" />, label: "Links", isActive: isDashboardSocialLinks },
+      { href: "/dashboard/canvas", icon: <Paintbrush className="w-4 h-4" />, label: "Canvas", isActive: isDashboardCanvas && !isCanvasSettings },
       ...(isCanvasSettings ? [
-        { href: pathname, icon: <Settings className="w-6 h-6" />, label: "Settings", isActive: isCanvasSettings }
+        { href: pathname, icon: <Settings className="w-4 h-4" />, label: "Settings", isActive: isCanvasSettings }
       ] : [])
     ] : [])
   ];
 
   return (
     <div className="sm:hidden fixed bottom-0 left-0 right-0 bg-glass/50 backdrop-blur-xl border-t border-white/5 z-50">
-      <div className="flex items-center justify-evenly px-4 py-2">
+      <div className="flex items-center justify-evenly">
         {navItems.map((item, index) => (
           <NavItem
             key={item.href}

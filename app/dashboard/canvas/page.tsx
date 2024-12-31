@@ -208,7 +208,7 @@ export default function CanvasSettingsPage() {
                     {RESOLUTIONS[canvas.resolution as keyof typeof RESOLUTIONS]?.label || canvas.resolution}
                   </p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <Link
                     href={`/canvas/${canvas.id}`}
                     target="_blank"
@@ -237,39 +237,41 @@ export default function CanvasSettingsPage() {
                   </Button>
                 </div>
               </div>
-              <div className="flex gap-2 items-center">
-                <div className="relative flex-1">
+              <div className="flex flex-col sm:flex-row gap-2">
+                <div className="relative flex-1 min-w-0">
                   <Input 
                     value={`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/overlay/canvas/${canvas.id}`}
                     readOnly
-                    className="font-mono text-sm bg-background/20"
+                    className="font-mono text-sm bg-background/20 w-full"
                     type={visibleUrls.has(canvas.id) ? "text" : "password"}
                   />
                 </div>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => toggleUrlVisibility(canvas.id)}
-                  className="bg-background/20 hover:bg-background/40"
-                >
-                  <Eye className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => handleCopyUrl(canvas.id)}
-                  className="bg-background/20 hover:bg-background/40"
-                >
-                  <Copy className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => handleOpenOverlay(canvas.id)}
-                  className="bg-background/20 hover:bg-background/40"
-                >
-                  <ExternalLink className="h-4 w-4" />
-                </Button>
+                <div className="flex gap-2 justify-end">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => toggleUrlVisibility(canvas.id)}
+                    className="bg-background/20 hover:bg-background/40"
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => handleCopyUrl(canvas.id)}
+                    className="bg-background/20 hover:bg-background/40"
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => handleOpenOverlay(canvas.id)}
+                    className="bg-background/20 hover:bg-background/40"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </motion.div>
           ))}
