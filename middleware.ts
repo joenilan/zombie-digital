@@ -6,28 +6,47 @@ export async function middleware(req: NextRequest) {
   const res = NextResponse.next();
   const supabase = createMiddlewareClient({ req, res });
 
-  // Refresh the session if it exists
+  // Refresh session if expired
   const {
     data: { session },
+    error,
   } = await supabase.auth.getSession();
 
-  // Redirect to root instead of /login
-  if (!session && req.nextUrl.pathname.startsWith("/dashboard")) {
-    return NextResponse.redirect(new URL("/", req.url));
+  // Log session state for debugging
+  console.log("Middleware session check:", {
+    path: req.nextUrl.pathname,
+    hasSession: !!session,
+    error: error?.message,
+  });
+
+  // Handle protected routes
+  if (req.nextUrl.pathname.startsWith("/dashboard")) {
+    if (!session) {
+      return NextResponse.redirect(new URL("/auth/signin", req.url));
+    }
+  }
+
+  // Handle auth routes
+  if (req.nextUrl.pathname.startsWith("/auth/signin")) {
+    if (session) {
+      return NextResponse.redirect(new URL("/dashboard", req.url));
+    }
   }
 
   return res;
 }
 
+// Ensure the middleware is only called for relevant paths
 export const config = {
   matcher: [
     /*
-     * Match all request paths except:
+     * Match all request paths except for the ones starting with:
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
-     * - public folder
+     * - public (public files)
+     * - auth/callback (auth callback route)
      */
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|public|auth/callback).*)",
   ],
 };

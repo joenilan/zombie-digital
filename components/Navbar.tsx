@@ -9,44 +9,48 @@ import UserMenu from "./UserMenu";
 import ThemeToggle from "./ThemeToggle";
 import { motion } from "framer-motion";
 import { SiteNotification } from "./SiteNotification";
-import { authService } from "@/lib/auth";
+import { User } from '@supabase/supabase-js';
 
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const supabase = createClientComponentClient();
   const isCanvasPage = pathname.startsWith('/canvas/');
 
   useEffect(() => {
-    const getUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setUser(session?.user ?? null);
-
-      // Validate session in background
-      if (session) {
-        const isValid = await authService.validateAndRefreshSession();
-        if (!isValid && !pathname.startsWith('/auth/')) {
-          router.push('/auth/signin');
-        }
+    // Initial session check
+    const getInitialSession = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        console.log('Initial session check:', { session: session?.user?.id, error });
+        if (error) throw error;
+        setUser(session?.user ?? null);
+      } catch (error) {
+        console.error('Error getting initial session:', error);
       }
     };
+    getInitialSession();
 
-    // Initial check
-    getUser();
-
-    // Set up interval to validate session every minute
-    const interval = setInterval(getUser, 60000);
-
+    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('Auth state changed:', { event, userId: session?.user?.id });
       setUser(session?.user ?? null);
+      if (event === 'SIGNED_IN') {
+        router.refresh();
+      }
     });
 
     return () => {
+      console.log('Cleaning up auth subscription');
       subscription.unsubscribe();
-      clearInterval(interval);
     };
-  }, [supabase.auth, pathname, router]);
+  }, [supabase, router]);
+
+  // Debug log when user state changes
+  useEffect(() => {
+    console.log('User state changed:', user?.id);
+  }, [user]);
 
   return (
     <header className={isCanvasPage ? "fixed top-4 left-4 right-4 z-50 pointer-events-none" : "sticky top-0 z-50 bg-background/80 backdrop-blur-xl"}>
@@ -66,9 +70,17 @@ export default function Navbar() {
                 Home
               </NavLink>
               {user && (
-                <NavLink href="/dashboard" current={pathname === "/dashboard"}>
-                  Dashboard
-                </NavLink>
+                <>
+                  <NavLink href="/dashboard" current={pathname === "/dashboard"}>
+                    Dashboard
+                  </NavLink>
+                  <NavLink href="/dashboard/social-links" current={pathname === "/dashboard/social-links"}>
+                    Social Links
+                  </NavLink>
+                  <NavLink href="/dashboard/canvas" current={pathname === "/dashboard/canvas"}>
+                    Canvas
+                  </NavLink>
+                </>
               )}
             </div>
           </div>

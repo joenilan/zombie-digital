@@ -4,7 +4,15 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { TWITCH_SCOPES } from "@/utils/twitch-constants";
 
-const DEBUG = false;
+const DEBUG = true;
+
+interface TwitchUser {
+  id: string;
+  twitch_id: string;
+  site_role: string;
+  created_at?: string;
+  confirmed_at?: string;
+}
 
 // Add UUID generation function
 function generateUUID() {
@@ -86,7 +94,7 @@ export async function GET(request: Request) {
         const { data: existingTwitchUser, error: checkError } =
           await serviceClient
             .from("twitch_users")
-            .select("id, twitch_id")
+            .select("*")
             .eq("twitch_id", metadata.provider_id)
             .maybeSingle();
 
@@ -132,10 +140,13 @@ export async function GET(request: Request) {
           updated_at: new Date().toISOString(),
           confirmed_at:
             existingTwitchUser?.confirmed_at || new Date().toISOString(),
+          created_at:
+            existingTwitchUser?.created_at || new Date().toISOString(),
           is_anonymous: false,
         };
 
         console.log("Saving user data with tokens:", {
+          id: userData.id,
           provider_token: !!userData.provider_token,
           provider_refresh_token: !!userData.provider_refresh_token,
           provider_scopes: userData.provider_scopes,
@@ -147,6 +158,7 @@ export async function GET(request: Request) {
           // Update existing Twitch account but preserve certain fields
           const updateData = {
             ...userData,
+            id: existingTwitchUser.id, // Preserve the existing ID
             site_role: existingTwitchUser.site_role,
             created_at: existingTwitchUser.created_at,
             confirmed_at: existingTwitchUser.confirmed_at,
@@ -155,11 +167,9 @@ export async function GET(request: Request) {
           result = await serviceClient
             .from("twitch_users")
             .update(updateData)
-            .eq("twitch_id", metadata.provider_id);
+            .eq("id", existingTwitchUser.id);
         } else {
           // Create new row for new Twitch account
-          userData.created_at = new Date().toISOString();
-          userData.confirmed_at = new Date().toISOString();
           result = await serviceClient.from("twitch_users").insert(userData);
         }
 
@@ -174,7 +184,7 @@ export async function GET(request: Request) {
         const { data: verifyUser, error: verifyError } = await serviceClient
           .from("twitch_users")
           .select("*")
-          .eq("twitch_id", metadata.provider_id)
+          .eq("id", userData.id)
           .single();
 
         if (verifyError || !verifyUser) {
@@ -191,28 +201,32 @@ export async function GET(request: Request) {
           email: verifyUser.email,
         });
 
-        // Get user's role from twitch_users
-        const { data: userRole } = await serviceClient
-          .from("twitch_users")
-          .select("site_role")
-          .eq("twitch_id", metadata.provider_id)
-          .single();
-
         // Update user metadata to include site_role
-        await supabase.auth.updateUser({
+        const { error: updateError } = await supabase.auth.updateUser({
           data: {
             ...metadata,
-            site_role: userRole?.site_role || "user",
+            site_role: verifyUser.site_role || "user",
           },
         });
 
+        if (updateError) {
+          console.error("Error updating user metadata:", updateError);
+        }
+
         console.log("Updated user metadata:", {
-          role: userRole?.site_role,
+          role: verifyUser.site_role,
           metadata: metadata,
         });
 
-        // Only redirect to dashboard after successful user creation/update
-        return NextResponse.redirect(`${requestUrl.origin}/dashboard`);
+        // Create response with redirect
+        const response = NextResponse.redirect(
+          `${requestUrl.origin}/dashboard`
+        );
+
+        // Set cookie with session data
+        await supabase.auth.setSession(session);
+
+        return response;
       } catch (error) {
         console.error("Error processing user data:", error);
         return NextResponse.redirect(

@@ -41,16 +41,7 @@ export default function OverlayLayout({
   }, [])
 
   return (
-    <div style={{
-      position: 'fixed',
-      inset: 0,
-      margin: 0,
-      padding: 0,
-      background: 'none',
-      backgroundColor: 'transparent',
-      overflow: 'hidden',
-      isolation: 'isolate'
-    }}>
+    <div data-overlay-page className="min-h-screen bg-transparent">
       {children}
     </div>
   )

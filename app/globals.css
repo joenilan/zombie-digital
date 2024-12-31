@@ -37,8 +37,8 @@
     @apply antialiased transition-colors duration-300;
   }
 
-  /* Apply gradient background to all pages except canvas */
-  body:not(:has(.canvas-page)) {
+  /* Apply gradient background to all pages except canvas and overlay */
+  body:not(:has(.canvas-page, [data-overlay-page])) {
     background: linear-gradient(
       135deg,
       hsl(326, 100%, 74%) 0%,
@@ -47,8 +47,8 @@
     );
   }
 
-  /* Theme overlays for non-canvas pages */
-  body:not(:has(.canvas-page))::before {
+  /* Theme overlays for non-canvas/overlay pages */
+  body:not(:has(.canvas-page, [data-overlay-page]))::before {
     content: '';
     position: fixed;
     inset: 0;
@@ -59,13 +59,13 @@
     z-index: 0;
   }
 
-  /* Dark theme: darker overlay for non-canvas pages */
-  .dark body:not(:has(.canvas-page))::before {
+  /* Dark theme: darker overlay for non-canvas/overlay pages */
+  .dark body:not(:has(.canvas-page, [data-overlay-page]))::before {
     background: rgb(10 10 15 / 0.9);
   }
 
-  /* Add radial gradient overlays for extra depth to non-canvas pages */
-  body:not(:has(.canvas-page))::after {
+  /* Add radial gradient overlays for extra depth to non-canvas/overlay pages */
+  body:not(:has(.canvas-page, [data-overlay-page]))::after {
     content: '';
     position: fixed;
     inset: 0;
