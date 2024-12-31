@@ -20,6 +20,7 @@ export default function Navbar() {
   const isDashboardSection = pathname.startsWith('/dashboard');
   const isDashboardSocialLinks = pathname === '/dashboard/social-links';
   const isDashboardCanvas = pathname === '/dashboard/canvas' || pathname.startsWith('/dashboard/canvas/');
+  const isCanvasSettings = pathname.includes('/canvas/') && pathname.endsWith('/settings');
   const isHome = pathname === '/';
 
   useEffect(() => {
@@ -91,6 +92,23 @@ export default function Navbar() {
                         >
                           Canvas
                         </SubNavLink>
+                        {isCanvasSettings && (
+                          <motion.div 
+                            className="flex items-center gap-1 ml-2 pl-2 border-l border-foreground/10"
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: 10 }}
+                            transition={{ duration: 0.2 }}
+                          >
+                            <SubNavLink 
+                              href={pathname}
+                              current={true}
+                              layoutId="sub-sub-nav"
+                            >
+                              Settings
+                            </SubNavLink>
+                          </motion.div>
+                        )}
                       </motion.div>
                     )}
                   </AnimatePresence>
