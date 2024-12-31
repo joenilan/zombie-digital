@@ -2,57 +2,37 @@
 
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
 import TwitchLoginButton from "@/components/TwitchLoginButton";
 import Link from "next/link";
 import PageTransitionLayout from "@/components/PageTransitionLayout";
-
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.2,
-    },
-  },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0 },
-};
+import { useRouter } from "next/navigation";
 
 export default function HomePage() {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<any>(undefined);
   const [loading, setLoading] = useState(true);
   const supabase = createClientComponentClient();
+  const router = useRouter();
 
   useEffect(() => {
-    const getUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setUser(session?.user ?? null);
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        router.push('/dashboard');
+      } else {
+        setUser(null);
+      }
       setLoading(false);
-    };
-
-    getUser();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
     });
+  }, [supabase, router]);
 
-    return () => subscription.unsubscribe();
-  }, [supabase.auth]);
+  if (user === undefined) {
+    return null; // Initial loading state
+  }
 
   return (
     <PageTransitionLayout>
       <div className="container mx-auto px-6 py-24">
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-          className="max-w-4xl mx-auto text-center space-y-12"
-        >
-          <motion.div variants={itemVariants} className="space-y-4">
+        <div className="max-w-4xl mx-auto text-center space-y-12">
+          <div className="space-y-4">
             <h1 className="text-5xl md:text-7xl font-bold">
               <span className="gradient-brand">Zombie</span>
               <span className="text-foreground/80">.Digital</span>
@@ -60,18 +40,15 @@ export default function HomePage() {
             <p className="text-2xl text-foreground/90">
               Twitch Management Platform
             </p>
-          </motion.div>
+          </div>
 
-          <motion.p 
-            variants={itemVariants}
-            className="text-xl text-foreground/80"
-          >
+          <p className="text-xl text-foreground/80">
             Take control of your Twitch presence with professional management tools, analytics, and automation.
-          </motion.p>
+          </p>
 
-          <motion.div variants={itemVariants}>
+          <div className="flex justify-center">
             {loading ? (
-              <div className="w-48 h-12 bg-background/20 rounded-full animate-pulse mx-auto" />
+              <div className="w-48 h-12 bg-background/20 rounded-full animate-pulse" />
             ) : user ? (
               <Link 
                 href="/dashboard" 
@@ -96,12 +73,9 @@ export default function HomePage() {
             ) : (
               <TwitchLoginButton size="lg" />
             )}
-          </motion.div>
+          </div>
 
-          <motion.div 
-            variants={containerVariants}
-            className="grid md:grid-cols-3 gap-6 pt-12"
-          >
+          <div className="grid md:grid-cols-3 gap-6 pt-12">
             <FeatureCard
               title="Stream Management"
               description="Control your stream settings, chat, and channel points"
@@ -114,8 +88,8 @@ export default function HomePage() {
               title="Analytics"
               description="Track your growth and understand your audience"
             />
-          </motion.div>
-        </motion.div>
+          </div>
+        </div>
       </div>
     </PageTransitionLayout>
   );
@@ -123,11 +97,9 @@ export default function HomePage() {
 
 function FeatureCard({ title, description }: { title: string; description: string }) {
   return (
-    <motion.div variants={itemVariants}>
-      <div className="ethereal-card">
-        <h3 className="text-lg font-bold mb-2">{title}</h3>
-        <p className="text-foreground/70">{description}</p>
-      </div>
-    </motion.div>
+    <div className="ethereal-card">
+      <h3 className="text-lg font-bold mb-2">{title}</h3>
+      <p className="text-foreground/70">{description}</p>
+    </div>
   );
 }

@@ -41,7 +41,7 @@ function RoleBadge({ role }: { role: string }) {
   return (
     <span className={`
       inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
-      bg-gradient-to-r ${colors} text-white shadow-sm
+      bg-gradient-to-r ${colors} text-white shadow-cyber
     `}>
       {role.charAt(0).toUpperCase() + role.slice(1)}
     </span>
@@ -60,7 +60,7 @@ function AccountTypeBadge({ type }: { type: string }) {
   return (
     <span className={`
       inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
-      bg-gradient-to-r ${colors} text-white shadow-sm
+      bg-gradient-to-r ${colors} text-white shadow-cyber
     `}>
       {label.charAt(0).toUpperCase() + label.slice(1)}
     </span>
@@ -81,7 +81,7 @@ function MiniStat({
   const displayValue = typeof value === 'number' ? value : 0;
 
   return (
-    <div className={`flex items-center gap-3 px-4 py-2.5 rounded-lg ${className}`}>
+    <div className={`flex items-center gap-3 px-4 py-2.5 rounded-lg bg-glass/30 backdrop-blur-md border border-white/5 ${className}`}>
       <div className="text-white/90">
         {icon}
       </div>
@@ -101,25 +101,26 @@ function GameCard({ game }: { game: any }) {
   if (!game || !game.boxArtUrl) return null;
 
   return (
-    <div className="flex gap-4 p-4 rounded-lg bg-background/30">
-      <Image
-        src={game.boxArtUrl}
-        alt={game.name}
-        width={300}
-        height={400}
-        className="object-cover"
-      />
+    <div className="flex gap-4 p-6 rounded-xl bg-glass/30 backdrop-blur-md border border-white/5">
+      <div className="relative w-24 h-32 overflow-hidden rounded-lg">
+        <Image
+          src={game.boxArtUrl}
+          alt={game.name}
+          fill
+          className="object-cover"
+        />
+      </div>
       <div className="flex flex-col gap-2">
-        <h3 className="text-lg font-semibold">{game.name}</h3>
+        <h3 className="text-xl font-semibold">{game.name}</h3>
         {game.title && (
-          <p className="text-sm text-foreground/70">{game.title}</p>
+          <p className="text-muted-foreground">{game.title}</p>
         )}
         {game.tags && game.tags.length > 0 && (
           <div className="flex flex-wrap gap-2 mt-2">
             {game.tags.map((tag: string) => (
               <span
                 key={tag}
-                className="px-2 py-1 text-xs rounded-full bg-background/50"
+                className="px-2 py-1 text-xs rounded-full bg-glass/20 backdrop-blur-sm border border-white/5"
               >
                 {tag}
               </span>
@@ -137,7 +138,7 @@ interface UserStatsProps {
 }
 
 export function UserStats({ user, onLoadComplete }: UserStatsProps) {
-  const [stats, setStats] = useState({
+  const [stats, setStats] = useState<any>({
     isAffiliate: false,
     lastGame: null,
     isLive: false
@@ -180,27 +181,25 @@ export function UserStats({ user, onLoadComplete }: UserStatsProps) {
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="w-full"
+      className="space-y-8"
     >
-      <motion.div variants={itemVariants} className="ethereal-card">
-        <div className="flex flex-col gap-6">
-          {/* Only show game info if there's a game */}
-          {stats.lastGame && (stats.isAffiliate || isSystemUser) && (
-            <motion.div variants={itemVariants}>
-              <GameCard game={stats.lastGame} />
-            </motion.div>
-          )}
+      {/* Game Info */}
+      {stats.lastGame && (stats.isAffiliate || isSystemUser) && (
+        <motion.div variants={itemVariants}>
+          <GameCard game={stats.lastGame} />
+        </motion.div>
+      )}
 
-          {/* Description */}
-          {user.raw_user_meta_data.custom_claims.description && (
-            <motion.div variants={itemVariants} className="p-4 rounded-lg bg-background/30">
-              <p className="text-foreground/70">
-                {user.raw_user_meta_data.custom_claims.description}
-              </p>
-            </motion.div>
-          )}
-        </div>
-      </motion.div>
+      {/* Description */}
+      {user.raw_user_meta_data.custom_claims.description && (
+        <motion.div variants={itemVariants}>
+          <div className="rounded-xl bg-glass/50 backdrop-blur-xl p-8 border border-white/5">
+            <p className="text-muted-foreground">
+              {user.raw_user_meta_data.custom_claims.description}
+            </p>
+          </div>
+        </motion.div>
+      )}
     </motion.div>
   );
 }

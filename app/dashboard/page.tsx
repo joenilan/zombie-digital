@@ -1,7 +1,6 @@
 import DashboardClient from './components/DashboardClient';
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
-import { StreamInfo } from '@/components/dashboard/stream-info'
 import { Suspense } from 'react';
 import { LoadingSpinner } from '@/components/LoadingSpinner';
 import { redirect } from 'next/navigation';
@@ -18,12 +17,7 @@ export default async function DashboardPage() {
     error: sessionError
   } = await supabase.auth.getSession();
 
-  if (sessionError) {
-    console.error('Session error:', sessionError);
-    redirect('/auth/signin');
-  }
-
-  if (!session) {
+  if (sessionError || !session) {
     redirect('/auth/signin');
   }
 
@@ -36,23 +30,19 @@ export default async function DashboardPage() {
     .eq('twitch_id', provider_id)
     .single();
 
-  if (twitchError) {
-    console.error('Twitch user error:', twitchError);
-    redirect('/auth/signin');
-  }
-
-  if (!twitchUser) {
+  if (twitchError || !twitchUser) {
     redirect('/auth/signin');
   }
 
   return (
-    <div className="space-y-6">
-      <Suspense fallback={<LoadingSpinner text="Loading stream info..." />}>
-        <StreamInfo user={twitchUser} />
-      </Suspense>
-      <Suspense fallback={<LoadingSpinner text="Loading dashboard..." />}>
-        <DashboardClient user={twitchUser} />
-      </Suspense>
-    </div>
+    <Suspense 
+      fallback={
+        <div className="rounded-xl bg-glass/50 backdrop-blur-xl p-8">
+          <LoadingSpinner text="Loading dashboard..." />
+        </div>
+      }
+    >
+      <DashboardClient user={twitchUser} />
+    </Suspense>
   );
 } 

@@ -1,59 +1,94 @@
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
-import { hasPermission } from '@/utils/permissions';
-import { SideNav } from '@/components/dashboard/side-nav'
-import { QuickActions } from '@/components/dashboard/quick-actions'
-import ContentTransition from '@/components/dashboard/ContentTransition'
+"use client"
 
-export default async function DashboardLayout({
+import { usePathname } from 'next/navigation'
+import { motion, AnimatePresence } from 'framer-motion'
+import { SideNav } from '@/components/dashboard/side-nav'
+import { Suspense } from 'react'
+import { LoadingSpinner } from '@/components/LoadingSpinner'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { useEffect, useState } from 'react'
+import type { TwitchUser } from '@/types/database'
+
+export default function DashboardLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: React.ReactNode
 }) {
-  const supabase = createServerComponentClient({ cookies });
-  
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+  const pathname = usePathname()
+  const [user, setUser] = useState<TwitchUser | null>(null)
+  const supabase = createClientComponentClient()
 
-  if (!session) {
-    redirect('/');
-  }
+  useEffect(() => {
+    async function loadUser() {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) return
 
-  const provider_id = session.user.user_metadata?.sub || 
-                     session.user.user_metadata?.provider_id;
+      const provider_id = session.user.user_metadata?.sub || 
+                       session.user.user_metadata?.provider_id
 
-  const { data: user } = await supabase
-    .from('twitch_users')
-    .select()
-    .eq('twitch_id', provider_id)
-    .single();
+      const { data: user } = await supabase
+        .from('twitch_users')
+        .select()
+        .eq('twitch_id', provider_id)
+        .single()
+
+      if (user) {
+        setUser(user)
+      }
+    }
+
+    loadUser()
+  }, [supabase])
 
   if (!user) {
-    redirect('/');
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <LoadingSpinner text="Loading..." />
+      </div>
+    )
   }
 
   return (
-    <div className="min-h-screen px-4 py-8">
-      <div className="max-w-7xl mx-auto space-y-8">
-        <div className="flex items-center justify-between">
+    <>
+      {/* Header */}
+      <header className="w-full border-b border-white/5">
+        <div className="container mx-auto px-4 py-6">
           <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-cyber-gradient">
             Dashboard
           </h1>
         </div>
-        <SideNav user={user} />
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          <div className="lg:col-span-1 order-last lg:order-first">
-            <QuickActions username={user.username} />
-          </div>
-          <div className="lg:col-span-3 order-first lg:order-last">
-            <ContentTransition>
+      </header>
+
+      {/* Main Content */}
+      <div className="container mx-auto px-4 py-8 space-y-8">
+        {/* Channel Overview */}
+        <section>
+          <Suspense 
+            fallback={
+              <div className="rounded-xl bg-glass/50 backdrop-blur-xl p-8">
+                <LoadingSpinner text="Loading channel stats..." />
+              </div>
+            }
+          >
+            <SideNav user={user} />
+          </Suspense>
+        </section>
+
+        {/* Dashboard Content */}
+        <section>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={pathname}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+            >
               {children}
-            </ContentTransition>
-          </div>
-        </div>
+            </motion.div>
+          </AnimatePresence>
+        </section>
       </div>
-    </div>
-  );
+    </>
+  )
 } 

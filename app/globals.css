@@ -33,8 +33,17 @@
     --ring: 240 4.9% 83.9%;
   }
 
+  * {
+    font-family: var(--font-sofia-sans), 'Sofia Sans', system-ui, sans-serif;
+  }
+
   body {
     @apply antialiased transition-colors duration-300;
+  }
+
+  /* Global link styling */
+  a:not([class]) {
+    @apply text-cyber-cyan hover:text-cyber-pink transition-colors;
   }
 
   /* Apply gradient background to all pages except canvas and overlay */
@@ -110,6 +119,10 @@
   .nav-link-inactive {
     @apply relative z-10 text-foreground/70 hover:text-foreground 
            transition-colors duration-200;
+  }
+
+  .cyber-link {
+    @apply text-cyber-cyan hover:text-cyber-pink transition-colors;
   }
 
   .ethereal-button {
@@ -351,4 +364,32 @@ body:has(.canvas-page) [class*="bg-"] {
   background-image: none !important;
   background-color: transparent !important;
   --background: transparent !important;
+}
+
+/* Add smooth page transitions */
+* {
+  @apply transition-[background-color,border-color] duration-300 ease-in-out;
+}
+
+/* Smooth page content transitions */
+.page-transition-enter {
+  opacity: 0;
+  transform: translate3d(0, 20px, 0);
+}
+
+.page-transition-enter-active {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+  transition: opacity 300ms, transform 300ms;
+}
+
+.page-transition-exit {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+}
+
+.page-transition-exit-active {
+  opacity: 0;
+  transform: translate3d(0, -20px, 0);
+  transition: opacity 300ms, transform 300ms;
 }

@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Copy, ExternalLink } from 'lucide-react'
 import { toast } from 'sonner'
+import { motion } from 'framer-motion'
 
 interface TwitchUser {
   id: string
@@ -88,53 +89,78 @@ export default function SocialLinksPage() {
   }
 
   if (isLoading || !twitchUser) {
-    return <div>Loading...</div>
+    return (
+      <div className="rounded-xl bg-glass/50 backdrop-blur-xl p-8 border border-white/5">
+        <div className="h-8 w-1/3 bg-glass animate-pulse rounded-lg mb-4" />
+        <div className="space-y-3">
+          <div className="h-4 w-full bg-glass animate-pulse rounded-lg" />
+          <div className="h-4 w-5/6 bg-glass animate-pulse rounded-lg" />
+          <div className="h-4 w-4/6 bg-glass animate-pulse rounded-lg" />
+        </div>
+      </div>
+    )
   }
 
   const profileUrl = `${window.location.origin}/${twitchUser.username}`
 
   return (
     <div className="space-y-8">
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">Profile Customization</h1>
-          <p className="text-muted-foreground">
-            Customize your profile appearance and manage your social links.
-          </p>
-        </div>
-
-        <div className="space-y-4">
+      <motion.div 
+        className="rounded-xl bg-glass/50 backdrop-blur-xl p-8 border border-white/5"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+      >
+        <div className="space-y-6">
           <div>
-            <h2 className="text-2xl font-bold">Your Profile</h2>
+            <h1 className="text-3xl font-bold">Profile Customization</h1>
             <p className="text-muted-foreground">
-              Share your profile with your audience.
+              Customize your profile appearance and manage your social links.
             </p>
           </div>
-          <div className="flex gap-2">
-            <Input 
-              value={profileUrl}
-              readOnly
-              className="font-mono"
-            />
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={handleCopyUrl}
-              title="Copy URL"
-            >
-              <Copy className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={handleOpenProfile}
-              title="Open Profile"
-            >
-              <ExternalLink className="h-4 w-4" />
-            </Button>
+
+          <div className="space-y-4">
+            <div>
+              <h2 className="text-2xl font-bold">Your Profile</h2>
+              <p className="text-muted-foreground">
+                Share your profile with your audience.
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Input 
+                value={profileUrl}
+                readOnly
+                className="font-mono bg-background/20"
+              />
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={handleCopyUrl}
+                title="Copy URL"
+                className="bg-background/20 hover:bg-background/40"
+              >
+                <Copy className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={handleOpenProfile}
+                title="Open Profile"
+                className="bg-background/20 hover:bg-background/40"
+              >
+                <ExternalLink className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
+      </motion.div>
 
+      <motion.div 
+        className="rounded-xl bg-glass/50 backdrop-blur-xl p-8 border border-white/5"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: 0.1 }}
+      >
         <div className="space-y-6">
           <div>
             <h2 className="text-2xl font-bold">Background</h2>
@@ -151,7 +177,14 @@ export default function SocialLinksPage() {
             onUpdate={handleBackgroundUpdate}
           />
         </div>
+      </motion.div>
 
+      <motion.div 
+        className="rounded-xl bg-glass/50 backdrop-blur-xl p-8 border border-white/5"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: 0.2 }}
+      >
         <div className="space-y-6">
           <div>
             <h2 className="text-2xl font-bold">Social Links</h2>
@@ -164,7 +197,7 @@ export default function SocialLinksPage() {
             twitchUserId={twitchUser.id}
           />
         </div>
-      </div>
+      </motion.div>
     </div>
   )
 } 

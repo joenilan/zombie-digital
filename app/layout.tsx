@@ -1,4 +1,3 @@
-import { GeistSans } from 'geist/font/sans'
 import { Metadata } from "next"
 import { ThemeProvider } from "next-themes"
 import QueryProvider from "@/providers/query-provider"
@@ -9,6 +8,16 @@ import { cookies } from "next/headers"
 import { cn } from "@/lib/utils"
 import { LayoutWrapper } from './layout-wrapper'
 import "./globals.css"
+import { Sofia_Sans } from 'next/font/google'
+
+const sofia = Sofia_Sans({
+  subsets: ['latin'],
+  display: 'swap',
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-sofia-sans',
+  fallback: ['system-ui', 'sans-serif'],
+  preload: true,
+});
 
 export const metadata: Metadata = {
   title: 'Zombie.Digital',
@@ -24,13 +33,16 @@ export default async function RootLayout({
   const { data: { session } } = await supabase.auth.getSession()
 
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={cn("min-h-screen font-sans antialiased", GeistSans.className)}>
+    <html lang="en" suppressHydrationWarning className={sofia.variable}>
+      <body className={cn(
+        "min-h-screen antialiased transition-colors duration-300 ease-in-out",
+        sofia.className
+      )}>
         <QueryProvider>
           <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
             <SessionProvider>
               <LayoutWrapper>
-                <main className="min-h-screen">
+                <main className="min-h-screen transition-all duration-300 ease-in-out">
                   {children}
                 </main>
               </LayoutWrapper>

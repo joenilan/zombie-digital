@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { toast } from 'sonner'
 import { useSearchParams, useRouter } from 'next/navigation'
+import { motion } from 'framer-motion'
 
 const RESOLUTIONS = {
   HD: { width: 1280, height: 720, label: 'HD (720p)' },
@@ -141,9 +142,12 @@ export default function CanvasSettingsPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center p-4">
-        <div className="text-center">
-          <p>Loading...</p>
+      <div className="rounded-xl bg-glass/50 backdrop-blur-xl p-8 border border-white/5">
+        <div className="h-8 w-1/3 bg-glass animate-pulse rounded-lg mb-4" />
+        <div className="space-y-3">
+          <div className="h-4 w-full bg-glass animate-pulse rounded-lg" />
+          <div className="h-4 w-5/6 bg-glass animate-pulse rounded-lg" />
+          <div className="h-4 w-4/6 bg-glass animate-pulse rounded-lg" />
         </div>
       </div>
     )
@@ -151,45 +155,55 @@ export default function CanvasSettingsPage() {
 
   if (error) {
     return (
-      <div className="flex min-h-screen flex-col items-center justify-center p-4">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-red-500 mb-4">Error</h1>
-          <p>{error}</p>
-        </div>
+      <div className="rounded-xl bg-glass/50 backdrop-blur-xl p-8 border border-white/5">
+        <h1 className="text-2xl font-bold text-red-500 mb-4">Error</h1>
+        <p className="text-muted-foreground">{error}</p>
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Canvas Settings</h1>
-        <Link 
-          href="/api/canvas/new"
-          className="flex items-center gap-2 px-4 py-2 bg-cyber-purple hover:bg-cyber-purple/80 text-white rounded-md transition-colors"
-        >
-          <PlusCircle size={20} />
-          New Canvas
-        </Link>
-      </div>
+    <div className="space-y-8">
+      <motion.div 
+        className="rounded-xl bg-glass/50 backdrop-blur-xl p-8 border border-white/5"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+      >
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold">Canvas Settings</h1>
+            <p className="text-muted-foreground">
+              Create and manage your stream overlays.
+            </p>
+          </div>
+          <Link 
+            href="/api/canvas/new"
+            className="flex items-center gap-2 px-4 py-2 bg-cyber-gradient text-white rounded-md transition-all duration-300 hover:scale-[1.02] shadow-cyber hover:shadow-cyber-hover"
+          >
+            <PlusCircle size={20} />
+            New Canvas
+          </Link>
+        </div>
 
-      <div className="bg-glass rounded-xl shadow-glass p-6">
-        <h2 className="text-xl font-semibold mb-4">Your Canvases</h2>
-        <div className="grid grid-cols-1 gap-4">
+        <div className="mt-8 grid grid-cols-1 gap-4">
           {canvases.length === 0 && (
             <div className="text-center p-8 bg-background/20 rounded-lg">
               <p className="text-muted-foreground">You haven't created any canvases yet.</p>
               <p className="text-sm text-muted-foreground mt-2">Click the "New Canvas" button to get started.</p>
             </div>
           )}
-          {canvases.map((canvas) => (
-            <div 
+          {canvases.map((canvas, index) => (
+            <motion.div 
               key={canvas.id}
-              className="flex flex-col gap-4 p-4 bg-background/20 rounded-lg group hover:bg-background/30 transition-all duration-300"
+              className="flex flex-col gap-4 p-6 rounded-xl bg-glass shadow-glass transition-all duration-300 hover:shadow-cyber border border-white/5"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: index * 0.1 }}
             >
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="font-medium">{canvas.name}</h3>
+                  <h3 className="font-medium text-lg">{canvas.name}</h3>
                   <p className="text-sm text-muted-foreground">
                     {RESOLUTIONS[canvas.resolution as keyof typeof RESOLUTIONS]?.label || canvas.resolution}
                   </p>
@@ -198,13 +212,13 @@ export default function CanvasSettingsPage() {
                   <Link
                     href={`/canvas/${canvas.id}`}
                     target="_blank"
-                    className="px-3 py-1.5 bg-cyber-purple/20 hover:bg-cyber-purple/40 text-white rounded transition-colors"
+                    className="px-3 py-1.5 bg-cyber-gradient text-white rounded transition-all duration-300 hover:scale-[1.02] shadow-cyber hover:shadow-cyber-hover"
                   >
                     Interact
                   </Link>
                   <Link
                     href={`/dashboard/canvas/${canvas.id}/settings`}
-                    className="px-3 py-1.5 bg-background/40 hover:bg-background/60 text-white rounded transition-colors"
+                    className="px-3 py-1.5 bg-background/20 hover:bg-background/40 text-white rounded transition-colors"
                   >
                     Settings
                   </Link>
@@ -226,31 +240,17 @@ export default function CanvasSettingsPage() {
               <div className="flex gap-2 items-center">
                 <div className="relative flex-1">
                   <Input 
-                    value=""
-                    readOnly
-                    className="font-mono text-sm bg-background/20 px-3 absolute inset-0 pointer-events-none opacity-0"
-                  />
-                  <div 
-                    className={`font-mono text-sm absolute inset-0 px-3 flex items-center ${visibleUrls.has(canvas.id) ? '' : 'opacity-50'}`}
-                    style={{ 
-                      filter: visibleUrls.has(canvas.id) ? 'none' : 'blur(4px)',
-                      transition: 'opacity 0.2s ease, filter 0.2s ease'
-                    }}
-                  >
-                    {`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/overlay/canvas/${canvas.id}`}
-                  </div>
-                  <Input 
                     value={`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/overlay/canvas/${canvas.id}`}
                     readOnly
-                    className="font-mono text-sm bg-background/20 px-3 text-transparent"
+                    className="font-mono text-sm bg-background/20"
+                    type={visibleUrls.has(canvas.id) ? "text" : "password"}
                   />
                 </div>
                 <Button
                   variant="outline"
                   size="icon"
                   onClick={() => toggleUrlVisibility(canvas.id)}
-                  title={visibleUrls.has(canvas.id) ? "Hide URL" : "Show URL"}
-                  className="shrink-0"
+                  className="bg-background/20 hover:bg-background/40"
                 >
                   <Eye className="h-4 w-4" />
                 </Button>
@@ -258,8 +258,7 @@ export default function CanvasSettingsPage() {
                   variant="outline"
                   size="icon"
                   onClick={() => handleCopyUrl(canvas.id)}
-                  title="Copy URL"
-                  className="shrink-0"
+                  className="bg-background/20 hover:bg-background/40"
                 >
                   <Copy className="h-4 w-4" />
                 </Button>
@@ -267,32 +266,15 @@ export default function CanvasSettingsPage() {
                   variant="outline"
                   size="icon"
                   onClick={() => handleOpenOverlay(canvas.id)}
-                  title="Open Overlay"
-                  className="shrink-0"
+                  className="bg-background/20 hover:bg-background/40"
                 >
                   <ExternalLink className="h-4 w-4" />
                 </Button>
               </div>
-            </div>
+            </motion.div>
           ))}
         </div>
-      </div>
-
-      <div className="bg-glass rounded-xl shadow-glass p-6">
-        <h2 className="text-xl font-semibold mb-4">OBS Setup</h2>
-        <div className="space-y-4">
-          <p className="text-muted-foreground">
-            To use a canvas in OBS:
-          </p>
-          <ol className="list-decimal list-inside space-y-2 text-muted-foreground">
-            <li>Add a new Browser Source in OBS</li>
-            <li>Set the URL to your canvas link</li>
-            <li>Set the width and height to match your chosen resolution</li>
-            <li>Enable "Control audio via OBS"</li>
-            <li>Refresh the browser source if needed</li>
-          </ol>
-        </div>
-      </div>
+      </motion.div>
     </div>
   )
 } 
