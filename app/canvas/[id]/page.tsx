@@ -60,10 +60,12 @@ export default function CanvasPage() {
   if (!canvas) return null
 
   return (
-    <FlowCanvasV2
-      canvasId={canvasId}
-      isOwner={currentUser?.id === canvas.user_id}
-      userId={currentUser?.id}
-    />
+    <div className="canvas-page">
+      <FlowCanvasV2
+        canvasId={canvasId}
+        isOwner={currentUser?.id === canvas.user_id}
+        userId={currentUser?.id}
+      />
+    </div>
   )
 } 

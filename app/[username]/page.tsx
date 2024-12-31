@@ -11,11 +11,15 @@ interface PageProps {
   params: {
     username: string
   }
+  searchParams: {
+    transparent?: string
+  }
 }
 
-export default async function ProfilePage({ params }: PageProps) {
+export default async function ProfilePage({ params, searchParams }: PageProps) {
   const supabase = createServerComponentClient({ cookies })
   const { username } = params
+  const isTransparent = searchParams.transparent === 'true'
 
   // Get the current user's session
   const { data: { session }, error: sessionError } = await supabase.auth.getSession()
@@ -66,10 +70,10 @@ export default async function ProfilePage({ params }: PageProps) {
   const isOwner = !sessionError && session?.user?.id === profile.user_id
 
   return (
-    <div className="min-h-screen py-12 px-4">
+    <div className={`min-h-screen py-12 px-4 ${isTransparent ? 'bg-transparent' : ''}`}>
       {/* Main Content Card */}
       <div className="max-w-2xl mx-auto relative">
-        <div className="bg-background/20 backdrop-blur-xl rounded-xl shadow-glass overflow-hidden border border-white/10">
+        <div className={`${isTransparent ? '' : 'bg-background/20'} backdrop-blur-xl rounded-xl shadow-glass overflow-hidden border border-white/10`}>
           {/* Card Background */}
           <RealtimeBackground 
             userId={profile.user_id}
@@ -80,24 +84,24 @@ export default async function ProfilePage({ params }: PageProps) {
           />
 
           {/* Glass Overlay */}
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+          <div className={`absolute inset-0 ${isTransparent ? 'bg-transparent' : 'bg-black/50 backdrop-blur-sm'}`} />
 
           {/* Content */}
           <div className="relative space-y-8 p-6">
             {/* Profile Header */}
             <div className="flex flex-col items-center text-center">
               <div className="relative mb-6">
-                <div className="absolute inset-0 rounded-full bg-gradient-to-r from-cyber-pink to-cyber-cyan animate-pulse blur-xl opacity-50"></div>
+                <div className={`absolute inset-0 rounded-full ${isTransparent ? '' : 'bg-gradient-to-r from-cyber-pink to-cyber-cyan animate-pulse blur-xl opacity-50'}`}></div>
                 <Image
                   src={profile.profile_image_url}
                   alt={profile.display_name}
                   width={130}
                   height={130}
-                  className="rounded-full relative border-4 border-background/50"
+                  className={`rounded-full relative ${isTransparent ? '' : 'border-4 border-background/50'}`}
                   priority
                 />
               </div>
-              <h1 className="text-4xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-cyber-pink to-cyber-cyan">
+              <h1 className={`text-4xl font-bold mb-2 ${isTransparent ? 'text-white' : 'bg-clip-text text-transparent bg-gradient-to-r from-cyber-pink to-cyber-cyan'}`}>
                 {profile.display_name}
               </h1>
               <p className="text-lg text-muted-foreground mb-8">@{profile.username}</p>
@@ -109,7 +113,7 @@ export default async function ProfilePage({ params }: PageProps) {
             </div>
 
             {/* Background Manager (only shown to profile owner) */}
-            {isOwner && (
+            {isOwner && !isTransparent && (
               <div>
                 <h2 className="text-xl font-semibold mb-4">Profile Background</h2>
                 <BackgroundManager 
@@ -127,22 +131,24 @@ export default async function ProfilePage({ params }: PageProps) {
               <RealtimeLinks 
                 userId={profile.user_id} 
                 initialLinks={initialLinks || []} 
-                isOwner={isOwner}
+                isOwner={isOwner && !isTransparent}
               />
             </div>
           </div>
         </div>
 
         {/* Footer (outside the card) */}
-        <div className="text-center text-sm text-muted-foreground/60 pt-8">
-          <p>
-            Powered by{" "}
-            <span className="font-bold">
-              <span className="gradient-brand">Zombie</span>
-              <span className="text-foreground/80">.Digital</span>
-            </span>
-          </p>
-        </div>
+        {!isTransparent && (
+          <div className="text-center text-sm text-muted-foreground/60 pt-8">
+            <p>
+              Powered by{" "}
+              <span className="font-bold">
+                <span className="gradient-brand">Zombie</span>
+                <span className="text-foreground/80">.Digital</span>
+              </span>
+            </p>
+          </div>
+        )}
       </div>
     </div>
   )
