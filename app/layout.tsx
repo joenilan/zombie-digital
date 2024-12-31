@@ -2,6 +2,7 @@ import { GeistSans } from 'geist/font/sans'
 import { Metadata } from "next"
 import { ThemeProvider } from "next-themes"
 import QueryProvider from "@/providers/query-provider"
+import { SessionProvider } from "@/providers/session-provider"
 import { Toaster } from 'sonner'
 import { createServerComponentClient } from "@supabase/auth-helpers-nextjs"
 import { cookies } from "next/headers"
@@ -27,11 +28,13 @@ export default async function RootLayout({
       <body className={cn("min-h-screen font-sans antialiased", GeistSans.className)}>
         <QueryProvider>
           <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
-            <LayoutWrapper>
-              <main className="min-h-screen">
-                {children}
-              </main>
-            </LayoutWrapper>
+            <SessionProvider>
+              <LayoutWrapper>
+                <main className="min-h-screen">
+                  {children}
+                </main>
+              </LayoutWrapper>
+            </SessionProvider>
           </ThemeProvider>
         </QueryProvider>
         <Toaster 

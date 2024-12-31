@@ -20,6 +20,7 @@ export default function CanvasPage() {
 
   useEffect(() => {
     let unsubscribe: (() => void) | undefined
+    let sessionCheckInterval: ReturnType<typeof setInterval>
 
     // Get canvas data
     const getCanvas = async () => {
@@ -37,28 +38,44 @@ export default function CanvasPage() {
       setCanvas(canvas)
     }
 
-    // Get current user and set up auth subscription
-    const setupAuth = async () => {
-      // Get initial session
-      const { data: { session } } = await supabase.auth.getSession()
-      
-      if (session?.user) {
+    // Check and refresh session if needed
+    const checkSession = async () => {
+      const { data: { session }, error } = await supabase.auth.getSession()
+      if (error) {
+        console.error('Error checking session:', error)
+        return
+      }
+
+      if (!session) {
+        // If no session, try to refresh it
+        const { data: { session: refreshedSession }, error: refreshError } = await supabase.auth.refreshSession()
+        if (refreshError || !refreshedSession) {
+          console.error('Session refresh failed:', refreshError)
+          setCurrentUser(null)
+          return
+        }
+        // Update user after successful refresh
         const { data: profile } = await supabase
           .from('twitch_users')
           .select('*')
-          .eq('twitch_id', session.user.user_metadata.provider_id)
+          .eq('twitch_id', refreshedSession.user.user_metadata.provider_id)
           .single()
-
         setCurrentUser(profile)
-      } else {
-        setCurrentUser(null)
       }
+    }
+
+    // Get current user and set up auth subscription
+    const setupAuth = async () => {
+      // Initial session check
+      await checkSession()
+
+      // Set up interval to check session
+      sessionCheckInterval = setInterval(checkSession, 60000) // Check every minute
 
       // Subscribe to auth changes
       const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-        if (event === 'SIGNED_OUT') {
-          setCurrentUser(null)
-          router.refresh()
+        if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
+          await checkSession()
         } else if (session?.user) {
           const { data: profile } = await supabase
             .from('twitch_users')
@@ -80,6 +97,7 @@ export default function CanvasPage() {
 
     return () => {
       if (unsubscribe) unsubscribe()
+      if (sessionCheckInterval) clearInterval(sessionCheckInterval)
     }
   }, [canvasId, supabase, router])
 
