@@ -46,6 +46,11 @@ export function MobileNav({ user, pathname }: MobileNavProps) {
   const isCanvasSettings = pathname.includes('/canvas/') && pathname.endsWith('/settings');
   const isHome = pathname === '/' || pathname === '/home';
   const isDashboardMain = isDashboardSection && !isDashboardSocialLinks && !isDashboardCanvas && !isCanvasSettings;
+  const isOverlay = pathname.startsWith('/overlay');
+  const isCanvasPage = pathname.startsWith('/canvas/') && !isCanvasSettings;
+
+  // Don't render navigation on overlay or canvas pages
+  if (isOverlay || isCanvasPage) return null;
 
   // Determine which nav items to show
   const navItems = [
