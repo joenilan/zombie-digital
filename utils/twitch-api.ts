@@ -126,208 +126,158 @@ async function refreshTwitchToken(userId: string, refreshToken: string) {
 }
 
 export async function fetchTwitchStats(
-  broadcasterId: string,
+  userId: string,
   accessToken: string,
   broadcasterType: string
-): Promise<TwitchStats> {
-  if (!accessToken) {
-    throw new Error("No access token provided");
-  }
-
+) {
   const headers = {
     Authorization: `Bearer ${accessToken}`,
     "Client-Id": process.env.NEXT_PUBLIC_TWITCH_CLIENT_ID!,
-    Accept: "application/json",
   };
 
   try {
-    // Validate token first
-    const validateResponse = await fetch(
-      "https://id.twitch.tv/oauth2/validate",
-      { headers: { Authorization: `Bearer ${accessToken}` } }
-    );
-
-    if (!validateResponse.ok) {
-      console.error("Token validation failed:", {
-        status: validateResponse.status,
-        statusText: validateResponse.statusText,
-      });
-
-      // Token is invalid, try to refresh
-      const {
-        data: { session },
-      } = await authService.getCurrentSession();
-      if (!session) {
-        throw new Error("No session available");
-      }
-
-      try {
-        // Get fresh token using refresh endpoint
-        const newToken = await refreshTwitchToken(
-          session.user.id,
-          session.refresh_token
-        );
-        if (!newToken) {
-          throw new Error("Failed to refresh token");
-        }
-
-        // Retry with new token
-        return fetchTwitchStats(broadcasterId, newToken, broadcasterType);
-      } catch (error) {
-        if (error instanceof Error && error.message.includes("sign in again")) {
-          // Redirect to sign in page instead of throwing
-          window.location.href = "/auth/signin";
-          return {
-            followers: 0,
-            isAffiliate: false,
-            isLive: false,
-            lastGame: null,
-          };
-        }
-        throw error;
-      }
-    }
-
-    // Get user info for followers count
-    const userResponse = await fetch(
-      `${TWITCH_API_URL}/users?id=${broadcasterId}`,
-      { headers }
-    );
-    const userData = await userResponse.json();
-    const user = userData.data?.[0];
-
-    // Get followers count
-    const followersResponse = await fetch(
-      `${TWITCH_API_URL}/channels/followers?broadcaster_id=${broadcasterId}`,
-      { headers }
-    );
-    const followersData = await followersResponse.json();
-
-    // Get channel info
-    const channelResponse = await fetch(
-      `${TWITCH_API_URL}/channels?broadcaster_id=${broadcasterId}`,
-      { headers }
-    );
-    const channelData = await channelResponse.json();
-
-    // Get stream info
-    const streamResponse = await fetch(
-      `${TWITCH_API_URL}/streams?user_id=${broadcasterId}`,
-      { headers }
-    );
-    const streamData = await streamResponse.json();
-
-    // Get channel points rewards
-    const pointsResponse = await fetch(
-      `${TWITCH_API_URL}/channel_points/custom_rewards?broadcaster_id=${broadcasterId}`,
-      { headers }
-    );
-    const pointsData = await pointsResponse.json();
-
-    // Get subscribers if affiliate/partner
-    let subscriberCount = undefined;
-    if (broadcasterType === "affiliate" || broadcasterType === "partner") {
-      try {
-        const subsResponse = await fetch(
-          `${TWITCH_API_URL}/subscriptions?broadcaster_id=${broadcasterId}`,
-          { headers }
-        );
-        if (subsResponse.ok) {
-          const subsData = await subsResponse.json();
-          subscriberCount = subsData.total || 0;
-        }
-      } catch (error) {
-        console.error("Error fetching subscriber count:", error);
-      }
-    }
-
-    // Get moderators (with pagination)
-    interface TwitchModerator {
-      user_id: string;
-      user_login: string;
-      user_name: string;
-    }
-
-    interface TwitchVIP {
-      user_id: string;
-      user_login: string;
-      user_name: string;
-    }
-
-    let allModerators: TwitchModerator[] = [];
-    let cursor: string | null = null;
-    do {
-      const modsUrl = new URL(`${TWITCH_API_URL}/moderation/moderators`);
-      modsUrl.searchParams.append("broadcaster_id", broadcasterId);
-      modsUrl.searchParams.append("first", "100"); // Max per page
-      if (cursor) {
-        modsUrl.searchParams.append("after", cursor);
-      }
-
-      const modsResponse = await fetch(modsUrl.toString(), { headers });
-      const modsData = await modsResponse.json();
-
-      if (modsData.data) {
-        allModerators = [...allModerators, ...modsData.data];
-      }
-
-      cursor = modsData.pagination?.cursor;
-    } while (cursor);
-
-    // Get VIPs (with pagination)
-    let allVips: TwitchVIP[] = [];
-    cursor = null;
-    do {
-      const vipsUrl = new URL(`${TWITCH_API_URL}/channels/vips`);
-      vipsUrl.searchParams.append("broadcaster_id", broadcasterId);
-      vipsUrl.searchParams.append("first", "100"); // Max per page
-      if (cursor) {
-        vipsUrl.searchParams.append("after", cursor);
-      }
-
-      const vipsResponse = await fetch(vipsUrl.toString(), { headers });
-      const vipsData = await vipsResponse.json();
-
-      if (vipsData.data) {
-        allVips = [...allVips, ...vipsData.data];
-      }
-
-      cursor = vipsData.pagination?.cursor;
-    } while (cursor);
-
-    const channel = channelData.data?.[0] || {};
-    const stream = streamData.data?.[0];
-
-    return {
-      followers: followersData.total || 0,
+    // Base stats object
+    const stats: any = {
+      followers: 0,
       isAffiliate:
         broadcasterType === "affiliate" || broadcasterType === "partner",
-      subscribers: subscriberCount,
       channelPoints: {
-        enabled: true,
-        activeRewards: pointsData.data?.length || 0,
+        enabled: false,
+        activeRewards: 0,
       },
-      lastGame: stream?.game_id
-        ? {
-            id: stream.game_id.toString(),
-            name: stream.game_name || "",
-            boxArtUrl: `https://static-cdn.jtvnw.net/ttv-boxart/${stream.game_id}-{width}x{height}.jpg`,
-          }
-        : channel.game_id
-        ? {
-            id: channel.game_id.toString(),
-            name: channel.game_name || "",
-            boxArtUrl: `https://static-cdn.jtvnw.net/ttv-boxart/${channel.game_id}-{width}x{height}.jpg`,
-          }
-        : null,
-      isLive: !!stream,
-      title: channel.title || stream?.title,
-      tags: channel.tags || [],
-      moderators: allModerators.length,
-      vips: allVips.length,
+      lastGame: null,
+      isLive: false,
+      moderators: 0,
+      vips: 0,
     };
-  } catch (error) {
-    console.error("Error fetching Twitch stats:", error);
-    throw error;
+
+    // Get channel info (available for all)
+    try {
+      const channelRes = await fetch(
+        `${TWITCH_API_URL}/channels?broadcaster_id=${userId}`,
+        { headers }
+      );
+      if (channelRes.ok) {
+        const channelData = await channelRes.json();
+        const channel = channelData.data?.[0];
+        if (channel) {
+          stats.title = channel.title;
+          stats.tags = channel.tags || [];
+          if (channel.game_name) {
+            stats.lastGame = {
+              id: channel.game_id,
+              name: channel.game_name,
+              boxArtUrl: `https://static-cdn.jtvnw.net/ttv-boxart/${channel.game_id}-{width}x{height}.jpg`,
+            };
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching channel info:", err);
+    }
+
+    // Get followers count (new endpoint)
+    try {
+      const followersRes = await fetch(
+        `${TWITCH_API_URL}/channels/followers?broadcaster_id=${userId}`,
+        { headers }
+      );
+      if (followersRes.ok) {
+        const followersData = await followersRes.json();
+        stats.followers = followersData.total || 0;
+      }
+    } catch (err) {
+      console.error("Error fetching followers:", err);
+    }
+
+    // Only fetch these stats for affiliates/partners
+    if (stats.isAffiliate) {
+      // Subscribers count
+      try {
+        const subsRes = await fetch(
+          `${TWITCH_API_URL}/subscriptions?broadcaster_id=${userId}`,
+          { headers }
+        );
+        if (subsRes.ok) {
+          const subsData = await subsRes.json();
+          stats.subscribers = subsData.total || 0;
+        }
+      } catch (err) {
+        console.error("Error fetching subscribers:", err);
+      }
+
+      // Channel Points
+      try {
+        const pointsRes = await fetch(
+          `${TWITCH_API_URL}/channel_points/custom_rewards?broadcaster_id=${userId}`,
+          { headers }
+        );
+        if (pointsRes.ok) {
+          const pointsData = await pointsRes.json();
+          stats.channelPoints = {
+            enabled: true,
+            activeRewards: pointsData.data?.length || 0,
+          };
+        }
+      } catch (err) {
+        console.error("Error fetching channel points:", err);
+      }
+    }
+
+    // Stream info (available for all) - this will override channel info if live
+    try {
+      const streamRes = await fetch(
+        `${TWITCH_API_URL}/streams?user_id=${userId}`,
+        { headers }
+      );
+      if (streamRes.ok) {
+        const streamData = await streamRes.json();
+        const stream = streamData.data?.[0];
+        if (stream) {
+          stats.isLive = true;
+          stats.title = stream.title;
+          stats.lastGame = stream.game_name
+            ? {
+                id: stream.game_id,
+                name: stream.game_name,
+                boxArtUrl: `https://static-cdn.jtvnw.net/ttv-boxart/${stream.game_id}-{width}x{height}.jpg`,
+              }
+            : null;
+          stats.tags = stream.tags || [];
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching stream info:", err);
+    }
+
+    // Moderators and VIPs (available for all)
+    try {
+      const [modsRes, vipsRes] = await Promise.all([
+        fetch(
+          `${TWITCH_API_URL}/moderation/moderators?broadcaster_id=${userId}`,
+          { headers }
+        ),
+        fetch(`${TWITCH_API_URL}/channels/vips?broadcaster_id=${userId}`, {
+          headers,
+        }),
+      ]);
+
+      if (modsRes.ok) {
+        const modsData = await modsRes.json();
+        stats.moderators = modsData.total || 0;
+      }
+
+      if (vipsRes.ok) {
+        const vipsData = await vipsRes.json();
+        stats.vips = vipsData.total || 0;
+      }
+    } catch (err) {
+      console.error("Error fetching mods/vips:", err);
+    }
+
+    return stats;
+  } catch (err) {
+    console.error("Error fetching Twitch stats:", err);
+    throw err;
   }
 }

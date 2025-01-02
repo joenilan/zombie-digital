@@ -11,6 +11,7 @@ import Link from "next/link";
 import { motion, useSpring, useMotionValue, useTransform, animate } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { Verified, Crown } from "lucide-react";
+import { useTwitchAuth } from "@/providers/twitch-auth-provider";
 
 interface TwitchStats {
   followers: number;
@@ -85,6 +86,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showDebug, setShowDebug] = useState(false);
+  const { providerToken, refreshTwitchToken, isRefreshing } = useTwitchAuth();
   const supabase = createClientComponentClient();
 
   useEffect(() => {
@@ -108,19 +110,14 @@ export default function DashboardPage() {
       if (!session) return;
 
       try {
-        console.log("Session:", session);
         const providerId = session.user.user_metadata.sub;
-        console.log("Provider ID:", providerId);
 
-        // First get user from database to get the provider token
+        // First get user from database
         const { data: twitchUser, error: twitchError } = await supabase
           .from("twitch_users")
           .select("*")
           .eq("twitch_id", providerId)
           .single();
-
-        console.log("Twitch User:", twitchUser);
-        console.log("Twitch Error:", twitchError);
 
         if (twitchError) {
           setError(twitchError.message);
@@ -128,73 +125,44 @@ export default function DashboardPage() {
           return;
         }
 
-        // Try to fetch user data from Twitch API
-        const fetchWithToken = async (token: string) => {
-          const response = await fetch(`https://api.twitch.tv/helix/users?id=${providerId}`, {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Client-Id': process.env.NEXT_PUBLIC_TWITCH_CLIENT_ID!,
-            }
-          });
-          
-          if (response.status === 401) {
-            // Token is invalid, try to refresh it
-            const refreshResponse = await fetch('/api/auth/refresh-twitch-token', {
-              method: 'POST',
+        // Wait for any ongoing token refresh to complete
+        if (isRefreshing) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+
+        async function fetchWithRetry(token: string, retryCount = 0): Promise<any> {
+          try {
+            const response = await fetch(`https://api.twitch.tv/helix/users?id=${providerId}`, {
               headers: {
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                userId: twitchUser.id,
-                refreshToken: twitchUser.provider_refresh_token,
-              }),
-            });
-
-            if (!refreshResponse.ok) {
-              throw new Error('Failed to refresh token');
-            }
-
-            const { access_token } = await refreshResponse.json();
-            
-            // Update the token in the database
-            const { error: updateError } = await supabase
-              .from('twitch_users')
-              .update({ provider_token: access_token })
-              .eq('id', twitchUser.id);
-
-            if (updateError) {
-              console.error('Failed to update token in database:', updateError);
-              throw new Error('Failed to update token in database');
-            }
-            
-            // Retry the request with the new token
-            const retryResponse = await fetch(`https://api.twitch.tv/helix/users?id=${providerId}`, {
-              headers: {
-                'Authorization': `Bearer ${access_token}`,
+                'Authorization': `Bearer ${token}`,
                 'Client-Id': process.env.NEXT_PUBLIC_TWITCH_CLIENT_ID!,
               }
             });
 
-            if (!retryResponse.ok) {
-              throw new Error('Failed to fetch Twitch user data after token refresh');
+            if (!response.ok) {
+              if (response.status === 401 && retryCount < 3) {
+                await refreshTwitchToken();
+                // Wait for the new token to be available in context
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                // Retry with new token from context
+                return fetchWithRetry(providerToken!, retryCount + 1);
+              }
+              throw new Error(`HTTP error! status: ${response.status}`);
             }
 
-            return retryResponse;
+            return response.json();
+          } catch (error) {
+            if (retryCount < 3) {
+              await new Promise(resolve => setTimeout(resolve, Math.pow(2, retryCount) * 1000));
+              return fetchWithRetry(providerToken!, retryCount + 1);
+            }
+            throw error;
           }
+        }
 
-          if (!response.ok) {
-            throw new Error('Failed to fetch Twitch user data');
-          }
-
-          return response;
-        };
-
-        const twitchResponse = await fetchWithToken(twitchUser.provider_token);
-        const twitchData = await twitchResponse.json();
+        const twitchData = await fetchWithRetry(providerToken!);
         const twitchUserData = twitchData.data?.[0];
-        console.log("Twitch API User Data:", twitchUserData);
 
-        // Combine the data, prioritizing the API response for broadcaster_type
         setTwitchUser({
           ...twitchUser,
           broadcaster_type: twitchUserData?.broadcaster_type || twitchUser.broadcaster_type || 'none'
@@ -202,50 +170,54 @@ export default function DashboardPage() {
       } catch (err) {
         console.error("Error fetching Twitch user:", err);
         setError("Failed to fetch Twitch user");
+      } finally {
         setLoading(false);
       }
     }
-    fetchTwitchUser();
-  }, [session, supabase]);
+
+    if (session && providerToken) {
+      fetchTwitchUser();
+    }
+  }, [session, providerToken, isRefreshing]);
 
   useEffect(() => {
     async function fetchStats() {
-      if (!twitchUser) return;
+      if (!twitchUser || !providerToken) return;
 
       try {
-        console.log("Loading Twitch stats...");
-        console.log("User ID:", twitchUser.twitch_id);
-        console.log("Provider Token:", twitchUser.provider_token.slice(0, 10) + "...");
-        console.log("Broadcaster Type:", twitchUser.broadcaster_type);
-
         const twitchStats = await fetchTwitchStats(
           twitchUser.twitch_id,
-          twitchUser.provider_token,
+          providerToken,
           twitchUser.broadcaster_type || "none"
         );
-
-        console.log("Raw Twitch Stats:", JSON.stringify(twitchStats, null, 2));
         
         if (twitchStats && typeof twitchStats === 'object') {
           setStats(twitchStats);
         } else {
           setError("Invalid stats data received");
         }
-        setLoading(false);
       } catch (err) {
         console.error("Error fetching stats:", err);
         setError(err instanceof Error ? err.message : "Failed to fetch stats");
+      } finally {
         setLoading(false);
       }
     }
     fetchStats();
-  }, [twitchUser]);
+  }, [twitchUser, providerToken]);
 
-  if (loading) {
+  if (!session) {
     return (
-      <div className="flex flex-col gap-4 items-center justify-center min-h-[200px]">
+      <div className="rounded-xl bg-glass/50 backdrop-blur-xl p-8 border border-white/5">
+        <p className="text-foreground/60">Please sign in to view your dashboard.</p>
+      </div>
+    );
+  }
+
+  if (loading || !stats || !twitchUser) {
+    return (
+      <div className="flex items-center justify-center min-h-[200px]">
         <LoadingSpinner />
-        <p>Loading dashboard data...</p>
       </div>
     );
   }
@@ -257,16 +229,6 @@ export default function DashboardPage() {
           <AlertCircle size={20} />
           <p>{error}</p>
         </div>
-      </div>
-    );
-  }
-
-  if (!session || !stats || !twitchUser) {
-    return (
-      <div className="rounded-xl bg-glass/50 backdrop-blur-xl p-8 border border-white/5">
-        <p className="text-foreground/60">
-          {!session ? 'Please sign in to view your dashboard.' : 'No stats available.'}
-        </p>
       </div>
     );
   }
@@ -351,7 +313,8 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <div className="space-y-6">
+      {/* Stream Info Section */}
+      <div className="space-y-8">
         {/* Title */}
         {stats.title && (
           <div className="flex items-start gap-3">
@@ -410,27 +373,6 @@ export default function DashboardPage() {
                 ))}
               </div>
             </div>
-          </div>
-        )}
-
-        {/* Debug Information - Only shown for admins/owners */}
-        {twitchUser.site_role && ['owner', 'admin'].includes(twitchUser.site_role) && (
-          <div className="mt-8 pt-8 border-t border-white/5">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-medium text-foreground/60">Debug Information</h3>
-              <button
-                onClick={() => setShowDebug(!showDebug)}
-                className="flex items-center gap-2 px-3 py-1 text-sm rounded-lg bg-glass/30 hover:bg-glass/50 transition-colors"
-              >
-                <Code size={16} />
-                {showDebug ? 'Hide Debug' : 'Show Debug'}
-              </button>
-            </div>
-            {showDebug && (
-              <pre className="whitespace-pre-wrap text-sm overflow-auto bg-glass/30 p-4 rounded-lg">
-                {JSON.stringify(stats, null, 2)}
-              </pre>
-            )}
           </div>
         )}
       </div>
