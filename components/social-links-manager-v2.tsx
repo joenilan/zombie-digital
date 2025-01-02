@@ -1,24 +1,17 @@
 'use client'
 
 import React, { useState } from 'react'
-import { DndProvider, useDrag, useDrop } from 'react-dnd'
-import { HTML5Backend } from 'react-dnd-html5-backend'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { GripVertical, Trash2, ExternalLink, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 import { platformIcons, platformColors, getPlatformIcon, getPlatformColor, getPlatformUrl, platformUrlPatterns } from '@/lib/platform-icons'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-
-// Constants
-const ItemTypes = {
-  SOCIAL_LINK: 'social-link'
-}
+import { Reorder, motion, useDragControls } from 'framer-motion'
 
 export interface SocialLink {
   id: string
@@ -31,61 +24,32 @@ export interface SocialLink {
 
 interface DraggableLinkProps {
   link: SocialLink
-  index: number
-  moveLink: (dragIndex: number, hoverIndex: number) => void
   onDelete: (id: string) => void
-  onDrop: () => void
 }
 
-const DraggableLink = ({ link, index, moveLink, onDelete, onDrop }: DraggableLinkProps) => {
-  const ref = React.useRef<HTMLDivElement>(null)
+const DraggableLink = ({ link, onDelete }: DraggableLinkProps) => {
   const Icon = getPlatformIcon(link.platform)
   const iconColor = getPlatformColor(link.platform)
-
-  // Drag source
-  const [{ isDragging }, drag] = useDrag({
-    type: ItemTypes.SOCIAL_LINK,
-    item: { index },
-    collect: monitor => ({
-      isDragging: monitor.isDragging()
-    }),
-    end: (_, monitor) => {
-      if (monitor.didDrop()) {
-        onDrop()
-      }
-    }
-  })
-
-  // Drop target
-  const [, drop] = useDrop({
-    accept: ItemTypes.SOCIAL_LINK,
-    hover: (item: { index: number }, monitor) => {
-      if (!ref.current) return
-
-      const dragIndex = item.index
-      const hoverIndex = index
-
-      // Don't replace items with themselves
-      if (dragIndex === hoverIndex) return
-
-      moveLink(dragIndex, hoverIndex)
-      item.index = hoverIndex
-    }
-  })
-
-  // Combine drag and drop refs
-  drag(drop(ref))
+  const controls = useDragControls()
 
   return (
-    <div
-      ref={ref}
-      style={{ opacity: isDragging ? 0.5 : 1 }}
-      className={`group relative flex items-center gap-3 p-3 bg-background/50 
-                 hover:bg-background/80 rounded-lg border border-border/50 
-                 hover:border-border transition-all duration-200
-                 ${isDragging ? 'border-primary' : ''}`}
+    <Reorder.Item
+      value={link}
+      dragListener={false}
+      dragControls={controls}
+      className="group relative flex items-center gap-3 p-3 bg-background/50 
+                hover:bg-background/80 rounded-lg border border-border/50 
+                hover:border-border transition-all duration-200"
+      whileDrag={{
+        scale: 1.02,
+        boxShadow: "0 5px 15px rgba(0,0,0,0.1)",
+        cursor: "grabbing"
+      }}
     >
-      <div className="text-muted-foreground/50 group-hover:text-muted-foreground pointer-events-none">
+      <div 
+        className="text-muted-foreground/50 group-hover:text-muted-foreground cursor-grab active:cursor-grabbing"
+        onPointerDown={(e) => controls.start(e)}
+      >
         <GripVertical className="w-5 h-5" />
       </div>
 
@@ -151,7 +115,7 @@ const DraggableLink = ({ link, index, moveLink, onDelete, onDrop }: DraggableLin
           </div>
         </DialogContent>
       </Dialog>
-    </div>
+    </Reorder.Item>
   )
 }
 
@@ -349,18 +313,11 @@ export function SocialLinksManagerV2({ initialLinks = [], twitchUserId }: {
     }
   }, [twitchUserId, supabase, queryClient])
 
-  const moveLink = (dragIndex: number, hoverIndex: number) => {
-    setLinks(prevLinks => {
-      const newLinks = [...prevLinks]
-      const [removed] = newLinks.splice(dragIndex, 1)
-      newLinks.splice(hoverIndex, 0, removed)
-      return newLinks
-    })
-  }
+  const handleReorder = async (newOrder: SocialLink[]) => {
+    setLinks(newOrder)
 
-  const handleDrop = async () => {
     try {
-      const updates = links.map((link, index) => ({
+      const updates = newOrder.map((link, index) => ({
         ...link,
         order_index: index
       }))
@@ -370,7 +327,7 @@ export function SocialLinksManagerV2({ initialLinks = [], twitchUserId }: {
         .upsert(updates)
 
       if (error) throw error
-      queryClient.setQueryData(['social-links', twitchUserId], links)
+      queryClient.setQueryData(['social-links', twitchUserId], newOrder)
       toast.success('Links reordered successfully')
     } catch (error) {
       console.error('Error updating order:', error)
@@ -400,22 +357,22 @@ export function SocialLinksManagerV2({ initialLinks = [], twitchUserId }: {
   }
 
   return (
-    <DndProvider backend={HTML5Backend}>
-      <div className="space-y-3">
-        <AddLinkDialog userId={twitchUserId} onAdd={handleAddLink} />
-        <div className="space-y-2">
-          {links.map((link, index) => (
-            <DraggableLink
-              key={link.id}
-              link={link}
-              index={index}
-              moveLink={moveLink}
-              onDelete={deleteLink}
-              onDrop={handleDrop}
-            />
-          ))}
-        </div>
-      </div>
-    </DndProvider>
+    <div className="space-y-3">
+      <AddLinkDialog userId={twitchUserId} onAdd={handleAddLink} />
+      <Reorder.Group
+        axis="y"
+        values={links}
+        onReorder={handleReorder}
+        className="space-y-2"
+      >
+        {links.map((link) => (
+          <DraggableLink
+            key={link.id}
+            link={link}
+            onDelete={deleteLink}
+          />
+        ))}
+      </Reorder.Group>
+    </div>
   )
 } 

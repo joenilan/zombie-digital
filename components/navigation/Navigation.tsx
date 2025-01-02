@@ -17,6 +17,11 @@ export function Navigation() {
   const [user, setUser] = useState<User | null>(null);
   const supabase = createClientComponentClient();
   const isCanvasPage = pathname.startsWith('/canvas/');
+  const isOverlay = pathname.startsWith('/overlay');
+  const isCanvasView = pathname.startsWith('/canvas/') && !pathname.endsWith('/settings');
+
+  // Don't render navigation on overlay or canvas pages
+  if (isOverlay || isCanvasView) return null;
 
   useEffect(() => {
     // Initial session check

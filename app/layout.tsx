@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils"
 import { LayoutWrapper } from './layout-wrapper'
 import "./globals.css"
 import { Sofia_Sans } from 'next/font/google'
+import { TwitchAuthProvider } from '@/providers/twitch-auth-provider'
 
 const sofia = Sofia_Sans({
   subsets: ['latin'],
@@ -41,11 +42,13 @@ export default async function RootLayout({
         <QueryProvider>
           <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
             <SessionProvider>
-              <LayoutWrapper>
-                <main className="min-h-screen transition-all duration-300 ease-in-out">
-                  {children}
-                </main>
-              </LayoutWrapper>
+              <TwitchAuthProvider>
+                <LayoutWrapper>
+                  <main className="min-h-screen transition-all duration-300 ease-in-out">
+                    {children}
+                  </main>
+                </LayoutWrapper>
+              </TwitchAuthProvider>
             </SessionProvider>
           </ThemeProvider>
         </QueryProvider>

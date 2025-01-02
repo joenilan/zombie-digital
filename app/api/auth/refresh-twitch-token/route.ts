@@ -13,6 +13,7 @@ export async function POST(request: Request) {
       error: sessionError,
     } = await supabase.auth.getSession();
     if (sessionError || !session) {
+      console.error("Session error:", sessionError);
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
@@ -29,7 +30,23 @@ export async function POST(request: Request) {
     });
 
     if (!response.ok) {
-      throw new Error("Failed to refresh Twitch token");
+      const errorText = await response.text();
+      console.error("Twitch token refresh failed:", {
+        status: response.status,
+        statusText: response.statusText,
+        error: errorText,
+      });
+
+      // If the refresh token is invalid, we should sign the user out
+      if (response.status === 400 || response.status === 401) {
+        await supabase.auth.signOut();
+        return new NextResponse("Invalid refresh token", { status: 401 });
+      }
+
+      return new NextResponse(
+        `Failed to refresh Twitch token: ${response.status} ${response.statusText}`,
+        { status: response.status }
+      );
     }
 
     const data = await response.json();
@@ -38,8 +55,8 @@ export async function POST(request: Request) {
     const { error: updateError } = await supabase
       .from("twitch_users")
       .update({
-        access_token: data.access_token,
-        refresh_token: data.refresh_token,
+        provider_token: data.access_token,
+        provider_refresh_token: data.refresh_token,
         token_expires_at: new Date(
           Date.now() + data.expires_in * 1000
         ).toISOString(),
@@ -47,12 +64,22 @@ export async function POST(request: Request) {
       .eq("id", userId);
 
     if (updateError) {
-      throw updateError;
+      console.error("Database update error:", updateError);
+      return new NextResponse(
+        `Failed to update tokens in database: ${updateError.message}`,
+        { status: 500 }
+      );
     }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({
+      success: true,
+      expires_in: data.expires_in,
+    });
   } catch (error) {
     console.error("Error refreshing Twitch token:", error);
-    return new NextResponse("Internal Server Error", { status: 500 });
+    return new NextResponse(
+      error instanceof Error ? error.message : "Internal Server Error",
+      { status: 500 }
+    );
   }
 }

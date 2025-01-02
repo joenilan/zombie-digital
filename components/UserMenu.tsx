@@ -67,16 +67,19 @@ export default function UserMenu({ user }: { user: any }) {
   const handleSignOut = async () => {
     try {
       setIsSigningOut(true);
-      await supabase.auth.signOut();
-      
+
+      // First, sign out on the server side
       const response = await fetch('/api/auth/signout', {
         method: 'POST',
         credentials: 'include',
       });
 
       if (!response.ok) {
-        throw new Error('Failed to sign out');
+        throw new Error('Failed to sign out on server');
       }
+
+      // Then sign out on the client side
+      await supabase.auth.signOut();
 
       setIsOpen(false);
       router.refresh();

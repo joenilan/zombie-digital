@@ -2,7 +2,7 @@
 
 import { usePathname } from 'next/navigation'
 import { motion } from 'framer-motion'
-import Navbar from '@/components/Navbar'
+import { Navigation } from '@/components/navigation/Navigation'
 
 export function LayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
@@ -16,9 +16,7 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="relative min-h-screen pb-20 sm:pb-0">
-      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl">
-        <Navbar />
-      </header>
+      <Navigation />
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
