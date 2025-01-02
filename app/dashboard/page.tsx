@@ -128,18 +128,68 @@ export default function DashboardPage() {
           return;
         }
 
-        // Then get user data from Twitch API using the provider token
-        const twitchResponse = await fetch(`https://api.twitch.tv/helix/users?id=${providerId}`, {
-          headers: {
-            'Authorization': `Bearer ${twitchUser.provider_token}`,
-            'Client-Id': process.env.NEXT_PUBLIC_TWITCH_CLIENT_ID!,
+        // Try to fetch user data from Twitch API
+        const fetchWithToken = async (token: string) => {
+          const response = await fetch(`https://api.twitch.tv/helix/users?id=${providerId}`, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Client-Id': process.env.NEXT_PUBLIC_TWITCH_CLIENT_ID!,
+            }
+          });
+          
+          if (response.status === 401) {
+            // Token is invalid, try to refresh it
+            const refreshResponse = await fetch('/api/auth/refresh-twitch-token', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                userId: twitchUser.id,
+                refreshToken: twitchUser.provider_refresh_token,
+              }),
+            });
+
+            if (!refreshResponse.ok) {
+              throw new Error('Failed to refresh token');
+            }
+
+            const { access_token } = await refreshResponse.json();
+            
+            // Update the token in the database
+            const { error: updateError } = await supabase
+              .from('twitch_users')
+              .update({ provider_token: access_token })
+              .eq('id', twitchUser.id);
+
+            if (updateError) {
+              console.error('Failed to update token in database:', updateError);
+              throw new Error('Failed to update token in database');
+            }
+            
+            // Retry the request with the new token
+            const retryResponse = await fetch(`https://api.twitch.tv/helix/users?id=${providerId}`, {
+              headers: {
+                'Authorization': `Bearer ${access_token}`,
+                'Client-Id': process.env.NEXT_PUBLIC_TWITCH_CLIENT_ID!,
+              }
+            });
+
+            if (!retryResponse.ok) {
+              throw new Error('Failed to fetch Twitch user data after token refresh');
+            }
+
+            return retryResponse;
           }
-        });
 
-        if (!twitchResponse.ok) {
-          throw new Error('Failed to fetch Twitch user data');
-        }
+          if (!response.ok) {
+            throw new Error('Failed to fetch Twitch user data');
+          }
 
+          return response;
+        };
+
+        const twitchResponse = await fetchWithToken(twitchUser.provider_token);
         const twitchData = await twitchResponse.json();
         const twitchUserData = twitchData.data?.[0];
         console.log("Twitch API User Data:", twitchUserData);
