@@ -85,16 +85,13 @@ export default function DashboardPage() {
   const [stats, setStats] = useState<TwitchStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showDebug, setShowDebug] = useState(false);
   const { providerToken, refreshTwitchToken, isRefreshing } = useTwitchAuth();
   const supabase = createClientComponentClient();
 
   useEffect(() => {
     async function fetchSession() {
       try {
-        console.log("Fetching user session...");
         const { data: { session } } = await supabase.auth.getSession();
-        console.log("Fetched session:", session);
         setSession(session);
       } catch (err) {
         console.error("Error fetching session:", err);
@@ -107,7 +104,7 @@ export default function DashboardPage() {
 
   useEffect(() => {
     async function fetchTwitchUser() {
-      if (!session) return;
+      if (!session || !providerToken) return;
 
       try {
         const providerId = session.user.user_metadata.sub;
@@ -140,11 +137,18 @@ export default function DashboardPage() {
             });
 
             if (!response.ok) {
-              if (response.status === 401 && retryCount < 3) {
+              if (response.status === 401) {
+                // Wait for any ongoing refresh to complete
+                if (isRefreshing) {
+                  await new Promise(resolve => setTimeout(resolve, 1000));
+                  return fetchWithRetry(providerToken!, retryCount);
+                }
+                
+                // Trigger token refresh and wait for it to complete
                 await refreshTwitchToken();
-                // Wait for the new token to be available in context
-                await new Promise(resolve => setTimeout(resolve, 2000));
-                // Retry with new token from context
+                // Wait a bit for the new token to be available
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                // Use the new token from the context
                 return fetchWithRetry(providerToken!, retryCount + 1);
               }
               throw new Error(`HTTP error! status: ${response.status}`);
@@ -152,6 +156,10 @@ export default function DashboardPage() {
 
             return response.json();
           } catch (error) {
+            if (error instanceof Error && error.message.includes('sign in again')) {
+              throw error;
+            }
+            
             if (retryCount < 3) {
               await new Promise(resolve => setTimeout(resolve, Math.pow(2, retryCount) * 1000));
               return fetchWithRetry(providerToken!, retryCount + 1);
@@ -160,7 +168,7 @@ export default function DashboardPage() {
           }
         }
 
-        const twitchData = await fetchWithRetry(providerToken!);
+        const twitchData = await fetchWithRetry(providerToken);
         const twitchUserData = twitchData.data?.[0];
 
         setTwitchUser({
@@ -185,6 +193,11 @@ export default function DashboardPage() {
       if (!twitchUser || !providerToken) return;
 
       try {
+        // Wait for any ongoing token refresh to complete
+        if (isRefreshing) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+
         const twitchStats = await fetchTwitchStats(
           twitchUser.twitch_id,
           providerToken,
@@ -204,7 +217,7 @@ export default function DashboardPage() {
       }
     }
     fetchStats();
-  }, [twitchUser, providerToken]);
+  }, [twitchUser, providerToken, isRefreshing]);
 
   if (!session) {
     return (
@@ -330,25 +343,21 @@ export default function DashboardPage() {
 
         {/* Game */}
         {stats.lastGame && (
-          <div className="flex items-start gap-4">
-            {stats.lastGame.boxArtUrl && (
-              <Image
-                src={stats.lastGame.boxArtUrl.replace('{width}', '100').replace('{height}', '133')}
-                alt={stats.lastGame.name}
-                width={100}
-                height={133}
-                className="rounded-lg"
-              />
-            )}
-            <div className="flex-1">
-              <div className="flex items-start gap-3">
-                <div className="mt-1 text-foreground/60">
-                  <Gamepad2 size={16} />
-                </div>
-                <div>
-                  <h3 className="text-sm font-medium text-foreground/60 mb-1">Current Game</h3>
-                  <p className="text-lg">{stats.lastGame.name}</p>
-                </div>
+          <div className="flex items-start gap-3">
+            <div className="mt-1 text-foreground/60">
+              <Gamepad2 size={16} />
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-foreground/60 mb-1">Current Game</h3>
+              <div className="flex items-center gap-3">
+                <Image
+                  src={stats.lastGame.boxArtUrl.replace('{width}', '40').replace('{height}', '53')}
+                  alt={stats.lastGame.name}
+                  width={40}
+                  height={53}
+                  className="rounded"
+                />
+                <p className="text-lg">{stats.lastGame.name}</p>
               </div>
             </div>
           </div>
@@ -361,15 +370,12 @@ export default function DashboardPage() {
               <Hash size={16} />
             </div>
             <div>
-              <h3 className="text-sm font-medium text-foreground/60 mb-2">Stream Tags</h3>
+              <h3 className="text-sm font-medium text-foreground/60 mb-1">Stream Tags</h3>
               <div className="flex flex-wrap gap-2">
-                {stats.tags.map((tag: string) => (
-                  <span
-                    key={tag}
-                    className="px-3 py-1 text-sm rounded-full bg-glass/30 backdrop-blur-md text-foreground/80"
-                  >
+                {stats.tags.map((tag) => (
+                  <Badge key={tag} variant="secondary">
                     {tag}
-                  </span>
+                  </Badge>
                 ))}
               </div>
             </div>

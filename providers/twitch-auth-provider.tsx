@@ -51,37 +51,80 @@ export function TwitchAuthProvider({ children }: { children: React.ReactNode }) 
       const expiresInFiveMinutes = expiresAt - now <= 300000 // 5 minutes in milliseconds
 
       if (expiresInFiveMinutes) {
-        // Call the refresh endpoint
-        const response = await fetch('/api/auth/refresh-twitch-token', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            userId: session.user.id,
-            refreshToken: user.provider_refresh_token
-          })
-        })
+        let retryCount = 0
+        const maxRetries = 3
 
-        if (!response.ok) {
-          const errorText = await response.text()
-          console.error('Failed to refresh token:', errorText)
-          setError('Failed to refresh token')
-          return
+        while (retryCount < maxRetries) {
+          try {
+            // Call the refresh endpoint
+            const response = await fetch('/api/auth/refresh-twitch-token', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                twitch_id: session.user.user_metadata.sub,
+                refreshToken: user.provider_refresh_token
+              })
+            })
+
+            if (!response.ok) {
+              const errorText = await response.text()
+              console.error('Failed to refresh token:', errorText)
+
+              // For 401/403 errors, try to get a fresh session first
+              if ((response.status === 401 || response.status === 403) && retryCount < maxRetries - 1) {
+                const freshSession = await authService.validateAndRefreshSession()
+                if (!freshSession) {
+                  await authService.signOut()
+                  setError('Session expired - Please sign in again')
+                  return
+                }
+                retryCount++
+                await new Promise(resolve => setTimeout(resolve, Math.pow(2, retryCount) * 1000))
+                continue
+              }
+
+              // For other errors, retry if we haven't hit the limit
+              if (retryCount < maxRetries - 1) {
+                retryCount++
+                await new Promise(resolve => setTimeout(resolve, Math.pow(2, retryCount) * 1000))
+                continue
+              }
+
+              setError('Failed to refresh token')
+              return
+            }
+
+            // Get the updated token from the database
+            const { data: updatedUser, error: updateError } = await supabase
+              .from('twitch_users')
+              .select('provider_token')
+              .eq('twitch_id', session.user.user_metadata.sub)
+              .single()
+
+            if (updateError) {
+              console.error('Error fetching updated token:', updateError)
+              setError('Failed to fetch updated token')
+              return
+            }
+
+            setProviderToken(updatedUser.provider_token)
+            break
+          } catch (err) {
+            if (err instanceof Error && err.message.includes('sign in again')) {
+              setError(err.message)
+              return
+            }
+
+            if (retryCount === maxRetries - 1) {
+              console.error('Max retries reached for token refresh:', err)
+              setError('Failed to refresh token after multiple attempts')
+              return
+            }
+
+            retryCount++
+            await new Promise(resolve => setTimeout(resolve, Math.pow(2, retryCount) * 1000))
+          }
         }
-
-        // Get the updated token from the database
-        const { data: updatedUser, error: updateError } = await supabase
-          .from('twitch_users')
-          .select('provider_token')
-          .eq('twitch_id', session.user.user_metadata.sub)
-          .single()
-
-        if (updateError) {
-          console.error('Error fetching updated token:', updateError)
-          setError('Failed to fetch updated token')
-          return
-        }
-
-        setProviderToken(updatedUser.provider_token)
       } else {
         setProviderToken(user.provider_token)
       }
@@ -96,10 +139,43 @@ export function TwitchAuthProvider({ children }: { children: React.ReactNode }) 
   useEffect(() => {
     refreshTwitchToken()
 
+    // Set up a timer to check token expiration based on database expiry time
+    let expiryTimer: number | null = null;
+
+    async function setupExpiryTimer() {
+      const { data: { session } } = await authService.getCurrentSession()
+      if (!session) return;
+
+      const { data: user } = await supabase
+        .from('twitch_users')
+        .select('token_expires_at')
+        .eq('twitch_id', session.user.user_metadata.sub)
+        .single()
+
+      if (user?.token_expires_at) {
+        const expiresAt = new Date(user.token_expires_at).getTime()
+        const now = Date.now()
+        const timeUntilExpiry = expiresAt - now - 300000 // Refresh 5 minutes before expiry
+
+        if (timeUntilExpiry > 0) {
+          expiryTimer = window.setTimeout(refreshTwitchToken, timeUntilExpiry)
+        } else {
+          // If already expired or about to expire, refresh now
+          refreshTwitchToken()
+        }
+      }
+    }
+
+    setupExpiryTimer()
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event) => {
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
         await refreshTwitchToken()
+        setupExpiryTimer()
       } else if (event === 'SIGNED_OUT') {
+        if (expiryTimer) {
+          window.clearTimeout(expiryTimer)
+        }
         setProviderToken(null)
         setError(null)
       }
@@ -107,6 +183,9 @@ export function TwitchAuthProvider({ children }: { children: React.ReactNode }) 
 
     return () => {
       subscription.unsubscribe()
+      if (expiryTimer) {
+        window.clearTimeout(expiryTimer)
+      }
     }
   }, [])
 
