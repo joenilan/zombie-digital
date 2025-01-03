@@ -50,11 +50,11 @@ class AuthService {
             return false;
           }
 
-          // Get the user's Twitch data from our database
+          // Get the user's Twitch data from our database using twitch_id
           const { data: twitchUser, error: twitchError } = await this.supabase
             .from("twitch_users")
             .select("*")
-            .eq("id", refreshedSession.user.id)
+            .eq("twitch_id", refreshedSession.user.user_metadata.provider_id)
             .single();
 
           if (twitchError || !twitchUser) {
@@ -75,7 +75,7 @@ class AuthService {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
-                userId: twitchUser.id,
+                twitch_id: twitchUser.twitch_id,
                 refreshToken: twitchUser.refresh_token,
               }),
             });

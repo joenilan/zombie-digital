@@ -61,6 +61,14 @@ export default function CanvasPage() {
           .eq('twitch_id', refreshedSession.user.user_metadata.provider_id)
           .single()
         setCurrentUser(profile)
+      } else {
+        // Get user profile if we have a session
+        const { data: profile } = await supabase
+          .from('twitch_users')
+          .select('*')
+          .eq('twitch_id', session.user.user_metadata.provider_id)
+          .single()
+        setCurrentUser(profile)
       }
     }
 

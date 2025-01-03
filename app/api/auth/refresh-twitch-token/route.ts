@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
   try {
-    const { userId, refreshToken } = await request.json();
+    const { twitch_id, refreshToken } = await request.json();
     const supabase = createRouteHandlerClient({ cookies });
 
     // Verify the user is authenticated
@@ -61,7 +61,7 @@ export async function POST(request: Request) {
           Date.now() + data.expires_in * 1000
         ).toISOString(),
       })
-      .eq("id", userId);
+      .eq("twitch_id", twitch_id);
 
     if (updateError) {
       console.error("Database update error:", updateError);

@@ -1,6 +1,6 @@
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
-import Navbar from '@/components/Navbar'
+import { Navigation } from '@/components/navigation/Navigation'
 
 export default async function CanvasLayout({
   children,
@@ -34,7 +34,7 @@ export default async function CanvasLayout({
 
   return (
     <div className="canvas-page" data-logged-in="true">
-      <Navbar />
+      <Navigation />
       <div className="canvas-content">
         {children}
       </div>
