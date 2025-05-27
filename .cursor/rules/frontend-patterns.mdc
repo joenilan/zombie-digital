@@ -1,0 +1,80 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+---
+description: Frontend development patterns for React/Next.js components with Tailwind CSS
+alwaysApply: true
+---
+
+always use tailwind, not css or inline css.
+
+always use react query for server state.
+
+always use zustand for client state.
+
+do not create demo components or make new versions of existing components that we are trying to fix.
+
+always check the codebase for existing code before making new pages, routes, or components. in many situations, one already exists.
+
+# Frontend Development Patterns
+
+## Component Structure
+Follow this structure for all React components:
+
+```typescript
+'use client' // Only if needed for client components
+
+import { useState, useEffect } from 'react'
+import { motion } from 'framer-motion'
+// ... other imports
+
+interface ComponentProps {
+  // Define props interface
+}
+
+export function ComponentName({ prop1, prop2 }: ComponentProps) {
+  // State and hooks at the top
+  const [state, setState] = useState()
+  
+  // Effects after state
+  useEffect(() => {
+    // Effect logic
+  }, [dependencies])
+  
+  // Event handlers
+  const handleEvent = () => {
+    // Handler logic
+  }
+  
+  // Render
+  return (
+    <motion.div
+      className="bg-glass/50 backdrop-blur-xl rounded-xl border border-white/5"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+    >
+      {/* Component content */}
+    </motion.div>
+  )
+}
+```
+
+## Styling Patterns
+- Use glass morphism: `bg-glass/50 backdrop-blur-xl`
+- Use cyber gradients: `bg-cyber-gradient` or `gradient-brand`
+- Use shadow effects: `shadow-glass`, `shadow-cyber`
+- Use hover effects: `hover:shadow-cyber-hover`
+
+## Animation Patterns
+- Use Framer Motion for all animations
+- Standard fade in: `initial={{ opacity: 0 }} animate={{ opacity: 1 }}`
+- Stagger animations for lists: `transition={{ delay: index * 0.1 }}`
+
+## Loading States
+- Use skeleton loaders for content: `bg-glass animate-pulse rounded-lg`
+- Use LoadingSpinner component for actions
+- Always provide loading feedback for async operations
+
+@components/LoadingSpinner.tsx

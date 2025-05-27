@@ -1,0 +1,64 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+---
+description: Development standards and best practices for Zombie.Digital - Tailwind CSS, Supabase MCP, React Query, Zustand
+alwaysApply: true
+---
+
+always use bun for package management.
+
+always use tailwind, not css or inline css.
+
+always use SUPABASE MCP SERVER for ALL database operations.
+
+NEVER use migration files, always use model context protocol server.
+
+do not use mock data for anything database related. NO MOCK DATA. always use the database and fallback to an error that shows why it is not loading from the database.
+
+do not create demo components or make new versions of existing components that we are trying to fix.
+
+always use SSR when possible.
+
+always use react query for server state.
+
+always use zustand for client state.
+
+do not run the dev server in composer EVER. we will always have the server already running.
+
+always check the codebase for existing code before making new pages, routes, or components. in many situations, one already exists.
+
+# Development Standards
+
+## Styling & UI
+- Always use Tailwind CSS for styling, never inline CSS or separate CSS files
+- Use Framer Motion for animations and transitions
+- Follow the cyber/gaming theme with glass morphism effects
+- Use the existing color palette (cyber-pink, cyber-cyan, etc.)
+
+## Database & State Management
+- Always use SUPABASE MCP SERVER for ALL database operations
+- NEVER use migration files, always use model context protocol server
+- Do not use mock data for anything database related - always use the database and fallback to an error that shows why it's not loading
+- Always use SSR when possible
+- Always use React Query for server state management
+- Always use Zustand for client state management
+
+## Component Development
+- Do not create demo components or make new versions of existing components when fixing issues
+- Always check the codebase for existing code before making new pages, routes, or components
+- Prefer reusing and improving existing components over creating new ones
+
+## Development Workflow
+- Do not run the dev server in composer EVER - assume the server is already running
+- Always check existing codebase before implementing new features
+- Use TypeScript strict mode
+- Follow the existing file structure and naming conventions
+
+## Code Quality
+- Implement proper error handling with user-friendly messages
+- Use proper loading states and skeleton loaders
+- Implement proper TypeScript types for all components and functions
+- Follow the existing component patterns and architecture

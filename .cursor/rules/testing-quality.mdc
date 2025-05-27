@@ -1,0 +1,74 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+---
+description: Testing and quality assurance guidelines for the project
+alwaysApply: true
+---
+
+# Testing & Quality Assurance
+
+## Testing Strategy
+- Unit tests for utility functions and hooks
+- Integration tests for API endpoints
+- E2E tests for critical user flows
+- Component testing with React Testing Library
+
+## Test Structure
+```typescript
+import { render, screen, fireEvent } from '@testing-library/react'
+import { ComponentName } from './ComponentName'
+
+describe('ComponentName', () => {
+  it('should render correctly', () => {
+    render(<ComponentName />)
+    expect(screen.getByText('Expected Text')).toBeInTheDocument()
+  })
+
+  it('should handle user interactions', async () => {
+    render(<ComponentName />)
+    fireEvent.click(screen.getByRole('button'))
+    // Assert expected behavior
+  })
+})
+```
+
+## API Testing
+```typescript
+import { createMocks } from 'node-mocks-http'
+import handler from './api/endpoint'
+
+describe('/api/endpoint', () => {
+  it('should return expected data', async () => {
+    const { req, res } = createMocks({
+      method: 'GET',
+    })
+
+    await handler(req, res)
+    expect(res._getStatusCode()).toBe(200)
+  })
+})
+```
+
+## Quality Checklist
+- [ ] TypeScript strict mode compliance
+- [ ] ESLint rules passing
+- [ ] Proper error handling
+- [ ] Loading states implemented
+- [ ] Responsive design tested
+- [ ] Accessibility standards met
+- [ ] Performance optimized
+
+## Error Handling Standards
+- Always provide user-friendly error messages
+- Log errors for debugging
+- Implement proper fallback UI
+- Use error boundaries for React components
+
+## Performance Testing
+- Lighthouse scores > 90
+- Bundle size analysis
+- Database query optimization
+- Real-time performance monitoring

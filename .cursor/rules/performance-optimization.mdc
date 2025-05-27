@@ -1,0 +1,93 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+---
+description: Performance optimization guidelines for Next.js applications
+alwaysApply: true
+---
+
+# Performance Optimization Guidelines
+
+## Performance Targets
+- Page Load Time: < 2 seconds
+- Time to Interactive: < 3 seconds  
+- Real-time Latency: < 100ms
+- Uptime: 99.9%
+
+## Code Splitting & Lazy Loading
+- Use dynamic imports for large components
+- Implement route-based code splitting
+- Lazy load non-critical components
+
+```typescript
+// Dynamic imports
+const HeavyComponent = dynamic(() => import('./HeavyComponent'), {
+  loading: () => <LoadingSpinner />
+})
+
+// Lazy loading with Suspense
+const LazyComponent = lazy(() => import('./LazyComponent'))
+```
+
+## Image Optimization
+- Always use Next.js Image component
+- Implement proper alt text
+- Use appropriate image formats (WebP, AVIF)
+- Implement lazy loading for images
+
+```typescript
+import Image from 'next/image'
+
+<Image
+  src={imageUrl}
+  alt="Description"
+  width={300}
+  height={200}
+  priority={isAboveFold}
+  placeholder="blur"
+/>
+```
+
+## Database Optimization
+- Use proper indexing on frequently queried columns
+- Implement query result caching with React Query
+- Use select() to limit returned columns
+- Implement pagination for large datasets
+
+```typescript
+// Optimized query
+const { data, error } = await supabase
+  .from('twitch_users')
+  .select('id, username, display_name') // Only needed columns
+  .range(0, 9) // Pagination
+  .order('created_at', { ascending: false })
+```
+
+## React Query Optimization
+- Set appropriate stale times
+- Use query invalidation strategically
+- Implement optimistic updates
+- Use query prefetching for predictable navigation
+
+```typescript
+const { data } = useQuery({
+  queryKey: ['users', page],
+  queryFn: fetchUsers,
+  staleTime: 5 * 60 * 1000, // 5 minutes
+  cacheTime: 10 * 60 * 1000, // 10 minutes
+})
+```
+
+## Bundle Optimization
+- Analyze bundle size regularly
+- Remove unused dependencies
+- Use tree shaking effectively
+- Implement proper code splitting
+
+## Real-time Optimization
+- Throttle real-time updates (16ms for 60fps)
+- Use debouncing for user inputs
+- Implement connection pooling
+- Handle connection failures gracefully

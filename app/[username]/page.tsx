@@ -2,10 +2,13 @@ import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { notFound } from 'next/navigation'
 import Image from 'next/image'
+import Link from 'next/link'
 import PageTransitionLayout from '@/components/PageTransitionLayout'
 import { RealtimeLinks } from './realtime-links'
 import { BackgroundManager } from '@/components/background-manager'
 import { RealtimeBackground } from './realtime-background'
+import { ShareButton } from './share-button'
+import { ViewTracker } from './view-tracker'
 
 interface PageProps {
   params: {
@@ -41,20 +44,9 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
     .eq('username', username)
     .single()
 
-  // Log the results to help debug
-  console.log('Username searched:', username)
-  console.log('Profile data:', profile)
-  console.log('Profile error:', profileError)
-
   if (!profile) {
-    console.log('Profile not found, redirecting to 404')
     notFound()
   }
-
-  // Add debug logs for ownership check AFTER we have the profile
-  console.log('Current user ID:', session?.user?.id)
-  console.log('Profile user_id:', profile.user_id)
-  console.log('Is owner?:', session?.user?.id === profile.user_id)
 
   // Get public social links
   const { data: initialLinks, error: linksError } = await supabase
@@ -63,19 +55,19 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
     .eq('user_id', profile.user_id)
     .order('order_index', { ascending: true })
 
-  console.log('Social links:', initialLinks)
-  console.log('Links error:', linksError)
-
   // Check if the current user is the profile owner (handle missing session gracefully)
   const isOwner = !sessionError && session?.user?.id === profile.user_id
 
   return (
     <div className={`min-h-screen py-12 px-4 ${isTransparent ? 'bg-transparent' : ''}`}>
+      {/* Track page view */}
+      <ViewTracker userId={profile.user_id} />
+
       {/* Main Content Card */}
       <div className="max-w-2xl mx-auto relative">
         <div className={`${isTransparent ? '' : 'bg-background/20'} backdrop-blur-xl rounded-xl shadow-glass overflow-hidden border border-white/10`}>
           {/* Card Background */}
-          <RealtimeBackground 
+          <RealtimeBackground
             userId={profile.user_id}
             initialBackground={{
               url: profile.background_media_url,
@@ -104,7 +96,18 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
               <h1 className={`text-4xl font-bold mb-2 ${isTransparent ? 'text-white' : 'bg-clip-text text-transparent bg-gradient-to-r from-cyber-pink to-cyber-cyan'}`}>
                 {profile.display_name}
               </h1>
-              <p className="text-lg text-muted-foreground mb-8">@{profile.username}</p>
+
+              {/* Username and Share buttons container */}
+              <div className="flex items-center justify-center gap-2 mb-8">
+                <p className="text-lg text-muted-foreground">@{profile.username}</p>
+
+                {!isTransparent && (
+                  <div className="flex items-center gap-2">
+                    <ShareButton username={username} displayName={profile.display_name} />
+                  </div>
+                )}
+              </div>
+
               {profile.description && (
                 <p className="text-muted-foreground max-w-lg">
                   {profile.description}
@@ -116,7 +119,7 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
             {isOwner && !isTransparent && (
               <div>
                 <h2 className="text-xl font-semibold mb-4">Profile Background</h2>
-                <BackgroundManager 
+                <BackgroundManager
                   userId={profile.user_id}
                   currentBackground={{
                     url: profile.background_media_url,
@@ -128,9 +131,9 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
 
             {/* Social Links */}
             <div>
-              <RealtimeLinks 
-                userId={profile.user_id} 
-                initialLinks={initialLinks || []} 
+              <RealtimeLinks
+                userId={profile.user_id}
+                initialLinks={initialLinks || []}
                 isOwner={isOwner && !isTransparent}
               />
             </div>
@@ -142,10 +145,10 @@ export default async function ProfilePage({ params, searchParams }: PageProps) {
           <div className="text-center text-sm text-muted-foreground/60 pt-8">
             <p>
               Powered by{" "}
-              <span className="font-bold">
+              <Link href="/" className="font-bold inline-flex items-center transition-all duration-300 hover:opacity-100 hover:text-foreground">
                 <span className="gradient-brand">Zombie</span>
                 <span className="text-foreground/80">.Digital</span>
-              </span>
+              </Link>
             </p>
           </div>
         )}

@@ -1,8 +1,21 @@
 "use client"
 
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import type { SocialLink } from '@/types/database'
+import { RealtimeChannel } from '@supabase/supabase-js'
+import Link from 'next/link'
+// Define SocialLink type directly instead of importing from a potentially missing module
+export interface SocialLink {
+  id: string
+  user_id: string
+  platform: string
+  url: string
+  title?: string
+  order_index: number
+  created_at?: string
+  updated_at?: string
+  [key: string]: any
+}
 import {
   Twitter,
   Youtube,
@@ -20,9 +33,9 @@ import {
   type LucideIcon,
   ChevronDown,
 } from 'lucide-react'
-import { 
-  SiDiscord, 
-  SiTiktok, 
+import {
+  SiDiscord,
+  SiTiktok,
   SiKick,
   SiKofi,
   SiPatreon,
@@ -196,7 +209,7 @@ function TwitchLink({ link, username }: { link: SocialLink; username: string }) 
           </div>
         )}
       </a>
-      
+
       {isLive && (
         <>
           <button
@@ -238,11 +251,12 @@ function TwitchLink({ link, username }: { link: SocialLink; username: string }) 
   )
 }
 
-// Add this type for the realtime payload
-type RealtimePayload = {
+// Type for the entire payload
+export interface RealtimePayload {
   eventType: 'INSERT' | 'UPDATE' | 'DELETE'
-  new: SocialLink | null
-  old: SocialLink
+  new: any
+  old: any
+  schema: string
   table: string
 }
 
@@ -256,45 +270,171 @@ export function RealtimeLinks({ userId, initialLinks, isOwner }: RealtimeLinksPr
   const [links, setLinks] = useState(initialLinks)
   const supabase = createClientComponentClient()
 
+  // Define refs at component level, not inside useEffect
+  const linkIdsRef = React.useRef(new Set<string>())
+  const isHandlingEventRef = React.useRef(false)
+
+  // Update when initial links change (e.g., on first load)
   useEffect(() => {
-    const channel = supabase
-      .channel(`social_tree_${userId}`)
-      .on(
+    setLinks(initialLinks)
+    // Update the ref when links change
+    linkIdsRef.current = new Set(initialLinks.map(link => link.id))
+  }, [initialLinks])
+
+  useEffect(() => {
+    console.log('Setting up realtime subscription for user:', userId)
+
+    // Create a unique channel ID that's fully unique (with timestamp and random string)
+    const channelId = `public_profile_${userId}_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    console.log(`Creating public profile channel: ${channelId}`);
+
+    let channel: RealtimeChannel | null = null;
+    try {
+      // Create channel with a unique name for public profile page
+      channel = supabase.channel(channelId);
+
+      // For all events (INSERT, UPDATE, DELETE), just refetch the entire list
+      // This ensures consistency and prevents duplicates
+      const handleDatabaseChange = async (payload?: any) => {
+        if (isHandlingEventRef.current) return;
+
+        try {
+          isHandlingEventRef.current = true;
+
+          // Check if this is a content update (name/URL change)
+          const isContentUpdate = payload &&
+            payload.eventType === 'UPDATE' &&
+            payload.new && payload.old && (
+              payload.new.url !== payload.old.url ||
+              payload.new.title !== payload.old.title ||
+              payload.new.platform !== payload.old.platform
+            );
+
+          if (isContentUpdate) {
+            console.log('Public profile: Detected content update (name/URL/platform changed)');
+          }
+
+          console.log('Public profile: Database change detected, fetching fresh data...');
+
+          const { data: freshLinks } = await supabase
+            .from('social_tree')
+            .select('*')
+            .eq('user_id', userId)
+            .order('order_index', { ascending: true });
+
+          if (freshLinks) {
+            console.log('Public profile: Updated links received:', freshLinks.length);
+
+            // Before blindly updating, check if there are actual differences
+            // This prevents unnecessary re-renders when the data hasn't changed
+            const freshIds = new Set(freshLinks.map(link => link.id));
+
+            // Check if there are differences by comparing IDs
+            let hasDifferences = freshIds.size !== linkIdsRef.current.size;
+
+            // If we have a content update, force an update regardless of ID changes
+            if (isContentUpdate) {
+              hasDifferences = true;
+              console.log('Public profile: Forcing update due to content change');
+            }
+
+            if (!hasDifferences) {
+              // Check for items in fresh that aren't in current
+              for (const link of freshLinks) {
+                if (!linkIdsRef.current.has(link.id)) {
+                  hasDifferences = true;
+                  break;
+                }
+              }
+
+              // If still no differences, check for items in current that aren't in fresh
+              if (!hasDifferences) {
+                for (const id of linkIdsRef.current) {
+                  if (!freshIds.has(id)) {
+                    hasDifferences = true;
+                    break;
+                  }
+                }
+              }
+
+              // Even if IDs match, content might have changed (name/URL updates)
+              if (!hasDifferences && payload && payload.eventType === 'UPDATE') {
+                // Compare content of current links with fresh links
+                const currentLinks = links;
+                const currentLinksMap = new Map(currentLinks.map(link => [link.id, link]));
+
+                for (const freshLink of freshLinks) {
+                  const currentLink = currentLinksMap.get(freshLink.id);
+                  if (currentLink && (
+                    currentLink.url !== freshLink.url ||
+                    currentLink.title !== freshLink.title ||
+                    currentLink.platform !== freshLink.platform
+                  )) {
+                    console.log('Public profile: Content change detected for link', freshLink.id);
+                    hasDifferences = true;
+                    break;
+                  }
+                }
+              }
+            }
+
+            if (hasDifferences) {
+              // Only update state if there's a difference in the data
+              console.log('Public profile: Differences detected, updating links');
+
+              // Update our ref for next comparison
+              linkIdsRef.current = freshIds;
+
+              setLinks(freshLinks);
+            } else {
+              console.log('Public profile: No changes detected, skipping update');
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching updated links:', error);
+        } finally {
+          // Allow handling future events after a short delay
+          // This prevents race conditions with multiple rapid changes
+          setTimeout(() => {
+            isHandlingEventRef.current = false;
+          }, 1000); // Longer delay for public profile to ensure dashboard has time to update
+        }
+      };
+
+      // Set up a single handler for all database events
+      channel.on(
         'postgres_changes',
         {
-          event: '*',
+          event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
           schema: 'public',
           table: 'social_tree',
           filter: `user_id=eq.${userId}`
         },
-        async (payload: RealtimePayload) => {
-          console.log('Realtime event:', payload.eventType, payload) // Debug log
-
-          if (payload.eventType === 'DELETE') {
-            setLinks(currentLinks => 
-              currentLinks.filter(link => link.id !== payload.old.id)
-            )
-          } else {
-            // For INSERT and UPDATE, fetch fresh data
-            const { data: freshLinks } = await supabase
-              .from('social_tree')
-              .select('*')
-              .eq('user_id', userId)
-              .order('order_index', { ascending: true })
-
-            if (freshLinks) {
-              console.log('Updated links:', freshLinks) // Debug log
-              setLinks(freshLinks)
-            }
-          }
+        (payload) => {
+          console.log('Public profile: Database event:', payload.eventType, payload);
+          handleDatabaseChange(payload);
         }
-      )
-      .subscribe()
+      );
+
+      // Subscribe to the channel and log status
+      channel.subscribe((status) => {
+        console.log(`Public profile realtime status for ${userId}:`, status);
+      });
+    } catch (error) {
+      console.error('Critical error setting up realtime for public profile:', error);
+    }
 
     return () => {
-      channel.unsubscribe()
-    }
-  }, [supabase, userId])
+      console.log('Cleaning up realtime subscription for public profile:', userId);
+      if (channel) {
+        try {
+          supabase.removeChannel(channel);
+        } catch (err) {
+          console.error('Error removing channel:', err);
+        }
+      }
+    };
+  }, [supabase, userId, links]) // Added links to dependencies since we reference it for the initial ref value
 
   if (!links.length) {
     return (
@@ -303,8 +443,8 @@ export function RealtimeLinks({ userId, initialLinks, isOwner }: RealtimeLinksPr
           {isOwner ? (
             <div className="space-y-4">
               <p className="mb-2">You haven't added any social links yet.</p>
-              <a 
-                href="/settings/links" 
+              <a
+                href="/settings/links"
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-glass 
                          hover:shadow-cyber transition-all duration-300 text-cyber-cyan 
                          hover:text-cyber-pink"
@@ -378,7 +518,7 @@ export function RealtimeLinks({ userId, initialLinks, isOwner }: RealtimeLinksPr
         console.log('Rendering regular link for:', link.platform);
         const Icon = getPlatformIcon(link.platform)
         const iconColor = getPlatformColor(link.platform)
-        
+
         return (
           <a
             key={link.id}

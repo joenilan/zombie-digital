@@ -33,6 +33,7 @@ interface BackgroundData {
 interface BackgroundManagerProps {
   userId: string
   currentBackground?: BackgroundData
+  onUpdate?: (background: BackgroundData) => void
 }
 
 // Database operations
@@ -78,7 +79,7 @@ async function uploadBackgroundFile(supabase: any, userId: string, file: File) {
 async function deleteBackgroundFile(supabase: any, url: string) {
   const match = url.match(/[a-f0-9-]+-\d+\.[a-zA-Z0-9]+/)
   const fileName = match ? match[0] : null
-  
+
   if (!fileName) {
     console.warn('Could not extract filename from URL:', url)
     return null
@@ -98,7 +99,7 @@ async function deleteBackgroundFile(supabase: any, url: string) {
   return data
 }
 
-export function BackgroundManager({ userId, currentBackground }: BackgroundManagerProps) {
+export function BackgroundManager({ userId, currentBackground, onUpdate }: BackgroundManagerProps) {
   const [isUploading, setIsUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -123,7 +124,7 @@ export function BackgroundManager({ userId, currentBackground }: BackgroundManag
         (payload) => {
           console.log('Received background update:', payload)
           const newData = payload.new as any
-          
+
           if (newData) {
             console.log('Updating background state:', {
               url: newData.background_media_url,
@@ -190,6 +191,10 @@ export function BackgroundManager({ userId, currentBackground }: BackgroundManag
       setIsDialogOpen(false)
       toast.success('Background updated successfully')
 
+      if (onUpdate) {
+        onUpdate(newBackground)
+      }
+
     } catch (error) {
       console.error('Error uploading background:', error)
       setUploadError('Failed to upload background. Please try again.')
@@ -220,6 +225,10 @@ export function BackgroundManager({ userId, currentBackground }: BackgroundManag
       // Only close dialog and show success if both operations succeeded
       setIsDeleteDialogOpen(false)
       toast.success('Background removed successfully')
+
+      if (onUpdate) {
+        onUpdate({ url: null, type: null })
+      }
 
     } catch (error) {
       console.error('Error deleting background:', error)

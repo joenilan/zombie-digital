@@ -1,36 +1,130 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Zombie.Digital - Twitch Management Platform
 
-## Getting Started
+A comprehensive Twitch management platform built with Next.js 14, providing streamers with professional tools for social media management, interactive stream overlays, analytics, and community engagement.
 
-First, run the development server:
+## 🚀 Features
 
+- **Social Links Management** - Drag-and-drop link organization with 20+ platform support
+- **Interactive Canvas System** - Real-time collaborative overlays for OBS integration
+- **Twitch Analytics** - Stream stats, follower tracking, and performance metrics
+- **User Profile Pages** - Custom public profiles with social sharing
+- **Admin Panel** - User management and site-wide notifications
+- **Real-time Updates** - Live synchronization across all features
+
+## 🛠 Tech Stack
+
+- **Frontend**: Next.js 14 (App Router), React 18, TypeScript
+- **Styling**: Tailwind CSS, Framer Motion
+- **Database**: Supabase (PostgreSQL) with Prisma ORM
+- **Authentication**: NextAuth.js with Twitch OAuth
+- **State Management**: React Query, Zustand
+- **Package Manager**: Bun
+
+## 📋 Documentation
+
+- **[Product Requirements Document (PRD)](./PRD.md)** - Comprehensive project overview, roadmap, and technical requirements
+- **[Cursor Rules](./.cursor/rules/)** - Development guidelines and coding standards
+
+## 🚀 Getting Started
+
+### Prerequisites
+
+- [Bun](https://bun.sh/) (latest version)
+- Node.js 18+ (for compatibility)
+- Supabase account and project
+
+### Installation
+
+1. Clone the repository:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/your-username/zombie-digital.git
+cd zombie-digital
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Install dependencies:
+```bash
+bun install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. Set up environment variables:
+```bash
+cp .env.example .env.local
+# Edit .env.local with your Supabase and Twitch credentials
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+4. Run the development server:
+```bash
+bun run dev
+```
 
-## Learn More
+5. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-To learn more about Next.js, take a look at the following resources:
+## 🔧 Development
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Package Management
+This project uses **Bun** for package management. Always use:
+- `bun add package-name` for installation
+- `bunx package-name` for execution
+- `bun run script-name` for scripts
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Code Standards
+- TypeScript strict mode
+- Tailwind CSS for styling (no inline CSS)
+- Framer Motion for animations
+- Supabase for all database operations
+- React Query for server state
+- Zustand for client state
 
-## Deploy on Vercel
+### Project Structure
+```
+├── app/                    # Next.js app router
+├── components/             # Reusable UI components
+├── lib/                   # Utility functions and configurations
+├── hooks/                 # Custom React hooks
+├── types/                 # TypeScript type definitions
+├── prisma/               # Database schema
+├── .cursor/rules/        # Development guidelines
+└── PRD.md               # Product Requirements Document
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 🎯 Roadmap
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+See the [PRD.md](./PRD.md) for detailed roadmap and feature planning.
+
+### Phase 1: Performance & Stability (Q1 2024)
+- Database optimization
+- Performance improvements
+- Testing implementation
+- Error monitoring
+
+### Phase 2: Feature Enhancement (Q2 2024)
+- Advanced analytics
+- Stream integration
+- Enhanced canvas tools
+
+### Phase 3: Community & Monetization (Q3 2024)
+- Team management
+- Viewer interaction tools
+- Revenue tracking
+
+## 🤝 Contributing
+
+1. Check existing components before creating new ones
+2. Follow the coding standards in `.cursor/rules/`
+3. Use proper TypeScript types
+4. Implement proper error handling
+5. Add tests for new features
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🔗 Links
+
+- [Live Demo](https://zombie.digital)
+- [Documentation](./PRD.md)
+- [Issues](https://github.com/your-username/zombie-digital/issues)
+
+---
+
+Built with ❤️ for the Twitch community

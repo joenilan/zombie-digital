@@ -1,0 +1,20 @@
+{
+    "mcpServers": {
+        "supabase": {
+            "command": "bunx",
+            "args": [
+                "-y",
+                "@supabase/mcp-server-supabase@latest",
+                "--access-token",
+                "sbp_01afbce3a1ab0872bf1130fac9d3eef84501a3f7"
+            ]
+        },
+        "memory": {
+            "command": "bunx",
+            "args": [
+                "-y",
+                "@modelcontextprotocol/server-memory"
+            ]
+        }
+    }
+}
