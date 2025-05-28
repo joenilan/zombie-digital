@@ -1,29 +1,33 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { TWITCH_SCOPES } from "@/utils/twitch-constants";
 
 export default function TwitchLoginButton({ size = "default" }: { size?: "default" | "lg" }) {
-  const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const supabase = createClientComponentClient();
 
   const handleLogin = async () => {
     setIsLoading(true);
     setError(null);
 
     try {
-      const response = await fetch("/api/auth/twitch", {
-        method: "POST",
+      const { error: signInError } = await supabase.auth.signInWithOAuth({
+        provider: 'twitch',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+          scopes: TWITCH_SCOPES.join(' '),
+        },
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to initiate Twitch login");
+      if (signInError) {
+        throw signInError;
       }
 
-      const { url } = await response.json();
-      window.location.href = url;
+      // The redirect will happen automatically, so we don't need to set loading to false
     } catch (err) {
       console.error("Login error:", err);
       setError(err instanceof Error ? err.message : "An error occurred");
