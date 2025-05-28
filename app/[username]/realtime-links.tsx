@@ -1,21 +1,11 @@
 "use client"
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect } from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { RealtimeChannel } from '@supabase/supabase-js'
 import Link from 'next/link'
-// Define SocialLink type directly instead of importing from a potentially missing module
-export interface SocialLink {
-  id: string
-  user_id: string
-  platform: string
-  url: string
-  title?: string
-  order_index: number
-  created_at?: string
-  updated_at?: string
-  [key: string]: any
-}
+import { useRealtimeLinksStore, type SocialLink } from '@/stores/useRealtimeLinksStore'
+import { useSocialLinksManagerStore } from '@/stores/useSocialLinksManagerStore'
 import {
   Twitch,
   ChevronDown,
@@ -32,28 +22,31 @@ interface RealtimeLinksProps {
 }
 
 function TwitchLink({ link, username }: { link: SocialLink; username: string }) {
-  console.log('TwitchLink mounted for:', username);
-  const [isExpanded, setIsExpanded] = useState(false)
-  const [isLive, setIsLive] = useState(false)
-  const [streamInfo, setStreamInfo] = useState<any>(null)
-  const [error, setError] = useState<string | null>(null)
+  const {
+    isExpanded,
+    isLive,
+    streamInfo,
+    streamError,
+    setIsExpanded,
+    setIsLive,
+    setStreamInfo,
+    setStreamError
+  } = useRealtimeLinksStore()
 
   useEffect(() => {
     async function checkTwitchStatus() {
-      console.log('Checking Twitch status for:', username);
       try {
         const response = await fetch(`/api/twitch/status?username=${username}`)
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`)
         }
         const data = await response.json()
-        console.log('Twitch status response:', data);
         setIsLive(data.isLive)
         setStreamInfo(data.stream)
-        setError(null)
+        setStreamError(null)
       } catch (error) {
         console.error('Error checking Twitch status:', error)
-        setError(error instanceof Error ? error.message : 'Unknown error')
+        setStreamError(error instanceof Error ? error.message : 'Unknown error')
       }
     }
 
@@ -61,12 +54,9 @@ function TwitchLink({ link, username }: { link: SocialLink; username: string }) 
     checkTwitchStatus() // Initial check
 
     return () => {
-      console.log('TwitchLink cleanup for:', username);
       clearInterval(interval)
     }
-  }, [username])
-
-  console.log('TwitchLink rendering with state:', { isLive, streamInfo, error });
+  }, [username, setIsLive, setStreamInfo, setStreamError])
 
   return (
     <div className="w-full">
@@ -85,7 +75,7 @@ function TwitchLink({ link, username }: { link: SocialLink; username: string }) 
           <span className="font-medium text-lg">
             {link.title || link.platform}
           </span>
-          {error ? (
+          {streamError ? (
             <span className="text-xs text-red-500">
               (Status check failed)
             </span>
@@ -163,16 +153,19 @@ export interface RealtimePayload {
 }
 
 export function RealtimeLinks({ userId, initialLinks, isOwner }: RealtimeLinksProps) {
-  console.log('RealtimeLinks render:', {
-    userId,
-    linksCount: initialLinks.length,
-    isOwner,
-  })
+  const {
+    links,
+    isUpdating,
+    lastUpdateType,
+    setLinks,
+    setIsUpdating,
+    setLastUpdateType
+  } = useRealtimeLinksStore()
 
-  const [links, setLinks] = useState(initialLinks)
-  const [isUpdating, setIsUpdating] = useState(false)
-  const [lastUpdateType, setLastUpdateType] = useState<'INSERT' | 'UPDATE' | 'DELETE' | null>(null)
   const supabase = createClientComponentClient()
+
+  // Also update the manager store for dashboard sync
+  const managerStore = useSocialLinksManagerStore()
 
   // Define refs at component level, not inside useEffect
   const linkIdsRef = React.useRef(new Set<string>())
@@ -183,14 +176,11 @@ export function RealtimeLinks({ userId, initialLinks, isOwner }: RealtimeLinksPr
     setLinks(initialLinks)
     // Update the ref when links change
     linkIdsRef.current = new Set(initialLinks.map(link => link.id))
-  }, [initialLinks])
+  }, [initialLinks, setLinks])
 
   useEffect(() => {
-    console.log('Setting up realtime subscription for user:', userId)
-
     // Create a unique channel ID that's fully unique (with timestamp and random string)
     const channelId = `public_profile_${userId}_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-    console.log(`Creating public profile channel: ${channelId}`);
 
     let channel: RealtimeChannel | null = null;
     let debounceTimeout: ReturnType<typeof setTimeout> | undefined;
@@ -208,13 +198,11 @@ export function RealtimeLinks({ userId, initialLinks, isOwner }: RealtimeLinksPr
         if (isCleanedUp) return; // Don't proceed if cleaned up
 
         debounceTimeout = setTimeout(async () => {
-          if (isCleanedUp || isHandlingEventRef.current) return;
+          if (isCleanedUp) return;
 
           try {
-            isHandlingEventRef.current = true;
             setIsUpdating(true);
             setLastUpdateType(eventType || null);
-            console.log('Public profile: Database change detected, fetching fresh data...');
 
             const { data: freshLinks } = await supabase
               .from('social_tree')
@@ -228,7 +216,9 @@ export function RealtimeLinks({ userId, initialLinks, isOwner }: RealtimeLinksPr
               freshLinks.forEach(link => linkIdsRef.current.add(link.id));
 
               setLinks(freshLinks);
-              console.log('Public profile: Updated with fresh links, count:', freshLinks.length);
+
+              // Also update the manager store for dashboard sync
+              managerStore.setLinks(freshLinks);
 
               // Show update feedback briefly
               setTimeout(() => {
@@ -244,14 +234,8 @@ export function RealtimeLinks({ userId, initialLinks, isOwner }: RealtimeLinksPr
               setIsUpdating(false);
               setLastUpdateType(null);
             }
-          } finally {
-            setTimeout(() => {
-              if (!isCleanedUp) {
-                isHandlingEventRef.current = false;
-              }
-            }, 500);
           }
-        }, 400); // 400ms debounce (different from dashboard's 350ms)
+        }, 50); // 50ms debounce (different from dashboard's 350ms)
       };
 
       // Set up a single handler for all database events
@@ -265,22 +249,18 @@ export function RealtimeLinks({ userId, initialLinks, isOwner }: RealtimeLinksPr
         },
         (payload) => {
           if (!isCleanedUp) {
-            console.log('Public profile: Database event:', payload.eventType, payload);
             debouncedRefresh(payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE');
           }
         }
       );
 
       // Subscribe to the channel and log status
-      channel.subscribe((status) => {
-        console.log(`Public profile realtime status for ${userId}:`, status);
-      });
+      channel.subscribe();
     } catch (error) {
       console.error('Critical error setting up realtime for public profile:', error);
     }
 
     return () => {
-      console.log('Cleaning up realtime subscription for public profile:', userId);
       isCleanedUp = true; // Set cleanup flag first
 
       if (debounceTimeout) {
@@ -289,18 +269,16 @@ export function RealtimeLinks({ userId, initialLinks, isOwner }: RealtimeLinksPr
       if (channel) {
         try {
           supabase.removeChannel(channel);
-          console.log('Successfully removed public profile channel:', channelId);
         } catch (err) {
           console.error('Error removing public profile channel:', err);
         }
       }
 
       // Reset state flags
-      isHandlingEventRef.current = false;
       setIsUpdating(false);
       setLastUpdateType(null);
     };
-  }, [supabase, userId]) // Removed links from dependencies to prevent infinite loops
+  }, [supabase, userId, setLinks, setIsUpdating, setLastUpdateType])
 
   if (!links.length) {
     return (
@@ -354,109 +332,38 @@ export function RealtimeLinks({ userId, initialLinks, isOwner }: RealtimeLinksPr
       <LayoutGroup>
         <AnimatePresence mode="popLayout">
           {links.map((link, index) => {
-            // Debug logging
-            console.log('Link:', {
-              id: link.id,
-              platform: link.platform,
-              platformLower: link.platform.toLowerCase(),
-              isTwitch: link.platform.toLowerCase() === 'twitch',
-              url: link.url
-            })
-
             // Special handling for Twitch links
             if (link.platform.toLowerCase() === 'twitch') {
-              console.log('Rendering TwitchLink for:', link.url);
+              // Extract username from Twitch URL
+              const match = link.url.match(/twitch\.tv\/([^\/\?]+)/);
+              if (!match) {
+                console.error('Failed to extract username from URL:', link.url);
+                return null;
+              }
+
+              const username = match[1];
+
               try {
-                const username = link.url.split('/').pop() || '';
-                console.log('Extracted username:', username);
-                if (!username) {
-                  console.error('Failed to extract username from URL:', link.url);
-                  throw new Error('Invalid Twitch URL');
-                }
                 return (
                   <motion.div
                     key={link.id}
                     layout
-                    initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                    animate={{
-                      opacity: 1,
-                      y: 0,
-                      scale: 1,
-                      transition: {
-                        type: "spring",
-                        stiffness: 300,
-                        damping: 30,
-                        delay: index * 0.05
-                      }
-                    }}
-                    exit={{
-                      opacity: 0,
-                      y: -20,
-                      scale: 0.95,
-                      transition: { duration: 0.2 }
-                    }}
-                    whileHover={{
-                      y: -2,
-                      transition: { type: "spring", stiffness: 400, damping: 25 }
-                    }}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.3 }}
                   >
                     <TwitchLink link={link} username={username} />
                   </motion.div>
                 );
               } catch (error) {
                 console.error('Error rendering TwitchLink:', error);
-                // Fallback to regular link if TwitchLink fails
-                const Icon = getPlatformIcon(link.platform);
-                return (
-                  <motion.a
-                    key={link.id}
-                    layout
-                    href={link.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block w-full p-4 rounded-xl bg-glass shadow-glass 
-                             hover:shadow-cyber transition-all duration-300 transform hover:-translate-y-1
-                             text-center group relative overflow-hidden"
-                    initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                    animate={{
-                      opacity: 1,
-                      y: 0,
-                      scale: 1,
-                      transition: {
-                        type: "spring",
-                        stiffness: 300,
-                        damping: 30,
-                        delay: index * 0.05
-                      }
-                    }}
-                    exit={{
-                      opacity: 0,
-                      y: -20,
-                      scale: 0.95,
-                      transition: { duration: 0.2 }
-                    }}
-                    whileHover={{
-                      y: -2,
-                      transition: { type: "spring", stiffness: 400, damping: 25 }
-                    }}
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-r from-cyber-pink/10 to-cyber-cyan/10 
-                                  opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                    <div className="relative flex items-center justify-center gap-3">
-                      <Icon className="w-6 h-6" />
-                      <span className="font-medium text-lg">
-                        {link.title || link.platform}
-                      </span>
-                    </div>
-                  </motion.a>
-                );
+                return null;
               }
             }
 
-            // Regular links with enhanced animations
-            console.log('Rendering regular link for:', link.platform);
-            const Icon = getPlatformIcon(link.platform)
-
+            // Regular link
+            const Icon = getPlatformIcon(link.platform);
             return (
               <motion.a
                 key={link.id}
@@ -486,20 +393,21 @@ export function RealtimeLinks({ userId, initialLinks, isOwner }: RealtimeLinksPr
                   transition: { duration: 0.2 }
                 }}
                 whileHover={{
-                  y: -2,
-                  transition: { type: "spring", stiffness: 400, damping: 25 }
+                  scale: 1.02,
+                  transition: { duration: 0.2 }
                 }}
+                whileTap={{ scale: 0.98 }}
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-cyber-pink/10 to-cyber-cyan/10 
                               opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 <div className="relative flex items-center justify-center gap-3">
-                  <Icon className="w-6 h-6" />
+                  <Icon className="w-6 h-6" style={{ color: getPlatformColor(link.platform) }} />
                   <span className="font-medium text-lg">
                     {link.title || link.platform}
                   </span>
                 </div>
               </motion.a>
-            )
+            );
           })}
         </AnimatePresence>
       </LayoutGroup>

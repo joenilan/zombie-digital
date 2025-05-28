@@ -57,6 +57,18 @@ export const ExternalLink = ({ className, style, onClick }: IconProps) =>
 export const Eye = ({ className, style, onClick }: IconProps) =>
     <Icon icon="lucide:eye" className={className} style={style} onClick={onClick} />
 
+export const EyeOff = ({ className, style, onClick }: IconProps) =>
+    <Icon icon="lucide:eye-off" className={className} style={style} onClick={onClick} />
+
+export const Search = ({ className, style, onClick }: IconProps) =>
+    <Icon icon="lucide:search" className={className} style={style} onClick={onClick} />
+
+export const SortAsc = ({ className, style, onClick }: IconProps) =>
+    <Icon icon="lucide:sort-asc" className={className} style={style} onClick={onClick} />
+
+export const SortDesc = ({ className, style, onClick }: IconProps) =>
+    <Icon icon="lucide:sort-desc" className={className} style={style} onClick={onClick} />
+
 export const Upload = ({ className, style, onClick }: IconProps) =>
     <Icon icon="lucide:upload" className={className} style={style} onClick={onClick} />
 
@@ -87,6 +99,9 @@ export const Layers = ({ className, style, onClick }: IconProps) =>
 export const ChevronRight = ({ className, style, onClick }: IconProps) =>
     <Icon icon="lucide:chevron-right" className={className} style={style} onClick={onClick} />
 
+export const ChevronLeft = ({ className, style, onClick }: IconProps) =>
+    <Icon icon="lucide:chevron-left" className={className} style={style} onClick={onClick} />
+
 export const ChevronDown = ({ className, style, onClick }: IconProps) =>
     <Icon icon="lucide:chevron-down" className={className} style={style} onClick={onClick} />
 
@@ -113,6 +128,9 @@ export const Store = ({ className, style, onClick }: IconProps) =>
 
 export const DollarSign = ({ className, style, onClick }: IconProps) =>
     <Icon icon="lucide:dollar-sign" className={className} style={style} onClick={onClick} />
+
+export const MoreHorizontal = ({ className, style, onClick }: IconProps) =>
+    <Icon icon="lucide:more-horizontal" className={className} style={style} onClick={onClick} />
 
 // Brand Icons (from Simple Icons collection - monochrome by default)
 export const Discord = ({ className, style, onClick }: IconProps) =>

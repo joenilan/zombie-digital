@@ -14,19 +14,11 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { motion, AnimatePresence } from 'framer-motion'
 import { getPlatformIcon, getPlatformColor, platformIcons, platformUrlPatterns, getPlatformUrl } from '@/lib/icons'
+import { useSocialLinksManagerStore, type SocialLink } from '@/stores/useSocialLinksManagerStore'
 
 // Constants
 const ItemTypes = {
   SOCIAL_LINK: 'social-link'
-}
-
-export interface SocialLink {
-  id: string
-  user_id: string
-  platform: string
-  url: string
-  title: string
-  order_index: number
 }
 
 interface DraggableLinkProps {
@@ -560,29 +552,40 @@ export function SocialLinksManagerV2({ initialLinks = [], twitchUserId, onLinksC
   twitchUserId: string
   onLinksChange?: (links: SocialLink[]) => void
 }) {
-  const [links, setLinks] = useState(initialLinks)
-  const [editingLink, setEditingLink] = useState<SocialLink | null>(null)
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
-  const [isDraggingAny, setIsDraggingAny] = useState(false)
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
-  const [newLinkPlatform, setNewLinkPlatform] = useState('')
+  const {
+    links,
+    editingLink,
+    isEditDialogOpen,
+    isDraggingAny,
+    isAddDialogOpen,
+    newLinkPlatform,
+    setLinks,
+    openEditDialog,
+    closeEditDialog,
+    openAddDialog,
+    closeAddDialog,
+    setIsDraggingAny,
+    setNewLinkPlatform,
+    reorderLinks,
+    removeLink,
+    addLink
+  } = useSocialLinksManagerStore()
+
   const queryClient = useQueryClient()
   const supabase = createClientComponentClient()
 
-  // Update internal state when props change
+  // Update store when props change
   useEffect(() => {
     setLinks(initialLinks)
-  }, [initialLinks])
+  }, [initialLinks, setLinks])
 
   // We remove the real-time subscription since the parent component now handles this
 
   const moveLink = (dragIndex: number, hoverIndex: number) => {
-    setLinks(prevLinks => {
-      const newLinks = [...prevLinks]
-      const [removed] = newLinks.splice(dragIndex, 1)
-      newLinks.splice(hoverIndex, 0, removed)
-      return newLinks
-    })
+    const newLinks = [...links]
+    const [removed] = newLinks.splice(dragIndex, 1)
+    newLinks.splice(hoverIndex, 0, removed)
+    reorderLinks(newLinks)
   }
 
   const handleDrop = async () => {
@@ -624,12 +627,12 @@ export function SocialLinksManagerV2({ initialLinks = [], twitchUserId, onLinksC
 
       if (error) throw error
 
-      const updatedLinks = links.filter(link => link.id !== id)
-      setLinks(updatedLinks)
+      // Use Zustand store action
+      removeLink(id)
 
       // Notify parent of changes
       if (onLinksChange) {
-        onLinksChange(updatedLinks)
+        onLinksChange(links.filter(link => link.id !== id))
       }
 
       toast.success('Link deleted', {
@@ -643,8 +646,7 @@ export function SocialLinksManagerV2({ initialLinks = [], twitchUserId, onLinksC
   }
 
   const handleEditLink = (link: SocialLink) => {
-    setEditingLink(link)
-    setIsEditDialogOpen(true)
+    openEditDialog(link)
   }
 
   const handleUpdateLink = () => {
@@ -674,7 +676,7 @@ export function SocialLinksManagerV2({ initialLinks = [], twitchUserId, onLinksC
 
       if (error) throw error
 
-      setIsAddDialogOpen(false)
+      closeAddDialog()
       setNewLinkPlatform('')
 
       // If we have the newly created link data, use it to update the UI immediately
@@ -709,7 +711,7 @@ export function SocialLinksManagerV2({ initialLinks = [], twitchUserId, onLinksC
       <div className="w-full">
         <div className="space-y-6">
           {links.length === 0 ? (
-            <EmptyState onAddClick={() => setIsAddDialogOpen(true)} />
+            <EmptyState onAddClick={() => openAddDialog()} />
           ) : (
             <>
               <div className="flex items-center justify-between mb-4">
@@ -725,7 +727,7 @@ export function SocialLinksManagerV2({ initialLinks = [], twitchUserId, onLinksC
                   </div>
 
                   <Button
-                    onClick={() => setIsAddDialogOpen(true)}
+                    onClick={() => openAddDialog()}
                     className="bg-primary hover:bg-primary/90 text-white gap-1.5 h-9"
                     size="sm"
                   >
@@ -756,7 +758,7 @@ export function SocialLinksManagerV2({ initialLinks = [], twitchUserId, onLinksC
         </div>
       </div>
 
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+      <Dialog open={isAddDialogOpen} onOpenChange={closeAddDialog}>
         <DialogContent className="max-w-md border-0 shadow-xl bg-background">
           <DialogHeader>
             <DialogTitle className="text-xl">Add New Social Link</DialogTitle>
@@ -812,7 +814,7 @@ export function SocialLinksManagerV2({ initialLinks = [], twitchUserId, onLinksC
                     type="button"
                     variant="outline"
                     onClick={() => {
-                      setIsAddDialogOpen(false);
+                      closeAddDialog();
                       setNewLinkPlatform('');
                     }}
                     className="gap-1 border-0 bg-muted/20"
@@ -840,7 +842,7 @@ export function SocialLinksManagerV2({ initialLinks = [], twitchUserId, onLinksC
         userId={twitchUserId}
         onUpdate={handleUpdateLink}
         open={isEditDialogOpen}
-        onOpenChange={setIsEditDialogOpen}
+        onOpenChange={closeEditDialog}
       />
     </DndProvider>
   )

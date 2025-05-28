@@ -6,7 +6,7 @@ export async function POST(request: NextRequest) {
   try {
     const cookieStore = cookies()
     const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
-    const { userId, viewerId } = await request.json()
+    const { userId, viewerId, referrer, userAgent } = await request.json()
 
     if (!userId) {
       return NextResponse.json(
@@ -15,14 +15,33 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if profile_views table exists, if not create it
-    const { error: tableCheckError } = await supabase.rpc('check_if_table_exists', {
-      table_name: 'profile_views'
-    })
+    // Get visitor's IP address for deduplication
+    const forwardedFor = request.headers.get('x-forwarded-for')
+    const realIp = request.headers.get('x-real-ip')
+    const visitorIp = forwardedFor?.split(',')[0] || realIp || 'unknown'
 
-    if (tableCheckError) {
-      // Create the table if it doesn't exist
-      await supabase.rpc('create_profile_views_table')
+    // Create a session identifier (IP + User Agent hash for basic deduplication)
+    const sessionId = Buffer.from(`${visitorIp}-${userAgent || 'unknown'}`).toString('base64').slice(0, 32)
+
+    // Check for recent views from the same session (within last 30 minutes)
+    const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString()
+    
+    const { data: recentView } = await supabase
+      .from('profile_view_logs')
+      .select('id')
+      .eq('profile_id', userId)
+      .eq('session_id', sessionId)
+      .gte('viewed_at', thirtyMinutesAgo)
+      .limit(1)
+      .single()
+
+    // If there's a recent view from this session, don't count it again
+    if (recentView) {
+      return NextResponse.json({ 
+        success: true, 
+        counted: false, 
+        reason: 'Recent view from same session' 
+      })
     }
 
     // First, try to get the existing record
@@ -62,18 +81,24 @@ export async function POST(request: NextRequest) {
       if (insertError) throw insertError
     }
 
-    // Log the view detail for analytics if viewerId is provided
-    if (viewerId) {
-      await supabase
-        .from('profile_view_logs')
-        .insert({
-          profile_id: userId,
-          viewer_id: viewerId,
-          viewed_at: new Date().toISOString()
-        })
-    }
+    // Log the view detail for analytics
+    await supabase
+      .from('profile_view_logs')
+      .insert({
+        profile_id: userId,
+        viewer_id: viewerId,
+        session_id: sessionId,
+        visitor_ip: visitorIp,
+        referrer: referrer,
+        user_agent: userAgent,
+        viewed_at: new Date().toISOString()
+      })
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ 
+      success: true, 
+      counted: true,
+      sessionId: sessionId 
+    })
   } catch (error) {
     console.error('Error tracking profile view:', error)
     return NextResponse.json(

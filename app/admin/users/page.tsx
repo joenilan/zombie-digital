@@ -23,10 +23,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Shield, ShieldAlert, ShieldCheck, User, Eye, EyeOff } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Search, SortAsc, SortDesc } from "lucide-react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, SortAsc, SortDesc, Eye, EyeOff, MoreHorizontal, ChevronLeft, ChevronRight } from "@/lib/icons";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useAdminUsersStore, type Role, type SortField, type SortDirection, type PageSize } from "@/stores/useAdminUsersStore";
 
 interface TwitchUser {
   id: string;
@@ -34,46 +40,27 @@ interface TwitchUser {
   display_name: string;
   email: string;
   profile_image_url: string;
-  site_role: "owner" | "admin" | "moderator" | "user";
+  site_role: Role;
   created_at: string;
   last_sign_in_at: string;
 }
 
-type Role = "owner" | "admin" | "moderator" | "user";
-type SortField = 'display_name' | 'username' | 'created_at' | 'last_sign_in_at';
-type SortDirection = 'asc' | 'desc';
-type PageSize = 5 | 10 | 25 | 50 | 100 | 'all';
-
-const roleConfig: Record<Role, { icon: any; color: string }> = {
-  owner: { icon: ShieldCheck, color: "text-yellow-500" },
-  admin: { icon: ShieldAlert, color: "text-red-500" },
-  moderator: { icon: Shield, color: "text-orange-500" },
-  user: { icon: User, color: "text-gray-500" }
-};
-
 function SensitiveInfo({ text }: { text: string }) {
-  const [isVisible, setIsVisible] = useState(false);
+  const { isVisible, setIsVisible } = useAdminUsersStore()
 
   return (
-    <div className="flex items-center gap-2 w-full">
-      <div
-        className={`transition-all duration-200 truncate ${
-          isVisible ? "" : "blur-[4px] select-none"
-        }`}
-      >
-        {text}
-      </div>
-      <button
+    <div className="flex items-center gap-2">
+      <span className={isVisible ? "" : "blur-sm select-none"}>
+        {isVisible ? text : "••••••••"}
+      </span>
+      <Button
+        variant="ghost"
+        size="sm"
         onClick={() => setIsVisible(!isVisible)}
-        className="p-1 hover:bg-white/10 rounded-full transition-colors flex-shrink-0"
-        title={isVisible ? "Hide sensitive data" : "Show sensitive data"}
+        className="h-6 w-6 p-0"
       >
-        {isVisible ? (
-          <EyeOff className="w-3 h-3 opacity-60" />
-        ) : (
-          <Eye className="w-3 h-3 opacity-60" />
-        )}
-      </button>
+        {isVisible ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+      </Button>
     </div>
   );
 }
@@ -87,12 +74,21 @@ export default function UsersPage() {
   const supabase = createClientComponentClient();
   const queryClient = useQueryClient();
 
-  const [search, setSearch] = useState('');
-  const [sortField, setSortField] = useState<SortField>('created_at');
-  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
-  const [roleFilter, setRoleFilter] = useState<Role | 'all'>('all');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState<PageSize>(10);
+  const {
+    search,
+    sortField,
+    sortDirection,
+    roleFilter,
+    currentPage,
+    pageSize,
+    setSearch,
+    setSortField,
+    setSortDirection,
+    setRoleFilter,
+    setCurrentPage,
+    setPageSize,
+    updateSort
+  } = useAdminUsersStore()
 
   const { data: users, isLoading } = useQuery({
     queryKey: ['users', sortField, sortDirection],
@@ -109,9 +105,9 @@ export default function UsersPage() {
 
   const filteredUsers = useMemo(() => {
     if (!users) return [];
-    
+
     return users.filter(user => {
-      const matchesSearch = search.toLowerCase() === '' || 
+      const matchesSearch = search.toLowerCase() === '' ||
         user.display_name.toLowerCase().includes(search.toLowerCase()) ||
         user.username.toLowerCase().includes(search.toLowerCase()) ||
         user.email.toLowerCase().includes(search.toLowerCase());
@@ -124,7 +120,7 @@ export default function UsersPage() {
 
   const paginatedUsers = useMemo(() => {
     if (pageSize === 'all') return filteredUsers;
-    
+
     const startIndex = (currentPage - 1) * Number(pageSize);
     return filteredUsers.slice(startIndex, startIndex + Number(pageSize));
   }, [filteredUsers, currentPage, pageSize]);
@@ -136,8 +132,6 @@ export default function UsersPage() {
 
   const updateRoleMutation = useMutation({
     mutationFn: async ({ userId, role }: { userId: string; role: string }) => {
-      console.log('Attempting role update:', { userId, role });
-      
       const { data, error } = await fetch('/api/admin/users/update-role', {
         method: 'POST',
         headers: {
@@ -159,8 +153,8 @@ export default function UsersPage() {
       // Optimistically update to the new value
       queryClient.setQueryData(['users'], (old: TwitchUser[] | undefined) => {
         if (!old) return old;
-        return old.map(user => 
-          user.id === newData.userId 
+        return old.map(user =>
+          user.id === newData.userId
             ? { ...user, site_role: newData.role as Role }
             : user
         );
@@ -188,6 +182,15 @@ export default function UsersPage() {
       queryClient.invalidateQueries({ queryKey: ['users'] });
     }
   });
+
+  const handlePageSizeChange = (value: string) => {
+    if (value === 'all') {
+      setPageSize('all');
+    } else {
+      setPageSize(Number(value) as Exclude<PageSize, 'all'>);
+    }
+    setCurrentPage(1); // Reset to first page when changing page size
+  };
 
   return (
     <div className="space-y-4">
@@ -228,16 +231,13 @@ export default function UsersPage() {
           <span className="text-sm text-muted-foreground">Show</span>
           <Select
             value={pageSize.toString()}
-            onValueChange={(value) => {
-              setPageSize(value === 'all' ? 'all' : Number(value) as PageSize);
-              setCurrentPage(1); // Reset to first page when changing page size
-            }}
+            onValueChange={handlePageSizeChange}
           >
             <SelectTrigger className="w-[100px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {[5, 10, 25, 50, 100, 'all'].map((size) => (
+              {[10, 25, 50, 100, 'all'].map((size) => (
                 <SelectItem key={size} value={size.toString()}>
                   {size === 'all' ? 'All' : size} entries
                 </SelectItem>
@@ -253,7 +253,7 @@ export default function UsersPage() {
           </span>
           <div className="flex items-center gap-1">
             <button
-              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              onClick={() => setCurrentPage(Math.max(currentPage - 1, 1))}
               disabled={currentPage === 1}
               className="p-1 rounded-lg hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -268,9 +268,9 @@ export default function UsersPage() {
                   currentPage,
                   currentPage + 1,
                   totalPages
-                ].filter((page, index, array) => 
-                  page > 0 && 
-                  page <= totalPages && 
+                ].filter((page, index, array) =>
+                  page > 0 &&
+                  page <= totalPages &&
                   array.indexOf(page) === index
                 ).map((page, index, array) => (
                   <React.Fragment key={page}>
@@ -279,10 +279,10 @@ export default function UsersPage() {
                     )}
                     <button
                       onClick={() => setCurrentPage(page)}
-                      className={`
-                        min-w-[32px] h-8 px-2 rounded-lg
-                        ${currentPage === page ? 'bg-white/10' : 'hover:bg-white/5'}
-                      `}
+                      className={`px-3 py-1 rounded-lg text-sm ${currentPage === page
+                        ? 'bg-primary text-primary-foreground'
+                        : 'hover:bg-white/5'
+                        }`}
                     >
                       {page}
                     </button>
@@ -291,23 +291,21 @@ export default function UsersPage() {
               </div>
             ) : (
               // Show all page numbers for small sets
-              <div className="flex items-center gap-1">
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                  <button
-                    key={page}
-                    onClick={() => setCurrentPage(page)}
-                    className={`
-                      min-w-[32px] h-8 px-2 rounded-lg
-                      ${currentPage === page ? 'bg-white/10' : 'hover:bg-white/5'}
-                    `}
-                  >
-                    {page}
-                  </button>
-                ))}
-              </div>
+              Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                <button
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  className={`px-3 py-1 rounded-lg text-sm ${currentPage === page
+                    ? 'bg-primary text-primary-foreground'
+                    : 'hover:bg-white/5'
+                    }`}
+                >
+                  {page}
+                </button>
+              ))
             )}
             <button
-              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              onClick={() => setCurrentPage(Math.min(currentPage + 1, totalPages))}
               disabled={currentPage === totalPages}
               className="p-1 rounded-lg hover:bg-white/5 disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -317,142 +315,116 @@ export default function UsersPage() {
         </div>
       </div>
 
-      <div className="flex gap-2 flex-wrap">
-        {[
-          { field: 'display_name', label: 'Name' },
-          { field: 'username', label: 'Username' },
-          { field: 'created_at', label: 'Joined' },
-          { field: 'last_sign_in_at', label: 'Last Sign In' },
-        ].map(({ field, label }) => (
-          <button
-            key={field}
-            onClick={() => {
-              if (sortField === field) {
-                setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
-              } else {
-                setSortField(field as SortField);
-                setSortDirection('asc');
-              }
-            }}
-            className={`
-              flex items-center gap-2 px-3 py-1 rounded-lg text-sm
-              transition-colors hover:bg-white/5
-              ${sortField === field ? 'text-cyber-pink' : 'text-muted-foreground'}
-            `}
-          >
-            {label}
-            {sortField === field && (
-              sortDirection === 'asc' ? 
-                <SortAsc className="w-4 h-4" /> : 
-                <SortDesc className="w-4 h-4" />
-            )}
-          </button>
-        ))}
-      </div>
-
-      {isLoading ? (
-        <div>Loading users...</div>
-      ) : !filteredUsers?.length ? (
-        <div>No users found</div>
-      ) : (
-        <div className="grid gap-4">
-          {paginatedUsers.map((user) => (
-            <div 
-              key={user.id}
-              className="flex flex-col gap-4 p-4 bg-glass rounded-xl shadow-glass hover:shadow-cyber transition-all duration-300"
-            >
-              {/* User Info */}
-              <div className="flex items-start gap-3">
-                <Image
-                  src={user.profile_image_url}
-                  alt={user.display_name}
-                  width={40}
-                  height={40}
-                  className="rounded-full flex-shrink-0"
-                />
-                <div className="min-w-0 flex-1">
-                  <div className="font-medium truncate">{user.display_name}</div>
-                  <div className="text-sm text-muted-foreground truncate">@{user.username}</div>
-                  <div className="text-sm text-muted-foreground">
-                    <SensitiveInfo text={user.email} />
-                  </div>
-                </div>
-              </div>
-
-              {/* Meta Info */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="text-sm">
-                  <div className="text-muted-foreground">Joined</div>
-                  <div>{format(new Date(user.created_at), 'PP')}</div>
-                </div>
-                <div className="text-sm">
-                  <div className="text-muted-foreground">Last Sign In</div>
-                  <div>{format(new Date(user.last_sign_in_at), 'PP')}</div>
-                </div>
-              </div>
-
-              {/* Role Management */}
-              <div className="flex items-center justify-between gap-2 pt-2 border-t border-white/10">
-                <Badge variant={
-                  user.site_role === 'owner' ? 'default' :
-                  user.site_role === 'admin' ? 'destructive' :
-                  user.site_role === 'moderator' ? 'warning' :
-                  'secondary'
-                }>
-                  {user.site_role}
-                </Badge>
-
-                {user.site_role !== 'owner' && (
-                  <Select
-                    value={user.site_role}
-                    onValueChange={(newRole) => {
-                      console.log('Role change requested:', newRole);
-                      updateRoleMutation.mutate({ 
-                        userId: user.id, 
-                        role: newRole 
-                      });
-                    }}
-                    disabled={updateRoleMutation.isPending}
-                  >
-                    <SelectTrigger className="w-[110px]">
-                      <SelectValue>
-                        <div className="flex items-center gap-2">
-                          {React.createElement(roleConfig[user.site_role as Role].icon, {
-                            className: `w-4 h-4 ${roleConfig[user.site_role as Role].color}`
-                          })}
-                          <span>{updateRoleMutation.isPending ? 'Updating...' : user.site_role}</span>
-                        </div>
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {["admin", "moderator", "user"].map((role) => (
-                        <SelectItem 
-                          key={role} 
-                          value={role}
-                          disabled={updateRoleMutation.isPending}
-                        >
-                          <div className="flex items-center gap-2">
-                            {React.createElement(roleConfig[role as Role].icon, {
-                              className: `w-4 h-4 ${roleConfig[role as Role].color}`
-                            })}
-                            <span>{role}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead
+                className="cursor-pointer hover:bg-white/5"
+                onClick={() => updateSort('display_name')}
+              >
+                Display Name
+                {sortField === 'display_name' && (
+                  <span className="ml-1">{sortDirection === 'asc' ? '↑' : '↓'}</span>
                 )}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {filteredUsers.length === 0 && !isLoading && (
-        <div className="text-center py-8 text-muted-foreground">
-          No users found matching your criteria
-        </div>
-      )}
+              </TableHead>
+              <TableHead
+                className="cursor-pointer hover:bg-white/5"
+                onClick={() => updateSort('username')}
+              >
+                Username
+                {sortField === 'username' && (
+                  <span className="ml-1">{sortDirection === 'asc' ? '↑' : '↓'}</span>
+                )}
+              </TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Role</TableHead>
+              <TableHead
+                className="cursor-pointer hover:bg-white/5"
+                onClick={() => updateSort('created_at')}
+              >
+                Created
+                {sortField === 'created_at' && (
+                  <span className="ml-1">{sortDirection === 'asc' ? '↑' : '↓'}</span>
+                )}
+              </TableHead>
+              <TableHead>Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {isLoading ? (
+              Array.from({ length: 5 }).map((_, i) => (
+                <TableRow key={i}>
+                  <TableCell><div className="h-4 bg-white/10 rounded animate-pulse" /></TableCell>
+                  <TableCell><div className="h-4 bg-white/10 rounded animate-pulse" /></TableCell>
+                  <TableCell><div className="h-4 bg-white/10 rounded animate-pulse" /></TableCell>
+                  <TableCell><div className="h-4 bg-white/10 rounded animate-pulse" /></TableCell>
+                  <TableCell><div className="h-4 bg-white/10 rounded animate-pulse" /></TableCell>
+                  <TableCell><div className="h-4 bg-white/10 rounded animate-pulse" /></TableCell>
+                </TableRow>
+              ))
+            ) : paginatedUsers.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                  No users found
+                </TableCell>
+              </TableRow>
+            ) : (
+              paginatedUsers.map((user) => (
+                <TableRow key={user.id}>
+                  <TableCell className="font-medium">{user.display_name}</TableCell>
+                  <TableCell>{user.username}</TableCell>
+                  <TableCell>
+                    <SensitiveInfo text={user.email} />
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={
+                      user.site_role === 'owner' ? 'warning' :
+                        user.site_role === 'admin' ? 'destructive' :
+                          user.site_role === 'moderator' ? 'default' :
+                            'secondary'
+                    }>
+                      {user.site_role}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {new Date(user.created_at).toLocaleDateString()}
+                  </TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={() => updateRoleMutation.mutate({ userId: user.id, role: 'user' })}
+                          disabled={user.site_role === 'user'}
+                        >
+                          Set as User
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => updateRoleMutation.mutate({ userId: user.id, role: 'moderator' })}
+                          disabled={user.site_role === 'moderator'}
+                        >
+                          Set as Moderator
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => updateRoleMutation.mutate({ userId: user.id, role: 'admin' })}
+                          disabled={user.site_role === 'admin'}
+                        >
+                          Set as Admin
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 } 

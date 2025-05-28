@@ -1,188 +1,127 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect } from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import { redirect } from 'next/navigation'
-import Link from 'next/link'
-import { PlusCircle, Eye, Copy, ExternalLink, Trash2, Loader2, Paintbrush } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { toast } from 'sonner'
-import { useSearchParams, useRouter } from 'next/navigation'
-import { motion } from 'framer-motion'
-import { useFeatureAccess } from '@/hooks/use-feature-access'
-import { User } from '@supabase/supabase-js'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Plus, Eye, EyeOff, Trash2, Settings, ExternalLink, Calendar, Users, Layers } from 'lucide-react'
+import Link from 'next/link'
+import { motion } from 'framer-motion'
 import { useAuthStore } from '@/stores/useAuthStore'
-import { SkeletonForm } from '@/components/ui/skeleton'
+import { useCanvasStore } from '@/stores/useCanvasStore'
+import { LoadingSpinner } from '@/components/LoadingSpinner'
+import { toast } from 'sonner'
 
-interface Canvas {
-  id: string
-  name: string
-  resolution: string
-  user_id: string
-  created_at: string
-}
+export default function CanvasPage() {
+  const { user } = useAuthStore()
+  const {
+    canvases,
+    canvasesLoading,
+    canvasesError,
+    visibleUrls,
+    isDeleting,
+    setCanvases,
+    setCanvasesLoading,
+    setCanvasesError,
+    addVisibleUrl,
+    removeVisibleUrl,
+    setIsDeleting
+  } = useCanvasStore()
 
-const RESOLUTIONS = {
-  '1920x1080': { label: '1920x1080 (Full HD)', width: 1920, height: 1080 },
-  '1280x720': { label: '1280x720 (HD)', width: 1280, height: 720 },
-  '1366x768': { label: '1366x768 (WXGA)', width: 1366, height: 768 },
-  '1600x900': { label: '1600x900 (HD+)', width: 1600, height: 900 },
-  '2560x1440': { label: '2560x1440 (QHD)', width: 2560, height: 1440 },
-  '3840x2160': { label: '3840x2160 (4K UHD)', width: 3840, height: 2160 }
-}
-
-export default function CanvasSettingsPage() {
-  const { user: authUser, session, isLoading: authLoading, isInitialized } = useAuthStore()
   const supabase = createClientComponentClient()
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const [canvases, setCanvases] = useState<Canvas[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string>('')
-  const [visibleUrls, setVisibleUrls] = useState<Set<string>>(new Set())
-  const [isDeleting, setIsDeleting] = useState<string | null>(null)
-  const { hasFeatureAccess, isLoading: featuresLoading } = useFeatureAccess(authUser)
 
-  // Handle success message from URL params
   useEffect(() => {
-    const success = searchParams.get('success')
-    if (success === 'canvas-created') {
-      toast.success('Canvas created successfully!')
-      // Remove the success param from URL
-      const newUrl = new URL(window.location.href)
-      newUrl.searchParams.delete('success')
-      window.history.replaceState({}, '', newUrl.toString())
+    if (user) {
+      fetchCanvases()
     }
-  }, [searchParams])
+  }, [user])
 
-  // Auth is handled by dashboard layout - no need for redirect logic here
+  const fetchCanvases = async () => {
+    if (!user) return
 
-  // Load canvas data
-  React.useEffect(() => {
-    async function fetchData() {
-      if (!authUser) return
-
-      try {
-        setLoading(true)
-
-        // Get user's canvases
-        const { data: canvasData } = await supabase
-          .from('canvas_settings')
-          .select('*')
-          .eq('user_id', authUser.id)
-          .order('created_at', { ascending: false })
-
-        setCanvases(canvasData || [])
-      } catch (err) {
-        console.error('Error:', err)
-        setError('An unexpected error occurred')
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    if (isInitialized && authUser) {
-      fetchData()
-    }
-  }, [authUser?.id, isInitialized, supabase])
-
-  const handleCopyUrl = async (canvasId: string) => {
     try {
-      const url = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/overlay/canvas/${canvasId}`
-      await navigator.clipboard.writeText(url)
-      toast.success('Overlay URL copied to clipboard')
-    } catch (err) {
-      toast.error('Failed to copy URL')
-    }
-  }
+      setCanvasesLoading(true)
+      setCanvasesError(null)
 
-  const handleOpenOverlay = (canvasId: string) => {
-    window.open(`/overlay/canvas/${canvasId}`, '_blank')
+      const { data, error } = await supabase
+        .from('canvases')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        throw error
+      }
+
+      setCanvases(data || [])
+    } catch (err) {
+      console.error('Error fetching canvases:', err)
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load canvases'
+      setCanvasesError(errorMessage)
+      toast.error('Failed to load canvases', {
+        description: errorMessage
+      })
+    } finally {
+      setCanvasesLoading(false)
+    }
   }
 
   const toggleUrlVisibility = (canvasId: string) => {
-    setVisibleUrls(prev => {
-      const next = new Set(prev)
-      if (next.has(canvasId)) {
-        next.delete(canvasId)
-      } else {
-        next.add(canvasId)
-      }
-      return next
-    })
+    if (visibleUrls.has(canvasId)) {
+      removeVisibleUrl(canvasId)
+    } else {
+      addVisibleUrl(canvasId)
+    }
   }
 
-  const handleDelete = async (canvasId: string) => {
-    if (!window.confirm('Are you sure you want to delete this canvas? This action cannot be undone.')) {
-      return
-    }
+  const deleteCanvas = async (canvasId: string) => {
+    if (!user) return
 
-    setIsDeleting(canvasId)
     try {
-      const response = await fetch(`/api/canvas/${canvasId}/delete`, {
-        method: 'DELETE'
-      })
+      setIsDeleting(canvasId)
 
-      if (!response.ok) {
-        throw new Error('Failed to delete canvas')
+      const { error } = await supabase
+        .from('canvases')
+        .delete()
+        .eq('id', canvasId)
+        .eq('user_id', user.id)
+
+      if (error) {
+        throw error
       }
 
-      // Remove the canvas from the local state
-      setCanvases(prev => prev.filter(c => c.id !== canvasId))
+      // Remove from local state
+      setCanvases(canvases.filter(canvas => canvas.id !== canvasId))
+
       toast.success('Canvas deleted successfully')
     } catch (err) {
       console.error('Error deleting canvas:', err)
-      toast.error('Failed to delete canvas')
+      const errorMessage = err instanceof Error ? err.message : 'Failed to delete canvas'
+      toast.error('Failed to delete canvas', {
+        description: errorMessage
+      })
     } finally {
       setIsDeleting(null)
     }
   }
 
-  // Auth is handled by dashboard layout - user is guaranteed to exist here
+  if (canvasesLoading) {
+    return <LoadingSpinner text="Loading canvases..." />
+  }
 
-  // Feature access check
-  if (!featuresLoading && !hasFeatureAccess('CANVAS')) {
+  if (canvasesError) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-background/90 flex items-center justify-center">
-        <Card className="max-w-md w-full mx-4 bg-glass border-amber-500/20">
-          <CardHeader className="text-center">
-            <CardTitle className="text-amber-400 flex items-center justify-center gap-2">
-              <Paintbrush className="w-5 h-5" />
-              Feature Not Available
-            </CardTitle>
-            <CardDescription>
-              The Canvas feature is not available for your account.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="text-center space-y-4">
-            <div className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
-              Access Restricted
-            </div>
-            <p className="text-sm text-muted-foreground">
-              Contact an administrator if you believe this is an error.
-            </p>
-            <Button asChild variant="outline">
-              <Link href="/dashboard">
-                Back to Dashboard
-              </Link>
+      <div className="min-h-screen">
+        <div className="container mx-auto px-4 py-8">
+          <div className="rounded-xl bg-glass/50 backdrop-blur-xl p-8 border border-red-500/20">
+            <h1 className="text-2xl font-bold text-red-500 mb-2">Error</h1>
+            <p className="text-muted-foreground">{canvasesError}</p>
+            <Button onClick={fetchCanvases} className="mt-4">
+              Try Again
             </Button>
-          </CardContent>
-        </Card>
-      </div>
-    )
-  }
-
-  if (loading) {
-    return <SkeletonForm />
-  }
-
-  if (error) {
-    return (
-      <div className="rounded-xl bg-glass/50 backdrop-blur-xl p-8 border border-white/5">
-        <h1 className="text-2xl font-bold text-red-500 mb-4">Error</h1>
-        <p className="text-muted-foreground">{error}</p>
+          </div>
+        </div>
       </div>
     )
   }
@@ -190,130 +129,151 @@ export default function CanvasSettingsPage() {
   return (
     <div className="min-h-screen">
       <div className="container mx-auto px-4 py-8">
+        {/* Page Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
-          <h1 className="text-4xl font-bold text-white mb-2">Canvas Settings</h1>
-          <p className="text-gray-300">Create and manage your stream overlays.</p>
-        </motion.div>
-
-        <div className="space-y-8">
-          <motion.div
-            className="rounded-xl bg-glass/50 backdrop-blur-xl p-8 border border-white/5"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            <div className="flex justify-between items-center mb-8">
-              <div>
-                <h2 className="text-2xl font-semibold mb-2">Manage Your Canvases</h2>
-                <p className="text-muted-foreground">
-                  Create and configure stream overlays for your broadcasts.
-                </p>
-              </div>
-              <Link
-                href="/api/canvas/new"
-                className="flex items-center gap-2 px-4 py-2 bg-cyber-gradient text-white rounded-md transition-all duration-300 hover:scale-[1.02] shadow-cyber hover:shadow-cyber-hover"
-              >
-                <PlusCircle size={20} />
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-4xl font-bold text-white mb-2">Canvas Studio</h1>
+              <p className="text-gray-300">Create and manage your interactive canvases for streaming overlays.</p>
+            </div>
+            <Button asChild className="gap-2">
+              <Link href="/dashboard/canvas/new">
+                <Plus className="w-4 h-4" />
                 New Canvas
               </Link>
-            </div>
+            </Button>
+          </div>
+        </motion.div>
 
-            <div className="grid grid-cols-1 gap-4">
-              {canvases.length === 0 && (
-                <div className="text-center p-8 bg-background/20 rounded-lg">
-                  <p className="text-muted-foreground">You haven't created any canvases yet.</p>
-                  <p className="text-sm text-muted-foreground mt-2">Click the "New Canvas" button to get started.</p>
-                </div>
-              )}
-              {canvases.map((canvas, index) => (
-                <motion.div
-                  key={canvas.id}
-                  className="flex flex-col gap-4 p-6 rounded-xl bg-glass shadow-glass transition-all duration-300 hover:shadow-cyber border border-white/5"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, delay: index * 0.1 }}
-                >
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h3 className="font-medium text-lg">{canvas.name}</h3>
-                      <p className="text-sm text-muted-foreground">
-                        {RESOLUTIONS[canvas.resolution as keyof typeof RESOLUTIONS]?.label || canvas.resolution}
-                      </p>
+        {/* Canvas Grid */}
+        {canvases.length === 0 ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-center py-16"
+          >
+            <div className="max-w-md mx-auto">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
+                <Layers className="w-8 h-8 text-primary" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2">No canvases yet</h3>
+              <p className="text-muted-foreground mb-6">
+                Create your first canvas to start building interactive streaming overlays.
+              </p>
+              <Button asChild>
+                <Link href="/dashboard/canvas/new">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create Canvas
+                </Link>
+              </Button>
+            </div>
+          </motion.div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {canvases.map((canvas, index) => (
+              <motion.div
+                key={canvas.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+              >
+                <Card className="bg-glass/50 backdrop-blur-xl border-white/5 hover:shadow-cyber-hover transition-all duration-300">
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 min-w-0">
+                        <CardTitle className="text-lg truncate">{canvas.name}</CardTitle>
+                        <CardDescription className="line-clamp-2">
+                          {canvas.description || 'No description provided'}
+                        </CardDescription>
+                      </div>
+                      <Badge variant={canvas.is_public ? "default" : "secondary"} className="ml-2">
+                        {canvas.is_public ? 'Public' : 'Private'}
+                      </Badge>
                     </div>
-                    <div className="flex flex-wrap gap-2">
-                      <Link
-                        href={`/canvas/${canvas.id}`}
-                        target="_blank"
-                        className="px-3 py-1.5 bg-cyber-gradient text-white rounded transition-all duration-300 hover:scale-[1.02] shadow-cyber hover:shadow-cyber-hover"
-                      >
-                        Interact
-                      </Link>
-                      <Link
-                        href={`/dashboard/canvas/${canvas.id}/settings`}
-                        className="px-3 py-1.5 bg-background/20 hover:bg-background/40 text-white rounded transition-colors"
-                      >
-                        Settings
-                      </Link>
+                  </CardHeader>
+
+                  <CardContent className="space-y-4">
+                    {/* Canvas Stats */}
+                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        <Calendar className="w-4 h-4" />
+                        {new Date(canvas.created_at).toLocaleDateString()}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Users className="w-4 h-4" />
+                        {canvas.is_public ? 'Public' : 'Private'}
+                      </div>
+                    </div>
+
+                    {/* Canvas URL */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">Canvas URL</span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => toggleUrlVisibility(canvas.id)}
+                          className="h-6 w-6 p-0"
+                        >
+                          {visibleUrls.has(canvas.id) ? (
+                            <EyeOff className="w-3 h-3" />
+                          ) : (
+                            <Eye className="w-3 h-3" />
+                          )}
+                        </Button>
+                      </div>
+
+                      {visibleUrls.has(canvas.id) && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="text-xs font-mono bg-muted/20 p-2 rounded border break-all"
+                        >
+                          {`${window.location.origin}/overlay/canvas/${canvas.id}`}
+                        </motion.div>
+                      )}
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex gap-2">
+                      <Button asChild variant="outline" size="sm" className="flex-1">
+                        <Link href={`/dashboard/canvas/${canvas.id}`}>
+                          <ExternalLink className="w-3 h-3 mr-1" />
+                          Edit
+                        </Link>
+                      </Button>
+
+                      <Button asChild variant="outline" size="sm">
+                        <Link href={`/dashboard/canvas/${canvas.id}/settings`}>
+                          <Settings className="w-3 h-3" />
+                        </Link>
+                      </Button>
+
                       <Button
-                        variant="destructive"
+                        variant="outline"
                         size="sm"
-                        onClick={() => handleDelete(canvas.id)}
+                        onClick={() => deleteCanvas(canvas.id)}
                         disabled={isDeleting === canvas.id}
-                        className="px-3 py-1.5"
+                        className="text-red-400 hover:text-red-300 hover:bg-red-500/10"
                       >
                         {isDeleting === canvas.id ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <div className="w-3 h-3 animate-spin rounded-full border border-current border-t-transparent" />
                         ) : (
-                          <Trash2 className="h-4 w-4" />
+                          <Trash2 className="w-3 h-3" />
                         )}
                       </Button>
                     </div>
-                  </div>
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <div className="relative flex-1 min-w-0">
-                      <Input
-                        value={`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/overlay/canvas/${canvas.id}`}
-                        readOnly
-                        className="font-mono text-sm bg-background/20 w-full"
-                        type={visibleUrls.has(canvas.id) ? "text" : "password"}
-                      />
-                    </div>
-                    <div className="flex gap-2 justify-end">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => toggleUrlVisibility(canvas.id)}
-                        className="bg-background/20 hover:bg-background/40"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => handleCopyUrl(canvas.id)}
-                        className="bg-background/20 hover:bg-background/40"
-                      >
-                        <Copy className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => handleOpenOverlay(canvas.id)}
-                        className="bg-background/20 hover:bg-background/40"
-                      >
-                        <ExternalLink className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
-        </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )

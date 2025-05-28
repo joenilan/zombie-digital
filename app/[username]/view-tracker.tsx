@@ -1,8 +1,10 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 
 export function ViewTracker({ userId, isOwner }: { userId: string; isOwner?: boolean }) {
+    const [viewCounted, setViewCounted] = useState<boolean | null>(null)
+
     useEffect(() => {
         if (!userId) return
 
@@ -27,6 +29,15 @@ export function ViewTracker({ userId, isOwner }: { userId: string; isOwner?: boo
 
                 if (!response.ok) {
                     console.error('Failed to track view:', await response.text())
+                    return
+                }
+
+                const result = await response.json()
+                setViewCounted(result.counted)
+
+                // Optional: Log for debugging (remove in production)
+                if (process.env.NODE_ENV === 'development') {
+                    console.log('View tracking result:', result)
                 }
             } catch (error) {
                 console.error('Error tracking profile view:', error)
@@ -34,7 +45,7 @@ export function ViewTracker({ userId, isOwner }: { userId: string; isOwner?: boo
         }
 
         // Track the view after a short delay to avoid counting bounces
-        const timeoutId = setTimeout(trackView, 5000)
+        const timeoutId = setTimeout(trackView, 3000) // Reduced from 5s to 3s
 
         return () => clearTimeout(timeoutId)
     }, [userId, isOwner]) // Only run when userId or isOwner changes

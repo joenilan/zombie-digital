@@ -16,18 +16,16 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
 
   // Check if this is a username route (public social links page)
   // A username route has a single segment and doesn't match other known routes
-  const isUsernamePage = (
-    pathname.split('/').filter(Boolean).length === 1 &&
+  const isUsernamePage = pathname.startsWith('/') &&
+    pathname.split('/').length === 2 &&
+    pathname !== '/' &&
     !pathname.startsWith('/dashboard') &&
     !pathname.startsWith('/admin') &&
-    !pathname.startsWith('/auth') &&
+    !pathname.startsWith('/canvas') &&
+    !pathname.startsWith('/overlay') &&
     !pathname.startsWith('/api') &&
-    !pathname.startsWith('/docs') &&
-    pathname !== '/'
-  )
-
-  // Log for debugging
-  console.log(`Path: ${pathname}, Is username page: ${isUsernamePage}`);
+    !pathname.startsWith('/_next') &&
+    !pathname.includes('.');
 
   // Don't show navigation on overlay, canvas pages, or username pages
   if (isOverlay || isCanvas || isUsernamePage) {

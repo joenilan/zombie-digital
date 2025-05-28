@@ -1,14 +1,19 @@
 'use client'
 
-import { supabase } from '@/lib/supabase'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { useEffect, useState } from 'react'
 import { FlowCanvasV2 } from '@/components/canvas/FlowCanvasV2'
 import { useParams } from 'next/navigation'
-import { useAuth } from '@/hooks/useAuth'
+import { useAuthStore } from '@/stores/useAuthStore'
 
 interface CanvasData {
   id: string
   user_id: string
+  name: string
+  description?: string
+  is_public: boolean
+  created_at: string
+  updated_at: string
 }
 
 export default function CanvasPage() {
@@ -16,25 +21,18 @@ export default function CanvasPage() {
   const canvasId = params.id as string
   const [canvas, setCanvas] = useState<CanvasData | null>(null)
   const [canvasLoading, setCanvasLoading] = useState(true)
-  const { user, isInitialized, isLoading } = useAuth()
-
-  console.log('[CanvasPage] Render state:', {
-    canvasId,
-    user: !!user,
-    isInitialized,
-    isLoading,
-    canvasLoading,
-    canvas: !!canvas
-  })
+  const { user, isInitialized, isLoading } = useAuthStore()
+  const supabase = createClientComponentClient()
 
   useEffect(() => {
     // Get canvas data
     const getCanvas = async () => {
       try {
-        console.log('[CanvasPage] Loading canvas data for:', canvasId)
         setCanvasLoading(true)
+
+        // First try the new canvases table
         const { data: canvas, error } = await supabase
-          .from('canvas_settings')
+          .from('canvases')
           .select('*')
           .eq('id', canvasId)
           .single()
@@ -44,7 +42,6 @@ export default function CanvasPage() {
           return
         }
 
-        console.log('[CanvasPage] Canvas data loaded:', !!canvas)
         setCanvas(canvas)
       } catch (error) {
         console.error('[CanvasPage] Unexpected error fetching canvas:', error)
@@ -56,11 +53,10 @@ export default function CanvasPage() {
     if (canvasId) {
       getCanvas()
     }
-  }, [canvasId])
+  }, [canvasId, supabase])
 
   // Show loading while auth is initializing or canvas is loading
   if (!isInitialized || isLoading || canvasLoading) {
-    console.log('[CanvasPage] Showing loading state')
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
@@ -76,7 +72,6 @@ export default function CanvasPage() {
 
   // Show error if no user (shouldn't happen due to middleware protection)
   if (!user) {
-    console.log('[CanvasPage] No user found (unexpected)')
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
@@ -88,11 +83,9 @@ export default function CanvasPage() {
 
   // Show error if no canvas data
   if (!canvas) {
-    console.log('[CanvasPage] No canvas data found')
     return <div className="flex items-center justify-center min-h-screen">Canvas not found</div>
   }
 
-  console.log('[CanvasPage] Rendering canvas component')
   return (
     <div className="canvas-page">
       <FlowCanvasV2

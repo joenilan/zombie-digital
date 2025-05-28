@@ -36,7 +36,6 @@ export function useFeatureAccess(user: TwitchUser | null): UseFeatureAccessRetur
 
   const fetchFeatures = async () => {
     try {
-      console.log('[FeatureAccess] Fetching features for user role:', userRole)
       setIsLoading(true)
       setError(null)
 
@@ -47,19 +46,15 @@ export function useFeatureAccess(user: TwitchUser | null): UseFeatureAccessRetur
 
       if (fetchError) throw fetchError
 
-      console.log('[FeatureAccess] Raw features from DB:', data)
-
       // Calculate user access for each feature
       const featuresWithAccess = data?.map(feature => {
         const hasAccess = hasRoleAccess(userRole, feature.required_role) && feature.enabled
-        console.log(`[FeatureAccess] Feature ${feature.feature_id}: required=${feature.required_role}, userRole=${userRole}, enabled=${feature.enabled}, hasAccess=${hasAccess}`)
         return {
           ...feature,
           user_has_access: hasAccess
         }
       }) || []
 
-      console.log('[FeatureAccess] Features with access calculated:', featuresWithAccess)
       setFeatures(featuresWithAccess)
     } catch (err) {
       console.error('Error fetching features:', err)
@@ -71,10 +66,7 @@ export function useFeatureAccess(user: TwitchUser | null): UseFeatureAccessRetur
 
   useEffect(() => {
     if (userRole !== null) {
-      console.log('[FeatureAccess] User role changed, fetching features:', userRole)
       fetchFeatures()
-    } else {
-      console.log('[FeatureAccess] User role is null, skipping fetch')
     }
   }, [userRole, supabase])
 
@@ -91,16 +83,12 @@ export function useFeatureAccess(user: TwitchUser | null): UseFeatureAccessRetur
     const userLevel = roleHierarchy[userRole as keyof typeof roleHierarchy] || 0
     const requiredLevel = roleHierarchy[requiredRole as keyof typeof roleHierarchy] || 0
 
-    const hasAccess = userLevel >= requiredLevel
-    console.log(`[FeatureAccess] Role check: ${userRole}(${userLevel}) >= ${requiredRole}(${requiredLevel}) = ${hasAccess}`)
-    return hasAccess
+    return userLevel >= requiredLevel
   }
 
   const hasFeatureAccess = (featureId: string): boolean => {
     const feature = features.find(f => f.feature_id === featureId)
-    const hasAccess = feature?.user_has_access || false
-    console.log(`[FeatureAccess] Checking access for ${featureId}:`, hasAccess, feature)
-    return hasAccess
+    return feature?.user_has_access || false
   }
 
   const getFeature = (featureId: string): Feature | undefined => {

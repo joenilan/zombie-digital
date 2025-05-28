@@ -3,7 +3,7 @@
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { useEffect, useState } from 'react'
 import { SocialLinksManagerV2 } from '@/components/social-links-manager-v2'
-import type { SocialLink } from '@/components/social-links-manager-v2'
+import type { SocialLink } from '@/stores/useSocialLinksStore'
 import { BackgroundUpload } from '@/components/background-upload'
 import { redirect } from 'next/navigation'
 import { useFeatureAccess } from '@/hooks/use-feature-access'
@@ -42,6 +42,7 @@ import React from 'react'
 import { RealtimeChannel } from '@supabase/supabase-js'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { LoadingSpinner } from '@/components/LoadingSpinner'
+import { useSocialLinksStore } from '@/stores/useSocialLinksStore'
 
 interface TwitchUser {
   id: string
@@ -75,14 +76,27 @@ const StatCard = ({ title, value, icon: Icon, color = "primary" }: {
 
 export default function SocialLinksPage() {
   const { user: authUser, session, isLoading: authLoading, isInitialized } = useAuthStore()
-  const [twitchUser, setTwitchUser] = useState<TwitchUser | null>(null)
-  const [links, setLinks] = useState<SocialLink[]>([])
-  const [profileViews, setProfileViews] = useState(0)
-  const [isLoading, setIsLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<'links' | 'appearance' | 'analytics'>('links')
-  const [showAddLinkDialog, setShowAddLinkDialog] = useState(false)
+  const {
+    twitchUser,
+    links,
+    profileViews,
+    isLoading,
+    activeTab,
+    showAddLinkDialog,
+    setTwitchUser,
+    setLinks,
+    setProfileViews,
+    setIsLoading,
+    setActiveTab,
+    setShowAddLinkDialog,
+    updateBackground
+  } = useSocialLinksStore()
   const supabase = createClientComponentClient()
   const { hasFeatureAccess, isLoading: featuresLoading } = useFeatureAccess(authUser)
+
+  // Analytics state
+  const [analyticsData, setAnalyticsData] = useState<any>(null)
+  const [analyticsLoading, setAnalyticsLoading] = useState(false)
 
   // Define refs at the component level
   const currentLinkIdsRef = React.useRef(new Set<string>())
@@ -151,110 +165,77 @@ export default function SocialLinksPage() {
 
     console.log('Setting up dashboard realtime subscriptions for user:', twitchUser.id);
 
-    // Create a unique channel ID for dashboard
-    const channelId = `dashboard_social_tree_${twitchUser.id}_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-    console.log(`Creating dashboard channel: ${channelId}`);
+    // Set up realtime subscription for dashboard
+    const channelId = `dashboard_social_links_${twitchUser.id}`;
 
-    let channel: RealtimeChannel | null = null;
-    let debounceTimeout: ReturnType<typeof setTimeout> | undefined;
-    let isCleanedUp = false; // Flag to prevent operations after cleanup
-
-    try {
-      channel = supabase.channel(channelId);
-
-      // Debounced handler to prevent rapid-fire updates
-      const debouncedRefresh = (eventType?: 'INSERT' | 'UPDATE' | 'DELETE') => {
-        if (isCleanedUp || debounceTimeout) {
-          if (debounceTimeout) clearTimeout(debounceTimeout);
-        }
-        if (isCleanedUp) return; // Don't proceed if cleaned up
-
-        debounceTimeout = setTimeout(async () => {
-          if (isCleanedUp || isHandlingEventRef.current) return;
-
+    const channel = supabase
+      .channel(channelId)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'social_tree',
+          filter: `user_id=eq.${twitchUser.id}`
+        },
+        async (payload) => {
+          // Fetch fresh data when changes occur
           try {
-            isHandlingEventRef.current = true;
-            console.log('Dashboard: Database change detected, fetching fresh data...');
-
-            const { data: freshLinks } = await supabase
+            const { data: freshLinks, error } = await supabase
               .from('social_tree')
               .select('*')
               .eq('user_id', twitchUser.id)
               .order('order_index', { ascending: true });
 
-            if (freshLinks && !isCleanedUp) {
-              // Update our tracking set
-              currentLinkIdsRef.current.clear();
-              freshLinks.forEach(link => currentLinkIdsRef.current.add(link.id));
-
-              setLinks(freshLinks);
-              console.log('Dashboard: Updated with fresh links, count:', freshLinks.length);
+            if (error) {
+              console.error('Error fetching fresh links:', error);
+              return;
             }
+
+            setLinks(freshLinks || []);
           } catch (error) {
             console.error('Error fetching fresh links:', error);
-          } finally {
-            setTimeout(() => {
-              if (!isCleanedUp) {
-                isHandlingEventRef.current = false;
-              }
-            }, 500);
-          }
-        }, 350); // 350ms debounce (different from profile's 400ms)
-      };
-
-      // Set up a single handler for all database events (like the profile page)
-      channel.on(
-        'postgres_changes',
-        {
-          event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
-          schema: 'public',
-          table: 'social_tree',
-          filter: `user_id=eq.${twitchUser.id}`
-        },
-        (payload) => {
-          if (!isCleanedUp) {
-            console.log('Dashboard: Database event:', payload.eventType, payload);
-            debouncedRefresh(payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE');
           }
         }
-      );
-
-      // Subscribe to the channel
-      channel.subscribe((status) => {
-        console.log(`Dashboard social links subscription status (${twitchUser.id}):`, status);
-      });
-
-    } catch (error) {
-      console.error('Critical error in dashboard real-time setup:', error);
-    }
+      )
+      .subscribe();
 
     return () => {
-      console.log('Cleaning up dashboard realtime subscriptions');
-      isCleanedUp = true; // Set cleanup flag first
-
-      if (debounceTimeout) {
-        clearTimeout(debounceTimeout);
+      try {
+        supabase.removeChannel(channel);
+      } catch (e) {
+        console.error('Error removing dashboard channel:', e);
       }
-      if (channel) {
-        try {
-          supabase.removeChannel(channel);
-          console.log('Successfully removed dashboard channel:', channelId);
-        } catch (e) {
-          console.error('Error removing dashboard channel:', e);
-        }
-      }
-
-      // Reset state flags
-      isHandlingEventRef.current = false;
     };
-  }, [twitchUser, supabase]) // Removed links from dependencies
+  }, [twitchUser, supabase])
+
+  // Fetch analytics data
+  const fetchAnalytics = async () => {
+    if (!authUser) return
+
+    setAnalyticsLoading(true)
+    try {
+      const response = await fetch('/api/analytics/profile-views?days=30')
+      if (response.ok) {
+        const data = await response.json()
+        setAnalyticsData(data)
+      }
+    } catch (error) {
+      console.error('Error fetching analytics:', error)
+    } finally {
+      setAnalyticsLoading(false)
+    }
+  }
+
+  // Fetch analytics when tab changes to analytics
+  useEffect(() => {
+    if (activeTab === 'analytics' && authUser && !analyticsData) {
+      fetchAnalytics()
+    }
+  }, [activeTab, authUser, analyticsData])
 
   const handleBackgroundUpdate = (background: { url: string | null; type: string | null }) => {
-    setTwitchUser(prev => prev ? {
-      ...prev,
-      background_media_url: background.url,
-      background_media_type: background.type
-    } : null)
+    updateBackground(background)
 
     if (background.url) {
       toast.success('Background updated', {
@@ -552,7 +533,7 @@ export default function SocialLinksPage() {
                           )}
 
                           {/* Glass Overlay */}
-                          <div className="absolute inset-0 bg-black/20" />
+                          <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" />
 
                           {/* Content - scaled down but proportionally identical */}
                           <div className="relative space-y-4 p-3">
@@ -674,10 +655,33 @@ export default function SocialLinksPage() {
                   </CardHeader>
                   <CardContent>
                     <div className="flex items-baseline gap-2">
-                      <div className="text-3xl font-bold">{profileViews !== null ? profileViews : "0"}</div>
+                      <div className="text-3xl font-bold">
+                        {analyticsLoading ? "..." : (analyticsData?.totalViews || profileViews || "0")}
+                      </div>
                       <div className="text-sm text-blue-500 flex items-center">
                         <ArrowUpRight className="w-3 h-3 mr-1" />
                         All time
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <BarChart4 className="w-4 h-4 text-green-500" />
+                      Recent Views
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-baseline gap-2">
+                      <div className="text-3xl font-bold">
+                        {analyticsLoading ? "..." : (analyticsData?.recentViews || "0")}
+                      </div>
+                      <div className={`text-sm flex items-center ${analyticsData?.growthPercentage >= 0 ? 'text-green-500' : 'text-red-500'
+                        }`}>
+                        <ArrowUpRight className="w-3 h-3 mr-1" />
+                        {analyticsData?.growthPercentage ? `${analyticsData.growthPercentage > 0 ? '+' : ''}${analyticsData.growthPercentage}%` : 'Last 7 days'}
                       </div>
                     </div>
                   </CardContent>
@@ -700,22 +704,6 @@ export default function SocialLinksPage() {
                     </div>
                   </CardContent>
                 </Card>
-
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <Calendar className="w-4 h-4 text-green-500" />
-                      Profile Age
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-baseline gap-2">
-                      <div className="text-3xl font-bold">
-                        {twitchUser?.created_at ? formatDistanceToNow(new Date(twitchUser.created_at), { addSuffix: false }) : "--"}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
               </div>
 
               <div className="bg-background rounded-xl p-6">
@@ -723,6 +711,8 @@ export default function SocialLinksPage() {
                   <h3 className="text-xl font-semibold">Views Over Time</h3>
                   <div className="flex items-center gap-2">
                     <Button variant="outline" size="sm" className="gap-1.5" onClick={() => {
+                      setAnalyticsData(null)
+                      fetchAnalytics()
                       toast.info("Refreshing analytics...", {
                         description: "Your analytics data is being updated.",
                       })
