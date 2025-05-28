@@ -552,7 +552,7 @@ export default function SocialLinksPage() {
                           )}
 
                           {/* Glass Overlay */}
-                          <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" />
+                          <div className="absolute inset-0 bg-black/20" />
 
                           {/* Content - scaled down but proportionally identical */}
                           <div className="relative space-y-4 p-3">
