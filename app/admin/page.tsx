@@ -2,6 +2,9 @@ import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 
+// Force dynamic rendering since we use cookies
+export const dynamic = 'force-dynamic';
+
 export default async function AdminPage() {
   const supabase = createServerComponentClient({ cookies });
 

@@ -2,6 +2,9 @@ import { createServerComponentClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { Navigation } from '@/components/navigation/Navigation'
 
+// Force dynamic rendering since we use cookies
+export const dynamic = 'force-dynamic';
+
 export default async function CanvasLayout({
   children,
 }: {
@@ -14,7 +17,7 @@ export default async function CanvasLayout({
 
   if (!session) {
     return (
-      <div style={{ 
+      <div style={{
         all: 'unset',
         display: 'block',
         position: 'fixed',

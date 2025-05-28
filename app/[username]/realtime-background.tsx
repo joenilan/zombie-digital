@@ -23,13 +23,13 @@ export function RealtimeBackground({ userId, initialBackground }: RealtimeBackgr
         {
           event: '*',
           schema: 'public',
-          table: 'public_profiles',
-          filter: `user_id=eq.${userId}`
+          table: 'twitch_users',
+          filter: `id=eq.${userId}`
         },
         async (payload) => {
           console.log('Background update:', payload)
           const newData = payload.new as any
-          
+
           if (newData) {
             setBackground({
               url: newData.background_media_url,

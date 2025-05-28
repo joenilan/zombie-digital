@@ -17,111 +17,13 @@ export interface SocialLink {
   [key: string]: any
 }
 import {
-  Twitter,
-  Youtube,
   Twitch,
-  Instagram,
-  Facebook,
-  Github,
-  Linkedin,
-  Globe,
-  Link as LinkIcon,
-  Rocket,
-  Music,
-  Store,
-  DollarSign,
-  type LucideIcon,
   ChevronDown,
-} from 'lucide-react'
-import {
-  SiDiscord,
-  SiTiktok,
-  SiKick,
-  SiKofi,
-  SiPatreon,
-  SiOnlyfans,
-  SiCashapp,
-  SiVenmo,
-  SiPaypal,
-  SiSpotify,
-  SiSoundcloud,
-  SiBandcamp,
-  SiThreads,
-  SiSubstack,
-  SiMedium,
-  SiBluesky,
-} from '@icons-pack/react-simple-icons'
-import { motion, AnimatePresence } from 'framer-motion'
-
-const platformIcons: Record<string, any> = {
-  // Social Media
-  twitter: Twitter,
-  bluesky: SiBluesky,
-  youtube: Youtube,
-  twitch: Twitch,
-  instagram: Instagram,
-  facebook: Facebook,
-  github: Github,
-  linkedin: Linkedin,
-  discord: SiDiscord,
-  tiktok: SiTiktok,
-  kick: SiKick,
-  threads: SiThreads,
-
-  // Content Creation
-  streamelements: Rocket,
-  kofi: SiKofi,
-  fourthwall: Store,
-  patreon: SiPatreon,
-  onlyfans: SiOnlyfans,
-
-  // Payment/Support
-  cashapp: SiCashapp,
-  venmo: SiVenmo,
-  paypal: SiPaypal,
-
-  // Music/Audio
-  spotify: SiSpotify,
-  soundcloud: SiSoundcloud,
-  bandcamp: SiBandcamp,
-  music: Music,
-
-  // Writing/Blogs
-  substack: SiSubstack,
-  medium: SiMedium,
-
-  // Generic
-  website: Globe,
-  link: LinkIcon,
-}
-
-// Custom color mapping for icons
-const platformColors: Record<string, string> = {
-  twitter: '#1DA1F2',
-  bluesky: '#0085FF',
-  youtube: '#FF0000',
-  twitch: '#9146FF',
-  instagram: '#E4405F',
-  discord: '#5865F2',
-  tiktok: '#000000',
-  kick: '#53FC18',
-  kofi: '#FF5E5B',
-  patreon: '#FF424D',
-  onlyfans: '#00AFF0',
-  spotify: '#1DB954',
-  streamelements: '#F43B4E',
-}
-
-function getPlatformIcon(platform: string) {
-  const normalizedPlatform = platform.toLowerCase().trim()
-  const Icon = platformIcons[normalizedPlatform] || platformIcons.link
-  return Icon
-}
-
-function getPlatformColor(platform: string) {
-  const normalizedPlatform = platform.toLowerCase().trim()
-  return platformColors[normalizedPlatform] || 'currentColor'
-}
+  getPlatformIcon,
+  getPlatformColor,
+  Link as LinkIcon
+} from '@/lib/icons'
+import { motion, AnimatePresence, LayoutGroup } from 'framer-motion'
 
 interface RealtimeLinksProps {
   userId: string
@@ -179,7 +81,7 @@ function TwitchLink({ link, username }: { link: SocialLink; username: string }) 
         <div className="absolute inset-0 bg-gradient-to-r from-cyber-pink/10 to-cyber-cyan/10 
                       opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         <div className="relative flex items-center justify-center gap-3">
-          <Twitch className="w-6 h-6" style={{ color: platformColors.twitch }} />
+          <Twitch className="w-6 h-6" />
           <span className="font-medium text-lg">
             {link.title || link.platform}
           </span>
@@ -268,6 +170,8 @@ export function RealtimeLinks({ userId, initialLinks, isOwner }: RealtimeLinksPr
   })
 
   const [links, setLinks] = useState(initialLinks)
+  const [isUpdating, setIsUpdating] = useState(false)
+  const [lastUpdateType, setLastUpdateType] = useState<'INSERT' | 'UPDATE' | 'DELETE' | null>(null)
   const supabase = createClientComponentClient()
 
   // Define refs at component level, not inside useEffect
@@ -289,116 +193,65 @@ export function RealtimeLinks({ userId, initialLinks, isOwner }: RealtimeLinksPr
     console.log(`Creating public profile channel: ${channelId}`);
 
     let channel: RealtimeChannel | null = null;
+    let debounceTimeout: ReturnType<typeof setTimeout> | undefined;
+    let isCleanedUp = false; // Flag to prevent operations after cleanup
+
     try {
       // Create channel with a unique name for public profile page
       channel = supabase.channel(channelId);
 
-      // For all events (INSERT, UPDATE, DELETE), just refetch the entire list
-      // This ensures consistency and prevents duplicates
-      const handleDatabaseChange = async (payload?: any) => {
-        if (isHandlingEventRef.current) return;
+      // Debounced handler to prevent rapid-fire updates
+      const debouncedRefresh = (eventType?: 'INSERT' | 'UPDATE' | 'DELETE') => {
+        if (isCleanedUp || debounceTimeout) {
+          if (debounceTimeout) clearTimeout(debounceTimeout);
+        }
+        if (isCleanedUp) return; // Don't proceed if cleaned up
 
-        try {
-          isHandlingEventRef.current = true;
+        debounceTimeout = setTimeout(async () => {
+          if (isCleanedUp || isHandlingEventRef.current) return;
 
-          // Check if this is a content update (name/URL change)
-          const isContentUpdate = payload &&
-            payload.eventType === 'UPDATE' &&
-            payload.new && payload.old && (
-              payload.new.url !== payload.old.url ||
-              payload.new.title !== payload.old.title ||
-              payload.new.platform !== payload.old.platform
-            );
+          try {
+            isHandlingEventRef.current = true;
+            setIsUpdating(true);
+            setLastUpdateType(eventType || null);
+            console.log('Public profile: Database change detected, fetching fresh data...');
 
-          if (isContentUpdate) {
-            console.log('Public profile: Detected content update (name/URL/platform changed)');
-          }
+            const { data: freshLinks } = await supabase
+              .from('social_tree')
+              .select('*')
+              .eq('user_id', userId)
+              .order('order_index', { ascending: true });
 
-          console.log('Public profile: Database change detected, fetching fresh data...');
-
-          const { data: freshLinks } = await supabase
-            .from('social_tree')
-            .select('*')
-            .eq('user_id', userId)
-            .order('order_index', { ascending: true });
-
-          if (freshLinks) {
-            console.log('Public profile: Updated links received:', freshLinks.length);
-
-            // Before blindly updating, check if there are actual differences
-            // This prevents unnecessary re-renders when the data hasn't changed
-            const freshIds = new Set(freshLinks.map(link => link.id));
-
-            // Check if there are differences by comparing IDs
-            let hasDifferences = freshIds.size !== linkIdsRef.current.size;
-
-            // If we have a content update, force an update regardless of ID changes
-            if (isContentUpdate) {
-              hasDifferences = true;
-              console.log('Public profile: Forcing update due to content change');
-            }
-
-            if (!hasDifferences) {
-              // Check for items in fresh that aren't in current
-              for (const link of freshLinks) {
-                if (!linkIdsRef.current.has(link.id)) {
-                  hasDifferences = true;
-                  break;
-                }
-              }
-
-              // If still no differences, check for items in current that aren't in fresh
-              if (!hasDifferences) {
-                for (const id of linkIdsRef.current) {
-                  if (!freshIds.has(id)) {
-                    hasDifferences = true;
-                    break;
-                  }
-                }
-              }
-
-              // Even if IDs match, content might have changed (name/URL updates)
-              if (!hasDifferences && payload && payload.eventType === 'UPDATE') {
-                // Compare content of current links with fresh links
-                const currentLinks = links;
-                const currentLinksMap = new Map(currentLinks.map(link => [link.id, link]));
-
-                for (const freshLink of freshLinks) {
-                  const currentLink = currentLinksMap.get(freshLink.id);
-                  if (currentLink && (
-                    currentLink.url !== freshLink.url ||
-                    currentLink.title !== freshLink.title ||
-                    currentLink.platform !== freshLink.platform
-                  )) {
-                    console.log('Public profile: Content change detected for link', freshLink.id);
-                    hasDifferences = true;
-                    break;
-                  }
-                }
-              }
-            }
-
-            if (hasDifferences) {
-              // Only update state if there's a difference in the data
-              console.log('Public profile: Differences detected, updating links');
-
-              // Update our ref for next comparison
-              linkIdsRef.current = freshIds;
+            if (freshLinks && !isCleanedUp) {
+              // Update our tracking set
+              linkIdsRef.current.clear();
+              freshLinks.forEach(link => linkIdsRef.current.add(link.id));
 
               setLinks(freshLinks);
-            } else {
-              console.log('Public profile: No changes detected, skipping update');
+              console.log('Public profile: Updated with fresh links, count:', freshLinks.length);
+
+              // Show update feedback briefly
+              setTimeout(() => {
+                if (!isCleanedUp) {
+                  setIsUpdating(false);
+                  setLastUpdateType(null);
+                }
+              }, 1000);
             }
+          } catch (error) {
+            console.error('Error fetching fresh links:', error);
+            if (!isCleanedUp) {
+              setIsUpdating(false);
+              setLastUpdateType(null);
+            }
+          } finally {
+            setTimeout(() => {
+              if (!isCleanedUp) {
+                isHandlingEventRef.current = false;
+              }
+            }, 500);
           }
-        } catch (error) {
-          console.error('Error fetching updated links:', error);
-        } finally {
-          // Allow handling future events after a short delay
-          // This prevents race conditions with multiple rapid changes
-          setTimeout(() => {
-            isHandlingEventRef.current = false;
-          }, 1000); // Longer delay for public profile to ensure dashboard has time to update
-        }
+        }, 400); // 400ms debounce (different from dashboard's 350ms)
       };
 
       // Set up a single handler for all database events
@@ -411,8 +264,10 @@ export function RealtimeLinks({ userId, initialLinks, isOwner }: RealtimeLinksPr
           filter: `user_id=eq.${userId}`
         },
         (payload) => {
-          console.log('Public profile: Database event:', payload.eventType, payload);
-          handleDatabaseChange(payload);
+          if (!isCleanedUp) {
+            console.log('Public profile: Database event:', payload.eventType, payload);
+            debouncedRefresh(payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE');
+          }
         }
       );
 
@@ -426,15 +281,26 @@ export function RealtimeLinks({ userId, initialLinks, isOwner }: RealtimeLinksPr
 
     return () => {
       console.log('Cleaning up realtime subscription for public profile:', userId);
+      isCleanedUp = true; // Set cleanup flag first
+
+      if (debounceTimeout) {
+        clearTimeout(debounceTimeout);
+      }
       if (channel) {
         try {
           supabase.removeChannel(channel);
+          console.log('Successfully removed public profile channel:', channelId);
         } catch (err) {
-          console.error('Error removing channel:', err);
+          console.error('Error removing public profile channel:', err);
         }
       }
+
+      // Reset state flags
+      isHandlingEventRef.current = false;
+      setIsUpdating(false);
+      setLastUpdateType(null);
     };
-  }, [supabase, userId, links]) // Added links to dependencies since we reference it for the initial ref value
+  }, [supabase, userId]) // Removed links from dependencies to prevent infinite loops
 
   if (!links.length) {
     return (
@@ -464,82 +330,179 @@ export function RealtimeLinks({ userId, initialLinks, isOwner }: RealtimeLinksPr
   }
 
   return (
-    <div className="space-y-4 w-full">
-      {links.map((link) => {
-        // Debug logging
-        console.log('Link:', {
-          id: link.id,
-          platform: link.platform,
-          platformLower: link.platform.toLowerCase(),
-          isTwitch: link.platform.toLowerCase() === 'twitch',
-          url: link.url
-        })
+    <div className="space-y-4 w-full relative">
+      {/* Real-time update indicator */}
+      <AnimatePresence>
+        {isUpdating && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="absolute -top-12 left-1/2 transform -translate-x-1/2 z-10"
+          >
+            <div className="bg-cyber-gradient text-white px-3 py-1 rounded-full text-xs font-medium shadow-lg">
+              {lastUpdateType === 'INSERT' && '✨ Link added'}
+              {lastUpdateType === 'UPDATE' && '🔄 Links updated'}
+              {lastUpdateType === 'DELETE' && '🗑️ Link removed'}
+              {!lastUpdateType && '🔄 Updating...'}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-        // Special handling for Twitch links
-        if (link.platform.toLowerCase() === 'twitch') {
-          console.log('Rendering TwitchLink for:', link.url);
-          try {
-            const username = link.url.split('/').pop() || '';
-            console.log('Extracted username:', username);
-            if (!username) {
-              console.error('Failed to extract username from URL:', link.url);
-              throw new Error('Invalid Twitch URL');
+      {/* Links with layout animations */}
+      <LayoutGroup>
+        <AnimatePresence mode="popLayout">
+          {links.map((link, index) => {
+            // Debug logging
+            console.log('Link:', {
+              id: link.id,
+              platform: link.platform,
+              platformLower: link.platform.toLowerCase(),
+              isTwitch: link.platform.toLowerCase() === 'twitch',
+              url: link.url
+            })
+
+            // Special handling for Twitch links
+            if (link.platform.toLowerCase() === 'twitch') {
+              console.log('Rendering TwitchLink for:', link.url);
+              try {
+                const username = link.url.split('/').pop() || '';
+                console.log('Extracted username:', username);
+                if (!username) {
+                  console.error('Failed to extract username from URL:', link.url);
+                  throw new Error('Invalid Twitch URL');
+                }
+                return (
+                  <motion.div
+                    key={link.id}
+                    layout
+                    initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                    animate={{
+                      opacity: 1,
+                      y: 0,
+                      scale: 1,
+                      transition: {
+                        type: "spring",
+                        stiffness: 300,
+                        damping: 30,
+                        delay: index * 0.05
+                      }
+                    }}
+                    exit={{
+                      opacity: 0,
+                      y: -20,
+                      scale: 0.95,
+                      transition: { duration: 0.2 }
+                    }}
+                    whileHover={{
+                      y: -2,
+                      transition: { type: "spring", stiffness: 400, damping: 25 }
+                    }}
+                  >
+                    <TwitchLink link={link} username={username} />
+                  </motion.div>
+                );
+              } catch (error) {
+                console.error('Error rendering TwitchLink:', error);
+                // Fallback to regular link if TwitchLink fails
+                const Icon = getPlatformIcon(link.platform);
+                return (
+                  <motion.a
+                    key={link.id}
+                    layout
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block w-full p-4 rounded-xl bg-glass shadow-glass 
+                             hover:shadow-cyber transition-all duration-300 transform hover:-translate-y-1
+                             text-center group relative overflow-hidden"
+                    initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                    animate={{
+                      opacity: 1,
+                      y: 0,
+                      scale: 1,
+                      transition: {
+                        type: "spring",
+                        stiffness: 300,
+                        damping: 30,
+                        delay: index * 0.05
+                      }
+                    }}
+                    exit={{
+                      opacity: 0,
+                      y: -20,
+                      scale: 0.95,
+                      transition: { duration: 0.2 }
+                    }}
+                    whileHover={{
+                      y: -2,
+                      transition: { type: "spring", stiffness: 400, damping: 25 }
+                    }}
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-cyber-pink/10 to-cyber-cyan/10 
+                                  opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    <div className="relative flex items-center justify-center gap-3">
+                      <Icon className="w-6 h-6" />
+                      <span className="font-medium text-lg">
+                        {link.title || link.platform}
+                      </span>
+                    </div>
+                  </motion.a>
+                );
+              }
             }
-            return <TwitchLink key={link.id} link={link} username={username} />;
-          } catch (error) {
-            console.error('Error rendering TwitchLink:', error);
-            // Fallback to regular link if TwitchLink fails
-            const Icon = getPlatformIcon(link.platform);
-            const iconColor = getPlatformColor(link.platform);
+
+            // Regular links with enhanced animations
+            console.log('Rendering regular link for:', link.platform);
+            const Icon = getPlatformIcon(link.platform)
+
             return (
-              <a
+              <motion.a
                 key={link.id}
+                layout
                 href={link.url}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="block w-full p-4 rounded-xl bg-glass shadow-glass 
                          hover:shadow-cyber transition-all duration-300 transform hover:-translate-y-1
                          text-center group relative overflow-hidden"
+                initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                animate={{
+                  opacity: 1,
+                  y: 0,
+                  scale: 1,
+                  transition: {
+                    type: "spring",
+                    stiffness: 300,
+                    damping: 30,
+                    delay: index * 0.05
+                  }
+                }}
+                exit={{
+                  opacity: 0,
+                  y: -20,
+                  scale: 0.95,
+                  transition: { duration: 0.2 }
+                }}
+                whileHover={{
+                  y: -2,
+                  transition: { type: "spring", stiffness: 400, damping: 25 }
+                }}
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-cyber-pink/10 to-cyber-cyan/10 
                               opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 <div className="relative flex items-center justify-center gap-3">
-                  <Icon className="w-6 h-6" style={{ color: iconColor }} />
+                  <Icon className="w-6 h-6" />
                   <span className="font-medium text-lg">
                     {link.title || link.platform}
                   </span>
                 </div>
-              </a>
-            );
-          }
-        }
-
-        // Regular links remain the same
-        console.log('Rendering regular link for:', link.platform);
-        const Icon = getPlatformIcon(link.platform)
-        const iconColor = getPlatformColor(link.platform)
-
-        return (
-          <a
-            key={link.id}
-            href={link.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block w-full p-4 rounded-xl bg-glass shadow-glass 
-                     hover:shadow-cyber transition-all duration-300 transform hover:-translate-y-1
-                     text-center group relative overflow-hidden"
-          >
-            <div className="absolute inset-0 bg-gradient-to-r from-cyber-pink/10 to-cyber-cyan/10 
-                          opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            <div className="relative flex items-center justify-center gap-3">
-              <Icon className="w-6 h-6" style={{ color: iconColor }} />
-              <span className="font-medium text-lg">
-                {link.title || link.platform}
-              </span>
-            </div>
-          </a>
-        )
-      })}
+              </motion.a>
+            )
+          })}
+        </AnimatePresence>
+      </LayoutGroup>
     </div>
   )
 } 

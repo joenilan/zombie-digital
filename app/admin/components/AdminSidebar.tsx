@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { 
-  BellIcon, 
-  UsersIcon, 
+import {
+  BellIcon,
+  UsersIcon,
   SettingsIcon,
   ShieldIcon,
-  ActivityIcon
+  ActivityIcon,
+  ToggleLeftIcon
 } from "lucide-react";
 
 const adminRoutes = [
@@ -26,6 +27,11 @@ const adminRoutes = [
     href: "/admin/users",
     label: "User Management",
     icon: UsersIcon
+  },
+  {
+    href: "/admin/features",
+    label: "Feature Management",
+    icon: ToggleLeftIcon
   },
   {
     href: "/admin/settings",
@@ -62,7 +68,7 @@ export function AdminSidebar() {
           >
             <div className="relative z-10 flex items-center gap-3">
               <Icon className={`w-5 h-5 transition-colors duration-300
-                ${isActive ? 'text-cyber-pink' : 'group-hover:text-cyber-cyan'}`} 
+                ${isActive ? 'text-cyber-pink' : 'group-hover:text-cyber-cyan'}`}
               />
               <span className="font-medium">{route.label}</span>
             </div>

@@ -1,47 +1,34 @@
 "use client"
 
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
-import { useEffect, useState } from "react"
+import { useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { useAuth } from "@/hooks/useAuth"
 import { LoadingSpinner } from "@/components/LoadingSpinner"
-import { TwitchAuthProvider } from "@/providers/twitch-auth-provider"
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  const [loading, setLoading] = useState(true)
   const router = useRouter()
-  const supabase = createClientComponentClient()
+  const { user, isInitialized, isLoading } = useAuth()
 
+  // Redirect to sign-in if not authenticated after initialization
   useEffect(() => {
-    async function checkAuth() {
-      try {
-        const { data: { session } } = await supabase.auth.getSession()
-        if (!session) {
-          router.push('/auth/signin')
-          return
-        }
-        setLoading(false)
-      } catch (error) {
-        console.error('Error checking auth:', error)
-        router.push('/auth/signin')
-      }
+    if (isInitialized && !isLoading && !user) {
+      router.replace('/auth/signin')
     }
+  }, [user, isInitialized, isLoading, router])
 
-    checkAuth()
-  }, [router, supabase])
-
-  if (loading) {
-    return null;
+  // Show loading while auth is initializing
+  if (!isInitialized || isLoading) {
+    return <LoadingSpinner text="Authenticating..." />
   }
 
-  return (
-    <TwitchAuthProvider>
-      <div className="container max-w-6xl mx-auto p-4 sm:p-6 lg:p-8">
-        {children}
-      </div>
-    </TwitchAuthProvider>
-  )
+  // Don't render if no user (redirect will happen)
+  if (!user) {
+    return <LoadingSpinner text="Redirecting to login..." />
+  }
+
+  return children
 } 

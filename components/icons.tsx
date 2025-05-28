@@ -1,8 +1,9 @@
 interface IconProps {
   size?: number;
+  className?: string;
 }
 
-export function UsersIcon({ size = 24 }: IconProps) {
+export function UsersIcon({ size = 24, className = "" }: IconProps) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -14,6 +15,7 @@ export function UsersIcon({ size = 24 }: IconProps) {
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
+      className={className}
     >
       <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
       <circle cx="9" cy="7" r="4" />
@@ -23,7 +25,7 @@ export function UsersIcon({ size = 24 }: IconProps) {
   );
 }
 
-export function StarIcon({ size = 24 }: IconProps) {
+export function StarIcon({ size = 24, className = "" }: IconProps) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -35,13 +37,14 @@ export function StarIcon({ size = 24 }: IconProps) {
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
+      className={className}
     >
       <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
     </svg>
   );
 }
 
-export function PointsIcon({ size = 24 }: IconProps) {
+export function PointsIcon({ size = 24, className = "" }: IconProps) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -53,6 +56,7 @@ export function PointsIcon({ size = 24 }: IconProps) {
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
+      className={className}
     >
       <circle cx="12" cy="12" r="10" />
       <path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8" />
@@ -61,7 +65,7 @@ export function PointsIcon({ size = 24 }: IconProps) {
   );
 }
 
-export function EyeIcon({ size = 24 }: IconProps) {
+export function EyeIcon({ size = 24, className = "" }: { size?: number; className?: string }) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -73,6 +77,7 @@ export function EyeIcon({ size = 24 }: IconProps) {
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
+      className={className}
     >
       <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
       <circle cx="12" cy="12" r="3" />

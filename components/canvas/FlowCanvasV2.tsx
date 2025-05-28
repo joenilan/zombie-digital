@@ -15,6 +15,7 @@ import ReactFlow, {
 } from 'reactflow'
 import 'reactflow/dist/style.css'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { createClient } from '@supabase/supabase-js'
 
 interface FlowCanvasV2Props {
   canvasId: string
@@ -23,9 +24,9 @@ interface FlowCanvasV2Props {
 }
 
 // Move ImageNode component completely outside
-const ImageNode = memo(({ data, selected, id, onResize, onRotate }: { 
-  data: { url: string, width?: number, height?: number, rotation?: number }, 
-  selected: boolean, 
+const ImageNode = memo(({ data, selected, id, onResize, onRotate }: {
+  data: { url: string, width?: number, height?: number, rotation?: number },
+  selected: boolean,
   id: string,
   onResize?: (width: number, height: number) => void,
   onRotate?: (rotation: number) => void
@@ -105,7 +106,7 @@ const ImageNode = memo(({ data, selected, id, onResize, onRotate }: {
       setDimensions({ width: newWidth, height: newHeight })
       onResize?.(newWidth, newHeight)
     }
-    
+
     if (isRotating && nodeRef.current) {
       const rect = nodeRef.current.getBoundingClientRect()
       const centerX = rect.left + rect.width / 2
@@ -139,7 +140,7 @@ const ImageNode = memo(({ data, selected, id, onResize, onRotate }: {
   }, [handleMouseMove, handleMouseUp])
 
   return (
-    <div 
+    <div
       ref={nodeRef}
       className="relative group"
       style={{
@@ -151,43 +152,43 @@ const ImageNode = memo(({ data, selected, id, onResize, onRotate }: {
         touchAction: 'none'
       }}
     >
-      <img 
+      <img
         ref={imageRef}
-        src={data.url} 
-        alt="media" 
-        className="absolute inset-0 w-full h-full object-fill" 
+        src={data.url}
+        alt="media"
+        className="absolute inset-0 w-full h-full object-fill"
         draggable={false}
       />
-      
+
       {/* Resize handles - only show when selected and not rotating */}
       {selected && !isRotating && width > 0 && height > 0 && (
         <>
-          <div 
-            className="absolute w-3 h-3 bg-blue-500 rounded-full -top-1.5 -left-1.5 cursor-nw-resize z-10 hover:scale-125 transition-transform" 
+          <div
+            className="absolute w-3 h-3 bg-blue-500 rounded-full -top-1.5 -left-1.5 cursor-nw-resize z-10 hover:scale-125 transition-transform"
             onMouseDown={(e) => handleResizeStart(e, 'nw')}
             onTouchStart={(e) => e.stopPropagation()}
           />
-          <div 
+          <div
             className="absolute w-3 h-3 bg-blue-500 rounded-full -top-1.5 -right-1.5 cursor-ne-resize z-10 hover:scale-125 transition-transform"
             onMouseDown={(e) => handleResizeStart(e, 'ne')}
             onTouchStart={(e) => e.stopPropagation()}
           />
-          <div 
+          <div
             className="absolute w-3 h-3 bg-blue-500 rounded-full -bottom-1.5 -left-1.5 cursor-sw-resize z-10 hover:scale-125 transition-transform"
             onMouseDown={(e) => handleResizeStart(e, 'sw')}
             onTouchStart={(e) => e.stopPropagation()}
           />
-          <div 
+          <div
             className="absolute w-3 h-3 bg-blue-500 rounded-full -bottom-1.5 -right-1.5 cursor-se-resize z-10 hover:scale-125 transition-transform"
             onMouseDown={(e) => handleResizeStart(e, 'se')}
             onTouchStart={(e) => e.stopPropagation()}
           />
         </>
       )}
-      
+
       {/* Rotate handle - only show when selected and not resizing */}
       {selected && !isResizing && width > 0 && height > 0 && (
-        <div 
+        <div
           className="absolute w-4 h-4 bg-blue-500 rounded-full -top-8 left-1/2 -translate-x-1/2 cursor-pointer z-10 hover:scale-125 transition-transform"
           onMouseDown={handleRotateStart}
           onTouchStart={(e) => e.stopPropagation()}
@@ -224,9 +225,9 @@ interface NodeContextMenuProps extends BaseContextMenuProps {
 
 // Canvas context menu (for uploading)
 const CanvasContextMenu = ({ x, y, onUpload, onClose }: CanvasContextMenuProps) => (
-  <div 
+  <div
     className="fixed border border-white/10 rounded-lg shadow-lg py-1 z-50"
-    style={{ 
+    style={{
       position: 'fixed',
       top: `${y}px`,
       left: `${x}px`,
@@ -247,9 +248,9 @@ const CanvasContextMenu = ({ x, y, onUpload, onClose }: CanvasContextMenuProps) 
 
 // Node context menu (for deleting)
 const NodeContextMenu = ({ x, y, onDelete, onClose }: NodeContextMenuProps) => (
-  <div 
+  <div
     className="fixed border border-white/10 rounded-lg shadow-lg py-1 z-50"
-    style={{ 
+    style={{
       position: 'fixed',
       top: `${y}px`,
       left: `${x}px`,
@@ -277,13 +278,13 @@ interface ConfirmDialogProps {
 
 const ConfirmDialog = ({ onConfirm, onCancel, count }: ConfirmDialogProps) => (
   <div className="fixed inset-0 z-50">
-    <div 
-      className="fixed inset-0" 
+    <div
+      className="fixed inset-0"
       style={{ backgroundColor: 'rgba(0, 0, 0, 0.8)' }}
-      onClick={onCancel} 
+      onClick={onCancel}
     />
     <div className="fixed inset-0 flex items-center justify-center">
-      <div 
+      <div
         className="border border-white/10 rounded-lg shadow-lg p-6 max-w-md mx-4"
         style={{ backgroundColor: 'rgb(24 24 27)' }}
       >
@@ -371,6 +372,7 @@ const BoundaryBox = () => {
 }
 
 function Flow({ canvasId, isOwner, userId }: FlowCanvasV2Props) {
+  // Use the same client for both owner and non-owner
   const supabase = createClientComponentClient()
   const [nodes, setNodes, onNodesChange] = useNodesState([])
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -562,7 +564,7 @@ function Flow({ canvasId, isOwner, userId }: FlowCanvasV2Props) {
         }
         return change
       })
-      
+
       // Always update React Flow state immediately for smooth movement
       onNodesChange(boundedChanges)
 
@@ -576,21 +578,23 @@ function Flow({ canvasId, isOwner, userId }: FlowCanvasV2Props) {
           if ('dragging' in change && change.dragging === false) {
             try {
               console.log('Saving final position to database...')
-              
+
               // First, send a final position update with dragId to ensure all clients are in sync
               if (dragIdRef.current) {
+                const finalPayload = {
+                  id: node.id,
+                  position: {
+                    x: Math.round(node.position.x),
+                    y: Math.round(node.position.y)
+                  },
+                  dragId: dragIdRef.current,
+                  final: true
+                }
+                console.log('[FlowCanvas] Sending final position broadcast:', finalPayload)
                 channelRef.current?.send({
                   type: 'broadcast',
                   event: 'position',
-                  payload: {
-                    id: node.id,
-                    position: {
-                      x: Math.round(node.position.x),
-                      y: Math.round(node.position.y)
-                    },
-                    dragId: dragIdRef.current,
-                    final: true
-                  }
+                  payload: finalPayload
                 })
               }
 
@@ -635,20 +639,22 @@ function Flow({ canvasId, isOwner, userId }: FlowCanvasV2Props) {
               if (!dragIdRef.current) {
                 dragIdRef.current = crypto.randomUUID()
               }
-              
+
               // Broadcast position through existing channel
+              const broadcastPayload = {
+                id: node.id,
+                position: {
+                  x: Math.round(node.position.x),
+                  y: Math.round(node.position.y)
+                },
+                dragId: dragIdRef.current,
+                final: false
+              }
+              console.log('[FlowCanvas] Sending position broadcast:', broadcastPayload)
               channelRef.current?.send({
                 type: 'broadcast',
                 event: 'position',
-                payload: {
-                  id: node.id,
-                  position: {
-                    x: Math.round(node.position.x),
-                    y: Math.round(node.position.y)
-                  },
-                  dragId: dragIdRef.current,
-                  final: false
-                }
+                payload: broadcastPayload
               })
               lastBroadcastRef.current = now
             }
@@ -661,37 +667,104 @@ function Flow({ canvasId, isOwner, userId }: FlowCanvasV2Props) {
 
   // Update useEffect for subscription handling
   useEffect(() => {
+    console.log(`[FlowCanvas] Component mounted - canvasId: ${canvasId}, isOwner: ${isOwner}`)
+    console.log(`[FlowCanvas] useEffect running, about to call loadNodes`)
+
     let channel: ReturnType<typeof supabase.channel> | null = null
     let isSubscribed = false
 
     const loadNodes = async () => {
-      const { data: mediaObjects, error } = await supabase
-        .from('canvas_media_objects')
-        .select('*')
-        .eq('canvas_id', canvasId)
-        .order('z_index', { ascending: true })
+      console.log(`[Overlay] Loading nodes for canvas ${canvasId}, isOwner: ${isOwner}`)
 
-      if (error) {
-        console.error('Error loading nodes:', error)
-        return
+      try {
+        // For overlay (non-owner), use API route to avoid client auth issues
+        if (!isOwner) {
+          console.log('[Overlay] Using API route for data fetching')
+
+          try {
+            const response = await fetch(`/api/canvas/${canvasId}/test-access`)
+            console.log('[Overlay] API response status:', response.status)
+
+            const result = await response.json()
+            console.log('[Overlay] API response data:', result)
+
+            if (!result.success) {
+              console.error('[Overlay] API route error:', result.error)
+              return
+            }
+
+            const mediaObjects = result.mediaObjects
+            console.log(`[Overlay] Loaded ${mediaObjects?.length || 0} media objects via API:`, mediaObjects)
+
+            const loadedNodes = mediaObjects.map((obj: any) => ({
+              id: obj.id,
+              type: 'imageNode',
+              position: { x: obj.position_x, y: obj.position_y },
+              data: {
+                url: obj.url,
+                width: obj.width,
+                height: obj.height,
+                rotation: obj.rotation,
+                zIndex: obj.z_index || 0
+              },
+              draggable: isOwner,
+              selectable: isOwner
+            }))
+
+            console.log(`[Overlay] Setting ${loadedNodes.length} nodes:`, loadedNodes)
+            setNodes(loadedNodes)
+
+            // Debug: Check if nodes were set
+            setTimeout(() => {
+              console.log(`[Overlay] Nodes state after setting:`, loadedNodes.length)
+            }, 100)
+
+            return
+          } catch (fetchError) {
+            console.error('[Overlay] Fetch error:', fetchError)
+            return
+          }
+        }
+
+        // For owner, use direct Supabase client
+        const { data: mediaObjects, error } = await supabase
+          .from('canvas_media_objects')
+          .select('*')
+          .eq('canvas_id', canvasId)
+          .order('z_index', { ascending: true })
+
+        if (error) {
+          console.error('[Overlay] Error loading nodes:', error)
+          return
+        }
+
+        console.log(`[Overlay] Loaded ${mediaObjects?.length || 0} media objects:`, mediaObjects)
+
+        const loadedNodes = mediaObjects.map(obj => ({
+          id: obj.id,
+          type: 'imageNode',
+          position: { x: obj.position_x, y: obj.position_y },
+          data: {
+            url: obj.url,
+            width: obj.width,
+            height: obj.height,
+            rotation: obj.rotation,
+            zIndex: obj.z_index || 0
+          },
+          draggable: isOwner,
+          selectable: isOwner
+        }))
+
+        console.log(`[Overlay] Setting ${loadedNodes.length} nodes:`, loadedNodes)
+        setNodes(loadedNodes)
+
+        // Debug: Check if nodes were set
+        setTimeout(() => {
+          console.log(`[Overlay] Nodes state after setting:`, loadedNodes.length)
+        }, 100)
+      } catch (error) {
+        console.error('[Overlay] Unexpected error in loadNodes:', error)
       }
-
-      const loadedNodes = mediaObjects.map(obj => ({
-        id: obj.id,
-        type: 'imageNode',
-        position: { x: obj.position_x, y: obj.position_y },
-        data: { 
-          url: obj.url,
-          width: obj.width,
-          height: obj.height,
-          rotation: obj.rotation,
-          zIndex: obj.z_index || 0
-        },
-        draggable: isOwner,
-        selectable: isOwner
-      }))
-
-      setNodes(loadedNodes)
     }
 
     const setupChannel = async () => {
@@ -702,9 +775,12 @@ function Flow({ canvasId, isOwner, userId }: FlowCanvasV2Props) {
           channelRef.current = null
         }
 
-        // Create new channel
-        channel = supabase.channel(`canvas_${canvasId}`)
+        // Create new channel with unique ID to avoid conflicts
+        const channelId = `canvas_${canvasId}_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`
+        channel = supabase.channel(channelId)
         channelRef.current = channel
+
+        console.log(`[FlowCanvas] Creating channel: ${channelId}`)
 
         // Set up channel handlers
         channel
@@ -718,8 +794,8 @@ function Flow({ canvasId, isOwner, userId }: FlowCanvasV2Props) {
             },
             (payload) => {
               if (!isSubscribed) return
-              console.log('Received database update:', payload)
-              
+              console.log('[FlowCanvas] Received database update:', payload)
+
               switch (payload.eventType) {
                 case 'INSERT':
                   const newNode = {
@@ -746,9 +822,9 @@ function Flow({ canvasId, isOwner, userId }: FlowCanvasV2Props) {
                     if (node.id === payload.new.id) {
                       return {
                         ...node,
-                        position: { 
-                          x: payload.new.position_x, 
-                          y: payload.new.position_y 
+                        position: {
+                          x: payload.new.position_x,
+                          y: payload.new.position_y
                         },
                         data: {
                           ...node.data,
@@ -770,6 +846,7 @@ function Flow({ canvasId, isOwner, userId }: FlowCanvasV2Props) {
             { event: 'position' },
             ({ payload }) => {
               if (!isSubscribed) return
+              console.log('[FlowCanvas] Received position broadcast:', payload)
               // Update all views except the one doing the dragging
               if (payload.dragId !== dragIdRef.current) {
                 setNodes((nds) => nds.map(node => {
@@ -938,7 +1015,7 @@ function Flow({ canvasId, isOwner, userId }: FlowCanvasV2Props) {
       // Check if we clicked on a node
       const targetElement = event.target as HTMLElement
       const nodeElement = targetElement.closest('.react-flow__node')
-      
+
       if (nodeElement) {
         const nodeId = nodeElement.getAttribute('data-id')
         if (nodeId) {
@@ -972,7 +1049,7 @@ function Flow({ canvasId, isOwner, userId }: FlowCanvasV2Props) {
     try {
       // Generate UUID for the node
       const nodeId = crypto.randomUUID()
-      
+
       // Get natural dimensions
       const naturalDimensions = await new Promise<{ width: number, height: number }>((resolve) => {
         const img = new Image()
@@ -984,7 +1061,7 @@ function Flow({ canvasId, isOwner, userId }: FlowCanvasV2Props) {
         }
         img.src = URL.createObjectURL(file)
       })
-      
+
       // Upload to storage bucket
       const fileExt = file.name.split('.').pop()
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`
@@ -1023,7 +1100,7 @@ function Flow({ canvasId, isOwner, userId }: FlowCanvasV2Props) {
         id: nodeId,
         type: 'imageNode',
         position: uploadPosition,
-        data: { 
+        data: {
           url: publicUrl,
           width: naturalDimensions.width,
           height: naturalDimensions.height,
@@ -1040,9 +1117,9 @@ function Flow({ canvasId, isOwner, userId }: FlowCanvasV2Props) {
   }, [canvasId, supabase, uploadPosition, setNodes, userId])
 
   return (
-    <div 
-      style={{ 
-        width: isOwner ? '100%' : '1920px', 
+    <div
+      style={{
+        width: isOwner ? '100%' : '1920px',
         height: isOwner ? '100%' : '1080px',
         position: isOwner ? 'absolute' : 'relative',
         inset: isOwner ? '0' : undefined,
@@ -1088,7 +1165,7 @@ function Flow({ canvasId, isOwner, userId }: FlowCanvasV2Props) {
         {isOwner && <BoundaryBox />}
         {isOwner && (
           <div className="absolute right-4 bottom-4 z-[60]">
-            <Controls 
+            <Controls
               className="!bg-background/80 !backdrop-blur-sm !p-2 !rounded-lg !border !border-white/10 [&>button]:w-6 [&>button]:h-6 [&>button]:bg-white/10 [&>button]:text-white [&>button:hover]:bg-white/20"
               showZoom={true}
               showFitView={true}
@@ -1100,9 +1177,9 @@ function Flow({ canvasId, isOwner, userId }: FlowCanvasV2Props) {
       </ReactFlow>
 
       {contextMenu && contextMenuType === 'canvas' && (
-        <div 
+        <div
           className="fixed border border-white/10 rounded-lg shadow-lg py-1 z-50"
-          style={{ 
+          style={{
             position: 'fixed',
             top: `${contextMenu.y}px`,
             left: `${contextMenu.x}px`,
@@ -1123,9 +1200,9 @@ function Flow({ canvasId, isOwner, userId }: FlowCanvasV2Props) {
       )}
 
       {contextMenu && contextMenuType === 'node' && contextMenuNodeId && (
-        <div 
+        <div
           className="fixed border border-white/10 rounded-lg shadow-lg py-1 z-50"
-          style={{ 
+          style={{
             position: 'fixed',
             top: `${contextMenu.y}px`,
             left: `${contextMenu.x}px`,

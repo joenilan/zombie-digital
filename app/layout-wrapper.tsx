@@ -1,13 +1,18 @@
 "use client"
 
 import { usePathname } from 'next/navigation'
-import { motion } from 'framer-motion'
+import { useEffect } from 'react'
 import { Navigation } from '@/components/navigation/Navigation'
 
 export function LayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const isOverlay = pathname.startsWith('/overlay')
   const isCanvas = pathname.startsWith('/canvas/') && !pathname.endsWith('/settings')
+
+  // Ensure page loads at top on route change
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [pathname])
 
   // Check if this is a username route (public social links page)
   // A username route has a single segment and doesn't match other known routes
@@ -30,16 +35,11 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="relative min-h-screen pb-20 sm:pb-0">
+    <div className="relative min-h-screen">
       <Navigation />
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.3 }}
-        className="relative"
-      >
+      <div className="pb-20 sm:pb-0">
         {children}
-      </motion.div>
+      </div>
     </div>
   )
 } 

@@ -9,11 +9,11 @@ import { toast } from 'sonner'
 import { GripVertical, Trash2, ExternalLink, Plus, Pencil, InfoIcon, ArrowUpDown, Search, X, Check, Link2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { platformIcons, platformColors, getPlatformIcon, getPlatformColor, getPlatformUrl, platformUrlPatterns } from '@/lib/platform-icons'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { motion, AnimatePresence } from 'framer-motion'
+import { getPlatformIcon, getPlatformColor, platformIcons, platformUrlPatterns, getPlatformUrl } from '@/lib/icons'
 
 // Constants
 const ItemTypes = {
@@ -217,10 +217,17 @@ const EditLinkDialog = ({
       onOpenChange(false)
       onUpdate()
       toast.success('Social link updated', {
-        description: 'Your changes have been saved',
+        description: 'Your changes have been saved and will update on your profile in real-time',
+        duration: 3000,
         action: {
-          label: "Dismiss",
-          onClick: () => { },
+          label: "View Profile",
+          onClick: () => {
+            // Get username from current user context or URL
+            const username = window.location.pathname.includes('/dashboard')
+              ? window.location.pathname.split('/')[1]
+              : 'profile'
+            window.open(`/${username}`, '_blank')
+          },
         },
       })
     } catch (error) {
@@ -422,10 +429,13 @@ const AddLink = ({ userId, onAdd, open, onOpenChange }: {
       onAdd()
 
       toast.success('Social link added', {
-        description: 'Your new link has been added to your profile',
+        description: 'Your new link has been added and will appear on your profile in real-time',
+        duration: 3000,
         action: {
-          label: "Dismiss",
-          onClick: () => { },
+          label: "View Profile",
+          onClick: () => {
+            window.open(`/${window.location.pathname.split('/')[1]}`, '_blank')
+          },
         },
       })
     } catch (error) {
@@ -596,7 +606,8 @@ export function SocialLinksManagerV2({ initialLinks = [], twitchUserId, onLinksC
       }
 
       toast.success('Links reordered', {
-        description: 'Your links have been reordered',
+        description: 'Your links have been reordered and will update on your profile',
+        duration: 3000,
       })
     } catch (error) {
       console.error('Error updating order:', error)
@@ -622,7 +633,8 @@ export function SocialLinksManagerV2({ initialLinks = [], twitchUserId, onLinksC
       }
 
       toast.success('Link deleted', {
-        description: 'Your link has been removed',
+        description: 'Your link has been removed and will update on your profile in real-time',
+        duration: 3000,
       })
     } catch (error) {
       console.error('Error deleting link:', error)
@@ -677,10 +689,13 @@ export function SocialLinksManagerV2({ initialLinks = [], twitchUserId, onLinksC
       }
 
       toast.success('Social link added', {
-        description: 'Your new link has been added to your profile',
+        description: 'Your new link has been added and will appear on your profile in real-time',
+        duration: 3000,
         action: {
-          label: "Dismiss",
-          onClick: () => { },
+          label: "View Profile",
+          onClick: () => {
+            window.open(`/${window.location.pathname.split('/')[1]}`, '_blank')
+          },
         },
       })
     } catch (error) {

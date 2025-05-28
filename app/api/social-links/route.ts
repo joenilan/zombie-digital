@@ -1,5 +1,37 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
+import { cookies } from "next/headers";
+
+// Helper function to check feature access
+async function checkFeatureAccess(featureId: string, userId: string) {
+  const supabase = createRouteHandlerClient({ cookies });
+  
+  // Get user's role
+  const { data: user } = await supabase
+    .from('twitch_users')
+    .select('site_role')
+    .eq('id', userId)
+    .single();
+
+  if (!user) return false;
+
+  // Get feature state
+  const { data: feature } = await supabase
+    .from('feature_states')
+    .select('enabled, required_role')
+    .eq('feature_id', featureId)
+    .single();
+
+  if (!feature || !feature.enabled) return false;
+
+  // Check role hierarchy
+  const roleHierarchy = ['user', 'moderator', 'admin', 'owner'];
+  const userRoleIndex = roleHierarchy.indexOf(user.site_role);
+  const requiredRoleIndex = roleHierarchy.indexOf(feature.required_role);
+
+  return userRoleIndex >= requiredRoleIndex;
+}
 
 /**
  * @swagger
@@ -24,6 +56,8 @@ import { NextResponse } from "next/server";
  *     responses:
  *       200:
  *         description: Social link created successfully
+ *       403:
+ *         description: Feature not available
  *       500:
  *         description: Error creating social link
  */
@@ -31,6 +65,15 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
     const { user_id, platform, url, title } = body;
+
+    // Check if SOCIALS feature is enabled for this user
+    const hasAccess = await checkFeatureAccess('SOCIALS', user_id);
+    if (!hasAccess) {
+      return NextResponse.json(
+        { error: "Social Links feature is not available for your account" },
+        { status: 403 }
+      );
+    }
 
     const link = await prisma.social_tree.create({
       data: {
@@ -69,6 +112,8 @@ export async function POST(req: Request) {
  *     responses:
  *       200:
  *         description: List of social links
+ *       403:
+ *         description: Feature not available
  *       500:
  *         description: Error fetching social links
  */
@@ -81,6 +126,15 @@ export async function GET(req: Request) {
       return NextResponse.json(
         { error: "User ID is required" },
         { status: 400 }
+      );
+    }
+
+    // Check if SOCIALS feature is enabled for this user
+    const hasAccess = await checkFeatureAccess('SOCIALS', userId);
+    if (!hasAccess) {
+      return NextResponse.json(
+        { error: "Social Links feature is not available for your account" },
+        { status: 403 }
       );
     }
 

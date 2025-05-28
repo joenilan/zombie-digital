@@ -31,6 +31,11 @@ export async function DELETE(
       return new NextResponse("User not found", { status: 404 });
     }
 
+    // Check if user has Canvas access (admin or owner only)
+    if (!['admin', 'owner'].includes(currentUser.site_role)) {
+      return new NextResponse("Canvas feature is currently in Alpha and only available to administrators and site owners", { status: 403 });
+    }
+
     // Get canvas settings to check ownership
     const { data: canvas, error: canvasError } = await supabase
       .from("canvas_settings")

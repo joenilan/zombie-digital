@@ -4,6 +4,12 @@ import type { NextRequest } from "next/server";
 
 export async function middleware(req: NextRequest) {
   const res = NextResponse.next();
+  
+  // Skip session checks for overlay routes - they should be publicly accessible
+  if (req.nextUrl.pathname.startsWith("/overlay")) {
+    return res;
+  }
+
   const supabase = createMiddlewareClient({ req, res });
 
   // Refresh session if expired
@@ -12,15 +18,17 @@ export async function middleware(req: NextRequest) {
     error,
   } = await supabase.auth.getSession();
 
-  // Log session state for debugging
-  console.log("Middleware session check:", {
-    path: req.nextUrl.pathname,
-    hasSession: !!session,
-    error: error?.message,
-  });
+  // Log session state for debugging (only in development)
+  if (process.env.NODE_ENV === 'development') {
+    console.log("Middleware session check:", {
+      path: req.nextUrl.pathname,
+      hasSession: !!session,
+      error: error?.message,
+    });
+  }
 
   // Handle protected routes
-  if (req.nextUrl.pathname.startsWith("/dashboard")) {
+  if (req.nextUrl.pathname.startsWith("/dashboard") || req.nextUrl.pathname.startsWith("/canvas")) {
     if (!session) {
       return NextResponse.redirect(new URL("/auth/signin", req.url));
     }

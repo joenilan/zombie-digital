@@ -3,6 +3,9 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { AdminLayoutClient } from './components/AdminLayoutClient';
 
+// Force dynamic rendering since we use cookies
+export const dynamic = 'force-dynamic';
+
 const DEBUG = false;
 
 export default async function AdminLayout({
@@ -11,7 +14,7 @@ export default async function AdminLayout({
   children: React.ReactNode;
 }) {
   const supabase = createServerComponentClient({ cookies });
-  
+
   const {
     data: { session },
   } = await supabase.auth.getSession();
@@ -21,10 +24,12 @@ export default async function AdminLayout({
   }
 
   // Get user's role from twitch_users table
+  const twitchId = session.user.user_metadata.provider_id || session.user.user_metadata.sub;
+
   const { data: user, error } = await supabase
     .from("twitch_users")
     .select("*")
-    .eq("twitch_id", session.user.user_metadata.provider_id)
+    .eq("twitch_id", twitchId)
     .single();
 
   if (!user || !['owner', 'admin'].includes(user.site_role)) {

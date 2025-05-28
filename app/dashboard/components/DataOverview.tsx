@@ -44,11 +44,11 @@ function SensitiveText({ text }: { text: string }) {
   );
 }
 
-function CollapsibleSection({ 
-  title, 
-  children, 
-  defaultExpanded = false 
-}: { 
+function CollapsibleSection({
+  title,
+  children,
+  defaultExpanded = false
+}: {
   title: string;
   children: React.ReactNode;
   defaultExpanded?: boolean;
@@ -87,8 +87,8 @@ function CollapsibleSection({
   );
 }
 
-function DataSection({ title, items, defaultExpanded = false }: { 
-  title: string; 
+function DataSection({ title, items, defaultExpanded = false }: {
+  title: string;
   items: { label: string; value: string; sensitive?: boolean }[];
   defaultExpanded?: boolean;
 }) {
@@ -120,7 +120,7 @@ function DataSection({ title, items, defaultExpanded = false }: {
 
 export function DataOverview({ session, user, effectiveRole }: DataOverviewProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  
+
   if (!hasPermission(effectiveRole, "admin")) {
     return null;
   }
@@ -145,10 +145,10 @@ export function DataOverview({ session, user, effectiveRole }: DataOverviewProps
   ];
 
   const integrationInfo = [
-    { label: "Provider Token", value: user.provider_token, sensitive: true },
-    { label: "Provider Refresh", value: user.provider_refresh_token, sensitive: true },
-    { label: "Token Expires", value: new Date(user.token_expires_at).toLocaleString() },
-    { label: "Active Scopes", value: `${user.provider_scopes.length} Permissions` },
+    { label: "Provider Token", value: user.provider_token || "N/A", sensitive: true },
+    { label: "Provider Refresh", value: user.provider_refresh_token || "N/A", sensitive: true },
+    { label: "Token Expires", value: user.token_expires_at ? new Date(user.token_expires_at).toLocaleString() : "N/A" },
+    { label: "Active Scopes", value: `${user.provider_scopes?.length || 0} Permissions` },
   ];
 
   const accountInfo = [
@@ -172,7 +172,7 @@ export function DataOverview({ session, user, effectiveRole }: DataOverviewProps
           <ChevronDownIcon size={20} className="opacity-60" />
         )}
       </button>
-      
+
       <AnimatePresence>
         {isExpanded && (
           <motion.div

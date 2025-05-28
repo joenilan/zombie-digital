@@ -1,0 +1,66 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+---
+description: State Management Rules
+---
+# State Management Rules
+
+## Client State vs Server State
+
+Our application follows a clear separation between client state and server state:
+- **Client State**: Use Zustand exclusively
+- **Server State**: Use React Query (TanStack Query) exclusively
+
+## Client State: Always Use Zustand
+
+Zustand is our team's preferred solution for all client-side state. Follow these guidelines:
+
+### DO
+
+- Use Zustand for all global application state
+- Create separate stores for distinct domains of state
+- Follow the store pattern: `useXxxStore.ts` where Xxx describes the domain
+- Use Zustand's built-in mechanisms for state updates
+- Apply immer middleware for complex state updates when needed
+- Utilize Zustand's built-in subscription model
+- Keep store implementations in a dedicated `/stores` directory
+- Always use Zustand dev tools so we can see state in chrome redux devtools
+
+### DON'T
+
+- Use Redux or Redux Toolkit for any state management
+- Use React Context API for global state (Context is acceptable only for theme/localization)
+- Use React's useState for complex state objects with multiple properties
+- Use React's useState for any state that needs to be shared between non-parent-child components
+- Create stores directly in component files
+- Mix different state management libraries
+
+## Server State: Always Use React Query
+
+React Query (TanStack Query) must be used for all server state management. Follow these guidelines:
+
+### DO
+
+- Use React Query hooks (`useQuery`, `useMutation`) for all API interactions
+- Implement query keys following our naming convention: `[entity, id, filter]`
+- Use query invalidation to maintain consistency across the application
+- Separate API service functions from React Query hooks
+- Leverage React Query's caching capabilities
+- Create abstracted custom hooks for commonly used queries
+- Use React Query's prefetching capabilities for anticipated user flows
+
+### DON'T
+
+- Store server data in Zustand stores
+- Implement custom caching logic when React Query provides it
+- Mix REST and GraphQL clients in the same component
+- Create redundant fetch mechanisms when React Query can handle it
+- Use React Query for client-only state
+- Manually track loading/error states that React Query provides
+- Mix REST and GraphQL clients in the same component
+- Create redundant fetch mechanisms when React Query can handle it
+- Use React Query for client-only state
+- Manually track loading/error states that React Query provides

@@ -1,16 +1,18 @@
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { User } from '@supabase/supabase-js';
+import { useUserRole } from '@/hooks/use-user-role'
+import { useFeatureAccess } from '@/hooks/use-feature-access';
+import type { TwitchUser } from '@/types/auth'
 
 interface DesktopNavProps {
-  user: User | null;
+  user: TwitchUser | null;
   pathname: string;
 }
 
-function NavLink({ href, current, children, layoutId = "nav-highlight" }: { 
-  href: string; 
-  current: boolean; 
+function NavLink({ href, current, children, layoutId = "nav-highlight" }: {
+  href: string;
+  current: boolean;
   children: React.ReactNode;
   layoutId?: string;
 }) {
@@ -29,7 +31,7 @@ function NavLink({ href, current, children, layoutId = "nav-highlight" }: {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ 
+          transition={{
             type: "spring",
             stiffness: 500,
             damping: 30,
@@ -42,9 +44,9 @@ function NavLink({ href, current, children, layoutId = "nav-highlight" }: {
   );
 }
 
-function SubNavLink({ href, current, children, layoutId = "subnav-highlight" }: { 
-  href: string; 
-  current: boolean; 
+function SubNavLink({ href, current, children, layoutId = "subnav-highlight" }: {
+  href: string;
+  current: boolean;
   children: React.ReactNode;
   layoutId?: string;
 }) {
@@ -63,7 +65,7 @@ function SubNavLink({ href, current, children, layoutId = "subnav-highlight" }: 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ 
+          transition={{
             type: "spring",
             stiffness: 500,
             damping: 30,
@@ -77,6 +79,8 @@ function SubNavLink({ href, current, children, layoutId = "subnav-highlight" }: 
 }
 
 export function DesktopNav({ user, pathname }: DesktopNavProps) {
+  const { hasCanvasAccess, isLoading } = useUserRole(user);
+  const { hasFeatureAccess, isLoading: featuresLoading } = useFeatureAccess(user);
   const isDashboardSection = pathname.startsWith('/dashboard');
   const isDashboardSocialLinks = pathname === '/dashboard/social-links';
   const isDashboardCanvas = pathname === '/dashboard/canvas' || pathname.startsWith('/dashboard/canvas/');
@@ -95,36 +99,45 @@ export function DesktopNav({ user, pathname }: DesktopNavProps) {
           </NavLink>
           <AnimatePresence mode="wait">
             {isDashboardSection && (
-              <motion.div 
+              <motion.div
                 className="flex items-center gap-1 ml-2 pl-2 border-l border-foreground/10"
                 initial={{ opacity: 0, x: -10 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 10 }}
                 transition={{ duration: 0.2 }}
               >
-                <SubNavLink 
-                  href="/dashboard/social-links" 
-                  current={isDashboardSocialLinks}
-                  layoutId="sub-nav"
-                >
-                  Social Links
-                </SubNavLink>
-                <SubNavLink 
-                  href="/dashboard/canvas" 
-                  current={isDashboardCanvas}
-                  layoutId="sub-nav"
-                >
-                  Canvas
-                </SubNavLink>
+                {!featuresLoading && hasFeatureAccess('SOCIALS') && (
+                  <SubNavLink
+                    href="/dashboard/social-links"
+                    current={isDashboardSocialLinks}
+                    layoutId="sub-nav"
+                  >
+                    Social Links
+                  </SubNavLink>
+                )}
+                {!featuresLoading && hasFeatureAccess('CANVAS') && (
+                  <SubNavLink
+                    href="/dashboard/canvas"
+                    current={isDashboardCanvas}
+                    layoutId="sub-nav"
+                  >
+                    <div className="flex items-center gap-2">
+                      Canvas
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gradient-to-r from-cyan-500 to-blue-500 text-white shadow-sm">
+                        Alpha
+                      </span>
+                    </div>
+                  </SubNavLink>
+                )}
                 {isCanvasSettings && (
-                  <motion.div 
+                  <motion.div
                     className="flex items-center gap-1 ml-2 pl-2 border-l border-foreground/10"
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: 10 }}
                     transition={{ duration: 0.2 }}
                   >
-                    <SubNavLink 
+                    <SubNavLink
                       href={pathname}
                       current={true}
                       layoutId="sub-sub-nav"

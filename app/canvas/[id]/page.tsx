@@ -1,9 +1,10 @@
 'use client'
 
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { supabase } from '@/lib/supabase'
 import { useEffect, useState } from 'react'
 import { FlowCanvasV2 } from '@/components/canvas/FlowCanvasV2'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams } from 'next/navigation'
+import { useAuth } from '@/hooks/useAuth'
 
 interface CanvasData {
   id: string
@@ -11,112 +12,93 @@ interface CanvasData {
 }
 
 export default function CanvasPage() {
-  const supabase = createClientComponentClient()
   const params = useParams()
-  const router = useRouter()
   const canvasId = params.id as string
   const [canvas, setCanvas] = useState<CanvasData | null>(null)
-  const [currentUser, setCurrentUser] = useState<any>(null)
+  const [canvasLoading, setCanvasLoading] = useState(true)
+  const { user, isInitialized, isLoading } = useAuth()
+
+  console.log('[CanvasPage] Render state:', {
+    canvasId,
+    user: !!user,
+    isInitialized,
+    isLoading,
+    canvasLoading,
+    canvas: !!canvas
+  })
 
   useEffect(() => {
-    let unsubscribe: (() => void) | undefined
-    let sessionCheckInterval: ReturnType<typeof setInterval>
-
     // Get canvas data
     const getCanvas = async () => {
-      const { data: canvas, error } = await supabase
-        .from('canvas_settings')
-        .select('*')
-        .eq('id', canvasId)
-        .single()
+      try {
+        console.log('[CanvasPage] Loading canvas data for:', canvasId)
+        setCanvasLoading(true)
+        const { data: canvas, error } = await supabase
+          .from('canvas_settings')
+          .select('*')
+          .eq('id', canvasId)
+          .single()
 
-      if (error) {
-        console.error('Error fetching canvas:', error)
-        return
-      }
-
-      setCanvas(canvas)
-    }
-
-    // Check and refresh session if needed
-    const checkSession = async () => {
-      const { data: { session }, error } = await supabase.auth.getSession()
-      if (error) {
-        console.error('Error checking session:', error)
-        return
-      }
-
-      if (!session) {
-        // If no session, try to refresh it
-        const { data: { session: refreshedSession }, error: refreshError } = await supabase.auth.refreshSession()
-        if (refreshError || !refreshedSession) {
-          console.error('Session refresh failed:', refreshError)
-          setCurrentUser(null)
+        if (error) {
+          console.error('[CanvasPage] Error fetching canvas:', error)
           return
         }
-        // Update user after successful refresh
-        const { data: profile } = await supabase
-          .from('twitch_users')
-          .select('*')
-          .eq('twitch_id', refreshedSession.user.user_metadata.provider_id)
-          .single()
-        setCurrentUser(profile)
-      } else {
-        // Get user profile if we have a session
-        const { data: profile } = await supabase
-          .from('twitch_users')
-          .select('*')
-          .eq('twitch_id', session.user.user_metadata.provider_id)
-          .single()
-        setCurrentUser(profile)
+
+        console.log('[CanvasPage] Canvas data loaded:', !!canvas)
+        setCanvas(canvas)
+      } catch (error) {
+        console.error('[CanvasPage] Unexpected error fetching canvas:', error)
+      } finally {
+        setCanvasLoading(false)
       }
     }
 
-    // Get current user and set up auth subscription
-    const setupAuth = async () => {
-      // Initial session check
-      await checkSession()
-
-      // Set up interval to check session
-      sessionCheckInterval = setInterval(checkSession, 60000) // Check every minute
-
-      // Subscribe to auth changes
-      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-        if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
-          await checkSession()
-        } else if (session?.user) {
-          const { data: profile } = await supabase
-            .from('twitch_users')
-            .select('*')
-            .eq('twitch_id', session.user.user_metadata.provider_id)
-            .single()
-
-          setCurrentUser(profile)
-        }
-      })
-
-      unsubscribe = () => {
-        subscription.unsubscribe()
-      }
+    if (canvasId) {
+      getCanvas()
     }
+  }, [canvasId])
 
-    getCanvas()
-    setupAuth()
+  // Show loading while auth is initializing or canvas is loading
+  if (!isInitialized || isLoading || canvasLoading) {
+    console.log('[CanvasPage] Showing loading state')
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p>Loading canvas...</p>
+          {!isInitialized && (
+            <p className="text-sm text-muted-foreground mt-2">Initializing authentication...</p>
+          )}
+        </div>
+      </div>
+    )
+  }
 
-    return () => {
-      if (unsubscribe) unsubscribe()
-      if (sessionCheckInterval) clearInterval(sessionCheckInterval)
-    }
-  }, [canvasId, supabase, router])
+  // Show error if no user (shouldn't happen due to middleware protection)
+  if (!user) {
+    console.log('[CanvasPage] No user found (unexpected)')
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <p>Authentication error. Please try refreshing the page.</p>
+        </div>
+      </div>
+    )
+  }
 
-  if (!canvas) return null
+  // Show error if no canvas data
+  if (!canvas) {
+    console.log('[CanvasPage] No canvas data found')
+    return <div className="flex items-center justify-center min-h-screen">Canvas not found</div>
+  }
 
+  console.log('[CanvasPage] Rendering canvas component')
   return (
     <div className="canvas-page">
       <FlowCanvasV2
         canvasId={canvasId}
-        isOwner={currentUser?.id === canvas.user_id}
-        userId={currentUser?.id}
+        isOwner={user?.id === canvas.user_id}
+        userId={user?.id}
       />
     </div>
   )

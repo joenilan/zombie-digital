@@ -1,26 +1,16 @@
 'use client'
 
 import { useEffect } from 'react'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 
-export function ViewTracker({ userId }: { userId: string }) {
+export function ViewTracker({ userId, isOwner }: { userId: string; isOwner?: boolean }) {
     useEffect(() => {
         if (!userId) return
 
-        const supabase = createClientComponentClient()
-        let viewerId: string | null = null
-
         async function trackView() {
             try {
-                // Get current user session (if any)
-                const { data: { session } } = await supabase.auth.getSession()
-                if (session?.user) {
-                    viewerId = session.user.id
-
-                    // Don't count views if the profile owner is viewing their own profile
-                    if (viewerId === userId) {
-                        return
-                    }
+                // Don't count views if the profile owner is viewing their own profile
+                if (isOwner) {
+                    return
                 }
 
                 // Track the view via API
@@ -29,7 +19,7 @@ export function ViewTracker({ userId }: { userId: string }) {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         userId,
-                        viewerId,
+                        viewerId: null, // We don't need to track the viewer ID for now
                         referrer: document.referrer || null,
                         userAgent: navigator.userAgent || null
                     })
@@ -47,7 +37,7 @@ export function ViewTracker({ userId }: { userId: string }) {
         const timeoutId = setTimeout(trackView, 5000)
 
         return () => clearTimeout(timeoutId)
-    }, [userId]) // Only run when userId changes
+    }, [userId, isOwner]) // Only run when userId or isOwner changes
 
     // This component doesn't render anything
     return null

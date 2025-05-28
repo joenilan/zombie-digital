@@ -1,28 +1,27 @@
 'use client'
 
 import { useEffect, useState } from "react";
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import { fetchTwitchStats } from "@/utils/twitch-api";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { SkeletonStats } from "@/components/ui/skeleton";
 import { AlertCircle, Hash, Gamepad2, Type, Code } from "lucide-react";
 import { UsersIcon, StarIcon, PointsIcon, ShieldIcon, SparklesIcon } from "@/components/icons";
 import Image from "next/image";
 import Link from "next/link";
-import { motion, useSpring, useMotionValue, useTransform, animate } from "framer-motion";
+import { motion, useSpring, useTransform } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { Verified, Crown } from "lucide-react";
-import { useTwitchAuth } from "@/providers/twitch-auth-provider";
+import { useAuthStore } from "@/stores/useAuthStore";
 
 interface TwitchStats {
   followers: number;
   isAffiliate: boolean;
   subscribers?: number;
-  totalViews?: number;
+  totalViewCount?: number;
   channelPoints?: {
     enabled: boolean;
     activeRewards: number;
   };
-  lastGame?: {
+  lastGame: {
     id: string;
     name: string;
     boxArtUrl: string;
@@ -33,17 +32,22 @@ interface TwitchStats {
   tags?: string[];
   moderators?: number;
   vips?: number;
+  createdAt?: string;
+  broadcasterType?: string;
 }
 
-function AnimatedCounter({ value }: { value: number }) {
-  const springValue = useSpring(0, { stiffness: 100, damping: 30 });
-  const rounded = useTransform(springValue, (latest) => Math.round(latest).toLocaleString());
-  
-  useEffect(() => {
-    springValue.set(value);
-  }, [springValue, value]);
+function AnimatedCounter({ value, className }: { value: number; className?: string }) {
+  const spring = useSpring(value, {
+    mass: 1,
+    stiffness: 75,
+    damping: 15,
+  });
 
-  return <motion.span>{rounded}</motion.span>;
+  const display = useTransform(spring, (current) =>
+    Math.round(current).toLocaleString()
+  );
+
+  return <motion.span className={className}>{display}</motion.span>;
 }
 
 function RoleBadge({ role }: { role: string }) {
@@ -80,308 +84,368 @@ function BroadcasterBadge({ type }: { type: string }) {
 }
 
 export default function DashboardPage() {
-  const [session, setSession] = useState<any>(null);
-  const [twitchUser, setTwitchUser] = useState<any>(null);
+  const { user, isLoading, isInitialized } = useAuthStore();
   const [stats, setStats] = useState<TwitchStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { providerToken, refreshTwitchToken, isRefreshing } = useTwitchAuth();
-  const supabase = createClientComponentClient();
 
   useEffect(() => {
-    async function fetchSession() {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        setSession(session);
-      } catch (err) {
-        console.error("Error fetching session:", err);
-        setError("Failed to fetch session");
-        setLoading(false);
-      }
-    }
-    fetchSession();
-  }, [supabase]);
-
-  useEffect(() => {
-    async function fetchTwitchUser() {
-      if (!session || !providerToken) return;
+    async function updateBroadcasterTypeAndFetchStats() {
+      if (!user || !user.twitch_id) return;
+      setLoading(true);
+      setError(null);
 
       try {
-        const providerId = session.user.user_metadata.sub;
+        // First, update the broadcaster type if it's not set
+        if (!user.broadcaster_type || user.broadcaster_type === 'none') {
+          console.log('Updating broadcaster type...');
+          const updateResponse = await fetch('/api/twitch/update-broadcaster-type', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: user.twitch_id }),
+          });
 
-        // First get user from database
-        const { data: twitchUser, error: twitchError } = await supabase
-          .from("twitch_users")
-          .select("*")
-          .eq("twitch_id", providerId)
-          .single();
-
-        if (twitchError) {
-          setError(twitchError.message);
-          setLoading(false);
-          return;
-        }
-
-        // Wait for any ongoing token refresh to complete
-        if (isRefreshing) {
-          await new Promise(resolve => setTimeout(resolve, 1000));
-        }
-
-        async function fetchWithRetry(token: string, retryCount = 0): Promise<any> {
-          try {
-            const response = await fetch(`https://api.twitch.tv/helix/users?id=${providerId}`, {
-              headers: {
-                'Authorization': `Bearer ${token}`,
-                'Client-Id': process.env.NEXT_PUBLIC_TWITCH_CLIENT_ID!,
-              }
-            });
-
-            if (!response.ok) {
-              if (response.status === 401) {
-                // Wait for any ongoing refresh to complete
-                if (isRefreshing) {
-                  await new Promise(resolve => setTimeout(resolve, 1000));
-                  return fetchWithRetry(providerToken!, retryCount);
-                }
-                
-                // Trigger token refresh and wait for it to complete
-                await refreshTwitchToken();
-                // Wait a bit for the new token to be available
-                await new Promise(resolve => setTimeout(resolve, 1000));
-                // Use the new token from the context
-                return fetchWithRetry(providerToken!, retryCount + 1);
-              }
-              throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            return response.json();
-          } catch (error) {
-            if (error instanceof Error && error.message.includes('sign in again')) {
-              throw error;
-            }
-            
-            if (retryCount < 3) {
-              await new Promise(resolve => setTimeout(resolve, Math.pow(2, retryCount) * 1000));
-              return fetchWithRetry(providerToken!, retryCount + 1);
-            }
-            throw error;
+          if (updateResponse.ok) {
+            const updateResult = await updateResponse.json();
+            console.log('Broadcaster type updated:', updateResult.broadcasterType);
+            // Refresh the auth store to get updated user data
+            // This will trigger a re-render with the updated broadcaster type
           }
         }
 
-        const twitchData = await fetchWithRetry(providerToken);
-        const twitchUserData = twitchData.data?.[0];
+        // Then fetch the stats
+        const response = await fetch(`/api/twitch/stats?userId=${user.twitch_id}`);
 
-        setTwitchUser({
-          ...twitchUser,
-          broadcaster_type: twitchUserData?.broadcaster_type || twitchUser.broadcaster_type || 'none'
-        });
-      } catch (err) {
-        console.error("Error fetching Twitch user:", err);
-        setError("Failed to fetch Twitch user");
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    if (session && providerToken) {
-      fetchTwitchUser();
-    }
-  }, [session, providerToken, isRefreshing]);
-
-  useEffect(() => {
-    async function fetchStats() {
-      if (!twitchUser || !providerToken) return;
-
-      try {
-        // Wait for any ongoing token refresh to complete
-        if (isRefreshing) {
-          await new Promise(resolve => setTimeout(resolve, 1000));
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Failed to fetch stats: ${response.status} ${errorText}`);
         }
 
-        const twitchStats = await fetchTwitchStats(
-          twitchUser.twitch_id,
-          providerToken,
-          twitchUser.broadcaster_type || "none"
-        );
-        
+        const twitchStats = await response.json();
+        console.log('Dashboard stats:', twitchStats);
+        console.log('User broadcaster type:', user.broadcaster_type);
+
         if (twitchStats && typeof twitchStats === 'object') {
           setStats(twitchStats);
-        } else {
-          setError("Invalid stats data received");
         }
       } catch (err) {
-        console.error("Error fetching stats:", err);
-        setError(err instanceof Error ? err.message : "Failed to fetch stats");
+        console.error('Error fetching stats:', err);
+        const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+        setError(errorMessage);
+        setStats(null);
       } finally {
         setLoading(false);
       }
     }
-    fetchStats();
-  }, [twitchUser, providerToken, isRefreshing]);
 
-  if (!session) {
-    return (
-      <div className="rounded-xl bg-glass/50 backdrop-blur-xl p-8 border border-white/5">
-        <p className="text-foreground/60">Please sign in to view your dashboard.</p>
-      </div>
-    );
+    if (isInitialized && user) {
+      updateBroadcasterTypeAndFetchStats();
+    }
+  }, [user?.twitch_id, isInitialized]);
+
+  // Show loading while auth is initializing or stats are loading
+  if (!isInitialized || isLoading || loading || !user) {
+    return <LoadingSpinner />
   }
 
-  if (loading || !stats || !twitchUser) {
-    return (
-      <div className="flex items-center justify-center min-h-[200px]">
-        <LoadingSpinner />
-      </div>
-    );
-  }
-
-  if (error) {
+  // Show error message if authentication failed
+  if (error && error.includes('Authentication failed')) {
     return (
       <div className="rounded-xl bg-glass/50 backdrop-blur-xl p-8 border border-red-500/20">
         <div className="flex items-center gap-2 text-red-500">
           <AlertCircle size={20} />
-          <p>{error}</p>
+          <div>
+            <p className="font-medium">Authentication Error</p>
+            <p className="text-sm text-red-400 mt-1">
+              Your session has expired. Please sign out and sign back in to continue.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show message if no stats could be loaded
+  if (!stats) {
+    return (
+      <div className="rounded-xl bg-glass/50 backdrop-blur-xl p-8 border border-yellow-500/20">
+        <div className="flex items-center gap-2 text-yellow-500">
+          <AlertCircle size={20} />
+          <div>
+            <p className="font-medium">Unable to load Twitch stats</p>
+            <p className="text-sm text-yellow-400 mt-1">
+              {error || 'Please try refreshing the page.'}
+            </p>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="rounded-xl bg-glass/50 backdrop-blur-xl p-8 border border-white/5"
-    >
-      {/* User Profile Section */}
-      <div className="flex items-start gap-6 mb-8">
-        <div className="relative shrink-0">
-          <Image
-            src={twitchUser.profile_image_url}
-            alt={twitchUser.display_name}
-            width={96}
-            height={96}
-            className="rounded-full relative z-10"
-            priority
-          />
-          <div className="absolute inset-0 rounded-full ring-2 ring-purple-500/20 z-20" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center flex-wrap gap-2">
-            <h2 className="text-3xl font-bold truncate">{twitchUser.display_name}</h2>
-            <div className="flex items-center gap-2">
-              <RoleBadge role={twitchUser.site_role} />
-              <BroadcasterBadge type={twitchUser.broadcaster_type} />
-            </div>
-          </div>
-          <Link 
-            href={`/${twitchUser.username}`}
-            className="inline-flex items-center gap-2 text-lg text-foreground/60 hover:text-foreground transition-colors"
+    <div className="min-h-screen">
+      <div className="container mx-auto px-4 py-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-8"
+        >
+          <h1 className="text-4xl font-bold text-white mb-2">Dashboard</h1>
+          <p className="text-gray-300">Welcome back! Here's your channel overview.</p>
+        </motion.div>
+
+        {loading ? (
+          <SkeletonStats count={8} />
+        ) : error ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="bg-red-500/10 border border-red-500/20 rounded-xl p-6 text-center"
           >
-            @{twitchUser.username}
-          </Link>
-          <div className="mt-4 flex flex-wrap items-center gap-4">
-            <div title="Total Followers" className="flex items-center gap-2">
-              <UsersIcon />
-              <span className="text-sm font-medium text-purple-500">
-                <AnimatedCounter value={stats.followers} />
-              </span>
-            </div>
-            {stats.subscribers !== undefined && stats.subscribers > 0 && (twitchUser.broadcaster_type === "partner" || twitchUser.broadcaster_type === "affiliate") && (
-              <div title="Active Subscribers" className="flex items-center gap-2">
-                <StarIcon />
-                <span className="text-sm font-medium text-pink-500">
-                  <AnimatedCounter value={stats.subscribers} />
-                </span>
-              </div>
-            )}
-            {stats.channelPoints?.enabled && stats.channelPoints.activeRewards > 0 && (twitchUser.broadcaster_type === "partner" || twitchUser.broadcaster_type === "affiliate") && (
-              <div title="Channel Points Rewards" className="flex items-center gap-2">
-                <PointsIcon />
-                <span className="text-sm font-medium text-cyan-500">
-                  <AnimatedCounter value={stats.channelPoints.activeRewards} />
-                </span>
-              </div>
-            )}
-            {stats.moderators !== undefined && stats.moderators > 0 && (twitchUser.broadcaster_type === "partner" || twitchUser.broadcaster_type === "affiliate") && (
-              <div title="Channel Moderators" className="flex items-center gap-2">
-                <div className="text-blue-500">
-                  <ShieldIcon className="w-4 h-4" />
-                </div>
-                <span className="text-sm font-medium text-blue-500">
-                  <AnimatedCounter value={stats.moderators} />
-                </span>
-              </div>
-            )}
-            {stats.vips !== undefined && stats.vips > 0 && (twitchUser.broadcaster_type === "partner" || twitchUser.broadcaster_type === "affiliate") && (
-              <div title="Channel VIPs" className="flex items-center gap-2">
-                <div className="text-amber-500">
-                  <SparklesIcon className="w-4 h-4" />
-                </div>
-                <span className="text-sm font-medium text-amber-500">
-                  <AnimatedCounter value={stats.vips} />
-                </span>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Stream Info Section */}
-      <div className="space-y-8">
-        {/* Title */}
-        {stats.title && (
-          <div className="flex items-start gap-3">
-            <div className="mt-1 text-foreground/60">
-              <Type size={16} />
-            </div>
-            <div>
-              <h3 className="text-sm font-medium text-foreground/60 mb-1">Stream Title</h3>
-              <p className="text-lg">{stats.title}</p>
-            </div>
-          </div>
-        )}
-
-        {/* Game */}
-        {stats.lastGame && (
-          <div className="flex items-start gap-3">
-            <div className="mt-1 text-foreground/60">
-              <Gamepad2 size={16} />
-            </div>
-            <div>
-              <h3 className="text-sm font-medium text-foreground/60 mb-1">Current Game</h3>
-              <div className="flex items-center gap-3">
-                <Image
-                  src={stats.lastGame.boxArtUrl.replace('{width}', '40').replace('{height}', '53')}
-                  alt={stats.lastGame.name}
-                  width={40}
-                  height={53}
-                  className="rounded"
-                />
-                <p className="text-lg">{stats.lastGame.name}</p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Tags */}
-        {stats.tags && stats.tags.length > 0 && (
-          <div className="flex items-start gap-3">
-            <div className="mt-1 text-foreground/60">
-              <Hash size={16} />
-            </div>
-            <div>
-              <h3 className="text-sm font-medium text-foreground/60 mb-1">Stream Tags</h3>
-              <div className="flex flex-wrap gap-2">
-                {stats.tags.map((tag) => (
-                  <Badge key={tag} variant="secondary">
-                    {tag}
+            <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-red-400 mb-2">Error Loading Stats</h3>
+            <p className="text-red-300">{error}</p>
+          </motion.div>
+        ) : stats ? (
+          <div className="space-y-8">
+            {/* Main Stats Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {/* Followers */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="bg-glass/50 backdrop-blur-xl rounded-xl border border-white/5 p-6 hover:shadow-cyber-hover transition-all duration-300"
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <UsersIcon className="w-8 h-8 text-cyber-pink" />
+                  <Badge variant="secondary" className="bg-cyber-pink/20 text-cyber-pink border-cyber-pink/30">
+                    Followers
                   </Badge>
-                ))}
-              </div>
+                </div>
+                <div className="space-y-2">
+                  <AnimatedCounter value={stats.followers} className="text-3xl font-bold text-white" />
+                  <p className="text-gray-400 text-sm">Total Followers</p>
+                </div>
+              </motion.div>
+
+              {/* Subscribers */}
+              {stats.subscribers !== undefined && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className="bg-glass/50 backdrop-blur-xl rounded-xl border border-white/5 p-6 hover:shadow-cyber-hover transition-all duration-300"
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <StarIcon className="w-8 h-8 text-cyber-cyan" />
+                    <Badge variant="secondary" className="bg-cyber-cyan/20 text-cyber-cyan border-cyber-cyan/30">
+                      Subscribers
+                    </Badge>
+                  </div>
+                  <div className="space-y-2">
+                    <AnimatedCounter value={stats.subscribers} className="text-3xl font-bold text-white" />
+                    <p className="text-gray-400 text-sm">Active Subscribers</p>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Total Views */}
+              {stats.totalViewCount !== undefined && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                  className="bg-glass/50 backdrop-blur-xl rounded-xl border border-white/5 p-6 hover:shadow-cyber-hover transition-all duration-300"
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <Hash className="w-8 h-8 text-purple-400" />
+                    <Badge variant="secondary" className="bg-purple-400/20 text-purple-400 border-purple-400/30">
+                      Views
+                    </Badge>
+                  </div>
+                  <div className="space-y-2">
+                    <AnimatedCounter value={stats.totalViewCount} className="text-3xl font-bold text-white" />
+                    <p className="text-gray-400 text-sm">Total Channel Views</p>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Broadcaster Status */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.4 }}
+                className="bg-glass/50 backdrop-blur-xl rounded-xl border border-white/5 p-6 hover:shadow-cyber-hover transition-all duration-300"
+              >
+                <div className="flex items-center justify-between mb-4">
+                  {stats.isAffiliate ? (
+                    <Crown className="w-8 h-8 text-yellow-400" />
+                  ) : (
+                    <Verified className="w-8 h-8 text-gray-400" />
+                  )}
+                  <Badge
+                    variant="secondary"
+                    className={`${stats.broadcasterType === 'partner'
+                      ? 'bg-purple-500/20 text-purple-400 border-purple-500/30'
+                      : stats.broadcasterType === 'affiliate'
+                        ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
+                        : 'bg-gray-500/20 text-gray-400 border-gray-500/30'
+                      }`}
+                  >
+                    {stats.broadcasterType === 'partner' ? 'Partner' :
+                      stats.broadcasterType === 'affiliate' ? 'Affiliate' : 'Creator'}
+                  </Badge>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-2xl font-bold text-white">
+                    {stats.broadcasterType === 'partner' ? 'Partner' :
+                      stats.broadcasterType === 'affiliate' ? 'Affiliate' : 'Creator'}
+                  </p>
+                  <p className="text-gray-400 text-sm">Broadcaster Status</p>
+                </div>
+              </motion.div>
             </div>
+
+            {/* Secondary Stats Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {/* Moderators */}
+              {stats.moderators !== undefined && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5 }}
+                  className="bg-glass/50 backdrop-blur-xl rounded-xl border border-white/5 p-6 hover:shadow-cyber-hover transition-all duration-300"
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <ShieldIcon className="w-8 h-8 text-green-400" />
+                    <Badge variant="secondary" className="bg-green-400/20 text-green-400 border-green-400/30">
+                      Moderators
+                    </Badge>
+                  </div>
+                  <div className="space-y-2">
+                    <AnimatedCounter value={stats.moderators} className="text-3xl font-bold text-white" />
+                    <p className="text-gray-400 text-sm">Active Moderators</p>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* VIPs */}
+              {stats.vips !== undefined && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.6 }}
+                  className="bg-glass/50 backdrop-blur-xl rounded-xl border border-white/5 p-6 hover:shadow-cyber-hover transition-all duration-300"
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <SparklesIcon className="w-8 h-8 text-amber-400" />
+                    <Badge variant="secondary" className="bg-amber-400/20 text-amber-400 border-amber-400/30">
+                      VIPs
+                    </Badge>
+                  </div>
+                  <div className="space-y-2">
+                    <AnimatedCounter value={stats.vips} className="text-3xl font-bold text-white" />
+                    <p className="text-gray-400 text-sm">VIP Members</p>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Channel Points */}
+              {stats.channelPoints && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.7 }}
+                  className="bg-glass/50 backdrop-blur-xl rounded-xl border border-white/5 p-6 hover:shadow-cyber-hover transition-all duration-300"
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <PointsIcon className="w-8 h-8 text-blue-400" />
+                    <Badge variant="secondary" className="bg-blue-400/20 text-blue-400 border-blue-400/30">
+                      Rewards
+                    </Badge>
+                  </div>
+                  <div className="space-y-2">
+                    <AnimatedCounter value={stats.channelPoints.activeRewards} className="text-3xl font-bold text-white" />
+                    <p className="text-gray-400 text-sm">Active Rewards</p>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Live Status */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.8 }}
+                className="bg-glass/50 backdrop-blur-xl rounded-xl border border-white/5 p-6 hover:shadow-cyber-hover transition-all duration-300"
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${stats.isLive ? 'bg-red-500' : 'bg-gray-500'
+                    }`}>
+                    <div className={`w-3 h-3 rounded-full ${stats.isLive ? 'bg-white animate-pulse' : 'bg-gray-300'
+                      }`} />
+                  </div>
+                  <Badge
+                    variant="secondary"
+                    className={`${stats.isLive
+                      ? 'bg-red-500/20 text-red-400 border-red-500/30'
+                      : 'bg-gray-500/20 text-gray-400 border-gray-500/30'
+                      }`}
+                  >
+                    {stats.isLive ? 'LIVE' : 'Offline'}
+                  </Badge>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-2xl font-bold text-white">
+                    {stats.isLive ? 'LIVE' : 'Offline'}
+                  </p>
+                  <p className="text-gray-400 text-sm">Stream Status</p>
+                </div>
+              </motion.div>
+            </div>
+
+            {/* Current Game/Category */}
+            {stats.lastGame && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.9 }}
+                className="bg-glass/50 backdrop-blur-xl rounded-xl border border-white/5 p-6"
+              >
+                <div className="flex items-center gap-4">
+                  <Gamepad2 className="w-8 h-8 text-cyber-pink" />
+                  <div>
+                    <h3 className="text-xl font-semibold text-white mb-1">
+                      {stats.isLive ? 'Currently Playing' : 'Last Played'}
+                    </h3>
+                    <p className="text-cyber-pink font-medium">{stats.lastGame.name}</p>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Stream Title */}
+            {stats.title && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 1.0 }}
+                className="bg-glass/50 backdrop-blur-xl rounded-xl border border-white/5 p-6"
+              >
+                <div className="flex items-center gap-4">
+                  <Type className="w-8 h-8 text-cyber-cyan" />
+                  <div>
+                    <h3 className="text-xl font-semibold text-white mb-1">
+                      {stats.isLive ? 'Stream Title' : 'Last Stream Title'}
+                    </h3>
+                    <p className="text-gray-300">{stats.title}</p>
+                  </div>
+                </div>
+              </motion.div>
+            )}
           </div>
-        )}
+        ) : null}
       </div>
-    </motion.div>
+    </div>
   );
 } 

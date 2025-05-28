@@ -11,7 +11,7 @@ export const getApiDocs = () => {
       },
       servers: [
         {
-          url: process.env.NEXT_PUBLIC_APP_URL,
+          url: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000',
           description: "Server URL",
         },
       ],

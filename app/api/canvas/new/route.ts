@@ -16,12 +16,17 @@ export async function GET() {
     // Get user's Twitch info
     const { data: twitchUser } = await supabase
       .from("twitch_users")
-      .select("id")
+      .select("id, site_role")
       .eq("twitch_id", user.user_metadata.provider_id)
       .single();
 
     if (!twitchUser) {
       throw new Error("Twitch user not found");
+    }
+
+    // Check if user has Canvas access (admin or owner only)
+    if (!['admin', 'owner'].includes(twitchUser.site_role)) {
+      return redirect("/dashboard?error=canvas-access-denied");
     }
 
     // Create a new canvas

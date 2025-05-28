@@ -7,6 +7,8 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { Database } from '@/lib/database.types'
 import { Loader2 } from 'lucide-react'
 import { motion } from 'framer-motion'
+import { useQuery } from '@tanstack/react-query'
+import { SkeletonForm } from '@/components/ui/skeleton'
 
 export default function CanvasSettingsPage() {
   const params = useParams()
@@ -72,58 +74,68 @@ export default function CanvasSettingsPage() {
   }, [canvasId, supabase])
 
   if (loading) {
-    return (
-      <div className="rounded-xl bg-glass/50 backdrop-blur-xl p-8 border border-white/5">
-        <div className="h-8 w-1/3 bg-glass animate-pulse rounded-lg mb-4" />
-        <div className="space-y-3">
-          <div className="h-4 w-full bg-glass animate-pulse rounded-lg" />
-          <div className="h-4 w-5/6 bg-glass animate-pulse rounded-lg" />
-          <div className="h-4 w-4/6 bg-glass animate-pulse rounded-lg" />
-        </div>
-      </div>
-    )
+    return <SkeletonForm />
   }
 
   if (error) {
     return (
-      <div className="rounded-xl bg-glass/50 backdrop-blur-xl p-8 border border-white/5">
-        <h1 className="text-2xl font-bold text-red-500 mb-2">Error</h1>
-        <p className="text-muted-foreground">{error}</p>
+      <div className="min-h-screen">
+        <div className="container mx-auto px-4 py-8">
+          <div className="rounded-xl bg-glass/50 backdrop-blur-xl p-8 border border-white/5">
+            <h1 className="text-2xl font-bold text-red-500 mb-2">Error</h1>
+            <p className="text-muted-foreground">{error}</p>
+          </div>
+        </div>
       </div>
     )
   }
 
   if (!canvasSettings) {
     return (
-      <div className="rounded-xl bg-glass/50 backdrop-blur-xl p-8 border border-white/5">
-        <h1 className="text-2xl font-bold mb-2">No Canvas Found</h1>
-        <p className="text-muted-foreground">This canvas does not exist.</p>
+      <div className="min-h-screen">
+        <div className="container mx-auto px-4 py-8">
+          <div className="rounded-xl bg-glass/50 backdrop-blur-xl p-8 border border-white/5">
+            <h1 className="text-2xl font-bold mb-2">No Canvas Found</h1>
+            <p className="text-muted-foreground">This canvas does not exist.</p>
+          </div>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="space-y-8">
-      <motion.div 
-        className="rounded-xl bg-glass/50 backdrop-blur-xl p-8 border border-white/5"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-      >
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold">Canvas Settings</h1>
-            <p className="text-muted-foreground">
-              Customize your canvas appearance and behavior.
-            </p>
-          </div>
-        </div>
+    <div className="min-h-screen">
+      <div className="container mx-auto px-4 py-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-8"
+        >
+          <h1 className="text-4xl font-bold text-white mb-2">Canvas Settings</h1>
+          <p className="text-gray-300">Customize your canvas appearance and behavior.</p>
+        </motion.div>
 
-        <CanvasSettingsForm
-          canvasId={canvasId}
-          initialData={canvasSettings}
-        />
-      </motion.div>
+        <div className="space-y-8">
+          <motion.div
+            className="rounded-xl bg-glass/50 backdrop-blur-xl p-8 border border-white/5"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <div className="mb-8">
+              <h2 className="text-2xl font-semibold mb-2">Configure Canvas</h2>
+              <p className="text-muted-foreground">
+                Adjust settings and customize your stream overlay.
+              </p>
+            </div>
+
+            <CanvasSettingsForm
+              canvasId={canvasId}
+              initialData={canvasSettings}
+            />
+          </motion.div>
+        </div>
+      </div>
     </div>
   )
 } 

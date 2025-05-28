@@ -1,0 +1,127 @@
+import { useEffect, useState } from 'react'
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { useUserRole } from './use-user-role'
+import type { TwitchUser } from '@/types/auth'
+
+export interface Feature {
+  id: string
+  feature_id: string
+  name: string
+  description: string
+  path: string | null
+  category: string
+  icon: string | null
+  enabled: boolean
+  required_role: 'user' | 'moderator' | 'admin' | 'owner'
+  sort_order: number
+  user_has_access?: boolean
+}
+
+interface UseFeatureAccessReturn {
+  features: Feature[]
+  isLoading: boolean
+  error: Error | null
+  hasFeatureAccess: (featureId: string) => boolean
+  getFeature: (featureId: string) => Feature | undefined
+  getFeaturesByCategory: (category: string) => Feature[]
+  refreshFeatures: () => Promise<void>
+}
+
+export function useFeatureAccess(user: TwitchUser | null): UseFeatureAccessReturn {
+  const [features, setFeatures] = useState<Feature[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<Error | null>(null)
+  const { userRole } = useUserRole(user)
+  const supabase = createClientComponentClient()
+
+  const fetchFeatures = async () => {
+    try {
+      console.log('[FeatureAccess] Fetching features for user role:', userRole)
+      setIsLoading(true)
+      setError(null)
+
+      const { data, error: fetchError } = await supabase
+        .from('feature_states')
+        .select('*')
+        .order('sort_order', { ascending: true })
+
+      if (fetchError) throw fetchError
+
+      console.log('[FeatureAccess] Raw features from DB:', data)
+
+      // Calculate user access for each feature
+      const featuresWithAccess = data?.map(feature => {
+        const hasAccess = hasRoleAccess(userRole, feature.required_role) && feature.enabled
+        console.log(`[FeatureAccess] Feature ${feature.feature_id}: required=${feature.required_role}, userRole=${userRole}, enabled=${feature.enabled}, hasAccess=${hasAccess}`)
+        return {
+          ...feature,
+          user_has_access: hasAccess
+        }
+      }) || []
+
+      console.log('[FeatureAccess] Features with access calculated:', featuresWithAccess)
+      setFeatures(featuresWithAccess)
+    } catch (err) {
+      console.error('Error fetching features:', err)
+      setError(err as Error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (userRole !== null) {
+      console.log('[FeatureAccess] User role changed, fetching features:', userRole)
+      fetchFeatures()
+    } else {
+      console.log('[FeatureAccess] User role is null, skipping fetch')
+    }
+  }, [userRole, supabase])
+
+  const hasRoleAccess = (userRole: string | null, requiredRole: string): boolean => {
+    if (!userRole) return false
+    
+    const roleHierarchy = {
+      user: 1,
+      moderator: 2,
+      admin: 3,
+      owner: 4
+    }
+
+    const userLevel = roleHierarchy[userRole as keyof typeof roleHierarchy] || 0
+    const requiredLevel = roleHierarchy[requiredRole as keyof typeof roleHierarchy] || 0
+
+    const hasAccess = userLevel >= requiredLevel
+    console.log(`[FeatureAccess] Role check: ${userRole}(${userLevel}) >= ${requiredRole}(${requiredLevel}) = ${hasAccess}`)
+    return hasAccess
+  }
+
+  const hasFeatureAccess = (featureId: string): boolean => {
+    const feature = features.find(f => f.feature_id === featureId)
+    const hasAccess = feature?.user_has_access || false
+    console.log(`[FeatureAccess] Checking access for ${featureId}:`, hasAccess, feature)
+    return hasAccess
+  }
+
+  const getFeature = (featureId: string): Feature | undefined => {
+    return features.find(f => f.feature_id === featureId)
+  }
+
+  const getFeaturesByCategory = (category: string): Feature[] => {
+    return features.filter(f => f.category === category && f.user_has_access)
+  }
+
+  const refreshFeatures = async () => {
+    await fetchFeatures()
+  }
+
+  return {
+    features: features.filter(f => f.user_has_access),
+    isLoading,
+    error,
+    hasFeatureAccess,
+    getFeature,
+    getFeaturesByCategory,
+    refreshFeatures
+  }
+} 

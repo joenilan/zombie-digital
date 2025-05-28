@@ -1,5 +1,5 @@
-import { authService } from "@/lib/auth";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { supabase as globalSupabase } from "@/lib/supabase";
 
 const TWITCH_API_URL = "https://api.twitch.tv/helix";
 
@@ -32,7 +32,7 @@ async function refreshTwitchToken(userId: string, refreshToken: string) {
   // First check if we have a valid session
   const {
     data: { session },
-  } = await authService.getCurrentSession();
+  } = await globalSupabase.auth.getSession();
   if (!session) {
     throw new Error("No active session");
   }
@@ -42,7 +42,7 @@ async function refreshTwitchToken(userId: string, refreshToken: string) {
       const response = await fetch("/api/auth/refresh-twitch-token", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, refreshToken }),
+        body: JSON.stringify({ twitch_id: userId, refreshToken }),
       });
 
       if (!response.ok) {
@@ -51,10 +51,10 @@ async function refreshTwitchToken(userId: string, refreshToken: string) {
 
         // For 401/403 errors, try to get a fresh session first
         if (response.status === 401 || response.status === 403) {
-          const freshSession = await authService.validateAndRefreshSession();
+          const { data: { session: freshSession } } = await globalSupabase.auth.getSession();
           if (!freshSession) {
             // Only sign out if we can't get a fresh session
-            await authService.signOut();
+            await globalSupabase.auth.signOut();
             throw new Error("Session expired - Please sign in again");
           }
 
@@ -91,7 +91,7 @@ async function refreshTwitchToken(userId: string, refreshToken: string) {
       const { data: user, error: dbError } = await supabase
         .from("twitch_users")
         .select("provider_token")
-        .eq("id", userId)
+        .eq("twitch_id", userId)
         .single();
 
       if (dbError) {
@@ -102,6 +102,13 @@ async function refreshTwitchToken(userId: string, refreshToken: string) {
       if (!user?.provider_token) {
         console.error("No provider token found after successful refresh");
         throw new Error("No provider token found after refresh");
+      }
+
+      // Trigger auth store refresh by dispatching a custom event
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('twitch-token-refreshed', {
+          detail: { userId, newToken: user.provider_token }
+        }));
       }
 
       return user.provider_token;
@@ -130,8 +137,54 @@ export async function fetchTwitchStats(
   accessToken: string,
   broadcasterType: string
 ) {
+  let currentAccessToken = accessToken;
+  let retryCount = 0;
+  const maxRetries = 1; // Only retry once after token refresh
+
+  const makeApiCall = async (url: string, headers: any) => {
+    const response = await fetch(url, { headers });
+    
+    // If we get a 401 and haven't retried yet, try to refresh the token
+    if (response.status === 401 && retryCount === 0) {
+      console.log('Token expired, attempting refresh...');
+      retryCount++;
+      
+      try {
+        // Get the user's refresh token from the database
+        const supabase = createClientComponentClient();
+        const { data: user, error: userError } = await supabase
+          .from('twitch_users')
+          .select('provider_refresh_token')
+          .eq('twitch_id', userId)
+          .single();
+
+        if (userError || !user?.provider_refresh_token) {
+          throw new Error('No refresh token available');
+        }
+
+        // Refresh the token
+        const newToken = await refreshTwitchToken(userId, user.provider_refresh_token);
+        currentAccessToken = newToken;
+        
+        // Update headers with new token
+        const newHeaders = {
+          ...headers,
+          Authorization: `Bearer ${newToken}`,
+        };
+        
+        // Retry the request with new token
+        return await fetch(url, { headers: newHeaders });
+      } catch (refreshError) {
+        console.error('Token refresh failed:', refreshError);
+        throw new Error('Authentication failed - please sign in again');
+      }
+    }
+    
+    return response;
+  };
+
   const headers = {
-    Authorization: `Bearer ${accessToken}`,
+    Authorization: `Bearer ${currentAccessToken}`,
     "Client-Id": process.env.NEXT_PUBLIC_TWITCH_CLIENT_ID!,
   };
 
@@ -153,9 +206,9 @@ export async function fetchTwitchStats(
 
     // Get channel info (available for all)
     try {
-      const channelRes = await fetch(
+      const channelRes = await makeApiCall(
         `${TWITCH_API_URL}/channels?broadcaster_id=${userId}`,
-        { headers }
+        headers
       );
       if (channelRes.ok) {
         const channelData = await channelRes.json();
@@ -178,9 +231,9 @@ export async function fetchTwitchStats(
 
     // Get followers count (new endpoint)
     try {
-      const followersRes = await fetch(
+      const followersRes = await makeApiCall(
         `${TWITCH_API_URL}/channels/followers?broadcaster_id=${userId}`,
-        { headers }
+        headers
       );
       if (followersRes.ok) {
         const followersData = await followersRes.json();
@@ -194,9 +247,9 @@ export async function fetchTwitchStats(
     if (stats.isAffiliate) {
       // Subscribers count
       try {
-        const subsRes = await fetch(
+        const subsRes = await makeApiCall(
           `${TWITCH_API_URL}/subscriptions?broadcaster_id=${userId}`,
-          { headers }
+          headers
         );
         if (subsRes.ok) {
           const subsData = await subsRes.json();
@@ -208,9 +261,9 @@ export async function fetchTwitchStats(
 
       // Channel Points
       try {
-        const pointsRes = await fetch(
+        const pointsRes = await makeApiCall(
           `${TWITCH_API_URL}/channel_points/custom_rewards?broadcaster_id=${userId}`,
-          { headers }
+          headers
         );
         if (pointsRes.ok) {
           const pointsData = await pointsRes.json();
@@ -226,9 +279,9 @@ export async function fetchTwitchStats(
 
     // Stream info (available for all) - this will override channel info if live
     try {
-      const streamRes = await fetch(
+      const streamRes = await makeApiCall(
         `${TWITCH_API_URL}/streams?user_id=${userId}`,
-        { headers }
+        headers
       );
       if (streamRes.ok) {
         const streamData = await streamRes.json();
@@ -252,13 +305,19 @@ export async function fetchTwitchStats(
 
     // Moderators and VIPs (available for all)
     try {
+      // Update headers in case token was refreshed
+      const currentHeaders = {
+        Authorization: `Bearer ${currentAccessToken}`,
+        "Client-Id": process.env.NEXT_PUBLIC_TWITCH_CLIENT_ID!,
+      };
+
       const [modsRes, vipsRes] = await Promise.all([
-        fetch(
+        makeApiCall(
           `${TWITCH_API_URL}/moderation/moderators?broadcaster_id=${userId}`,
-          { headers }
+          currentHeaders
         ),
-        fetch(`${TWITCH_API_URL}/channels/vips?broadcaster_id=${userId}`, {
-          headers,
+        makeApiCall(`${TWITCH_API_URL}/channels/vips?broadcaster_id=${userId}`, {
+          headers: currentHeaders,
         }),
       ]);
 

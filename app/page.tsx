@@ -1,11 +1,10 @@
 "use client";
 
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
-import { useEffect, useState } from "react";
 import TwitchLoginButton from "@/components/TwitchLoginButton";
 import Link from "next/link";
 import PageTransitionLayout from "@/components/PageTransitionLayout";
-import { useRouter } from "next/navigation";
+import { useAuthStore } from "@/stores/useAuthStore";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
 
 function FeatureCard({ title, description }: { title: string; description: string }) {
   return (
@@ -17,20 +16,14 @@ function FeatureCard({ title, description }: { title: string; description: strin
 }
 
 export default function HomePage() {
-  const [user, setUser] = useState<any>(undefined);
-  const [loading, setLoading] = useState(true);
-  const supabase = createClientComponentClient();
-  const router = useRouter();
+  const { user, isLoading, isInitialized } = useAuthStore();
 
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-  }, [supabase]);
-
-  if (user === undefined) {
-    return null; // Initial loading state
+  if (!isInitialized || isLoading) {
+    return (
+      <PageTransitionLayout>
+        <LoadingSpinner />
+      </PageTransitionLayout>
+    );
   }
 
   return (
@@ -52,11 +45,11 @@ export default function HomePage() {
           </p>
 
           <div className="flex justify-center">
-            {loading ? (
+            {isLoading ? (
               <div className="w-48 h-12 bg-background/20 rounded-full animate-pulse" />
             ) : user ? (
-              <Link 
-                href="/dashboard" 
+              <Link
+                href="/dashboard"
                 className="ethereal-button inline-flex items-center gap-2"
               >
                 Go to Dashboard

@@ -2,6 +2,36 @@ import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
+// Helper function to check feature access
+async function checkFeatureAccess(featureId: string, userId: string) {
+  const supabase = createRouteHandlerClient({ cookies });
+  
+  // Get user's role
+  const { data: user } = await supabase
+    .from('twitch_users')
+    .select('site_role')
+    .eq('id', userId)
+    .single();
+
+  if (!user) return false;
+
+  // Get feature state
+  const { data: feature } = await supabase
+    .from('feature_states')
+    .select('enabled, required_role')
+    .eq('feature_id', featureId)
+    .single();
+
+  if (!feature || !feature.enabled) return false;
+
+  // Check role hierarchy
+  const roleHierarchy = ['user', 'moderator', 'admin', 'owner'];
+  const userRoleIndex = roleHierarchy.indexOf(user.site_role);
+  const requiredRoleIndex = roleHierarchy.indexOf(feature.required_role);
+
+  return userRoleIndex >= requiredRoleIndex;
+}
+
 export async function GET(request: Request) {
   const supabase = createRouteHandlerClient({ cookies });
 
@@ -16,12 +46,18 @@ export async function GET(request: Request) {
     // Get user's Twitch info
     const { data: twitchUser } = await supabase
       .from("twitch_users")
-      .select("id")
+      .select("id, site_role")
       .eq("twitch_id", user.user_metadata.provider_id)
       .single();
 
     if (!twitchUser) {
       return new NextResponse("Twitch user not found", { status: 404 });
+    }
+
+    // Check if user has Canvas access
+    const hasAccess = await checkFeatureAccess('CANVAS', twitchUser.id);
+    if (!hasAccess) {
+      return new NextResponse("Canvas feature is not available for your account", { status: 403 });
     }
 
     // Get user's canvas settings
@@ -52,12 +88,18 @@ export async function POST(request: Request) {
     // Get user's Twitch info
     const { data: twitchUser } = await supabase
       .from("twitch_users")
-      .select("id")
+      .select("id, site_role")
       .eq("twitch_id", user.user_metadata.provider_id)
       .single();
 
     if (!twitchUser) {
       return new NextResponse("Twitch user not found", { status: 404 });
+    }
+
+    // Check if user has Canvas access
+    const hasAccess = await checkFeatureAccess('CANVAS', twitchUser.id);
+    if (!hasAccess) {
+      return new NextResponse("Canvas feature is not available for your account", { status: 403 });
     }
 
     const body = await request.json();
@@ -102,12 +144,18 @@ export async function PATCH(request: Request) {
     // Get user's Twitch info
     const { data: twitchUser } = await supabase
       .from("twitch_users")
-      .select("id")
+      .select("id, site_role")
       .eq("twitch_id", user.user_metadata.provider_id)
       .single();
 
     if (!twitchUser) {
       return new NextResponse("Twitch user not found", { status: 404 });
+    }
+
+    // Check if user has Canvas access
+    const hasAccess = await checkFeatureAccess('CANVAS', twitchUser.id);
+    if (!hasAccess) {
+      return new NextResponse("Canvas feature is not available for your account", { status: 403 });
     }
 
     const body = await request.json();

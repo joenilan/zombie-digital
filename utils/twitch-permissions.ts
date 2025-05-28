@@ -6,9 +6,9 @@ export function canManageBroadcast(scopes: TwitchScope[]) {
 
 export function canModerateChat(scopes: TwitchScope[]) {
   return (
-    scopes.includes("channel:moderate") &&
-    scopes.includes("chat:read") &&
-    scopes.includes("chat:edit")
+    scopes.includes("moderation:read") &&
+    scopes.includes("user:read:chat") &&
+    scopes.includes("user:bot")
   );
 }
 
@@ -20,7 +20,7 @@ export function canManageRewards(scopes: TwitchScope[]) {
 }
 
 // Example usage in a component:
-const hasModPermissions = canModerateChat(twitchUser.provider_scopes);
-if (hasModPermissions) {
-  // Show mod controls
-}
+// const hasModPermissions = canModerateChat(twitchUser.provider_scopes);
+// if (hasModPermissions) {
+//   // Show mod controls
+// }

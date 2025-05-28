@@ -1,8 +1,6 @@
 'use client'
 
 import { forwardRef } from 'react'
-import { ThreeCanvas } from './ThreeCanvas'
-import { ThreeCanvasTest } from './ThreeCanvasTest'
 
 interface DisplayCanvasProps {
   resolution: string
@@ -13,8 +11,23 @@ interface DisplayCanvasProps {
   canvasOwner: string
 }
 
-export const DisplayCanvas = forwardRef<any, DisplayCanvasProps>(
+export const DisplayCanvas = forwardRef<HTMLDivElement, DisplayCanvasProps>(
   (props, ref) => {
-    return <ThreeCanvasTest ref={ref} {...props} />
+    return (
+      <div
+        ref={ref}
+        className="w-full h-full flex items-center justify-center bg-gray-900 text-white"
+        style={{ backgroundColor: props.background_color }}
+      >
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-2">Canvas Display</h2>
+          <p className="text-gray-400">Canvas functionality is being updated</p>
+          <p className="text-sm text-gray-500 mt-2">Resolution: {props.resolution}</p>
+          {props.show_name_tag && (
+            <p className="text-sm text-gray-500">Owner: {props.canvasOwner}</p>
+          )}
+        </div>
+      </div>
+    )
   }
 ) 
