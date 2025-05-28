@@ -63,16 +63,12 @@ export const TWITCH_SCOPES = [
   'channel:manage:schedule',
   
   // Extensions
-  'channel:read:extensions',
   'channel:manage:extensions',
   'user:read:broadcast',
   'user:edit:broadcast',
   
   // Follows
   'user:read:follows',
-  
-  // Whispers
-  'user:manage:whispers',
   
   // Block management
   'user:read:blocked_users',
