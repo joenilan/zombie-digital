@@ -8,22 +8,26 @@ async function checkFeatureAccess(featureId: string, userId: string) {
   const supabase = createRouteHandlerClient({ cookies });
   
   // Get user's role
-  const { data: user } = await supabase
+  const { data: user, error: userError } = await supabase
     .from('twitch_users')
     .select('site_role')
     .eq('id', userId)
     .single();
 
-  if (!user) return false;
+  if (!user) {
+    return false;
+  }
 
   // Get feature state
-  const { data: feature } = await supabase
+  const { data: feature, error: featureError } = await supabase
     .from('feature_states')
     .select('enabled, required_role')
     .eq('feature_id', featureId)
     .single();
 
-  if (!feature || !feature.enabled) return false;
+  if (!feature || !feature.enabled) {
+    return false;
+  }
 
   // Check role hierarchy
   const roleHierarchy = ['user', 'moderator', 'admin', 'owner'];
