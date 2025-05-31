@@ -1,5 +1,6 @@
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { supabase as globalSupabase } from "@/lib/supabase";
+import { handleAuthError } from "@/utils/auth-error-handler";
 
 const TWITCH_API_URL = "https://api.twitch.tv/helix";
 
@@ -49,16 +50,18 @@ async function refreshTwitchToken(userId: string, refreshToken: string) {
         const errorData = await response.text();
         console.error(`Token refresh failed (${response.status}):`, errorData);
 
-        // For 401/403 errors, try to get a fresh session first
+        // Use the auth error handler for auth-related errors
         if (response.status === 401 || response.status === 403) {
-          const { data: { session: freshSession } } = await globalSupabase.auth.getSession();
-          if (!freshSession) {
-            // Only sign out if we can't get a fresh session
-            await globalSupabase.auth.signOut();
-            throw new Error("Session expired - Please sign in again");
+          const authErrorHandled = await handleAuthError({
+            status: response.status,
+            message: errorData
+          }, 'Twitch token refresh');
+
+          if (authErrorHandled) {
+            throw new Error("Authentication failed - redirecting to sign in");
           }
 
-          // If we got a fresh session, retry with the new refresh token
+          // If not handled by auth error handler, retry with fresh session
           if (retryCount < maxRetries - 1) {
             retryCount++;
             await new Promise((resolve) =>

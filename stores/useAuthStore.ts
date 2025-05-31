@@ -39,11 +39,16 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true }, false, 'initialize:start')
 
         try {
-          // Get current session
+          // Get current session - this will automatically refresh if needed
           const { data: { session }, error } = await supabase.auth.getSession()
           
           if (error) {
             console.error('[AuthStore] Session error:', error)
+            // If there's a session error, try to refresh once
+            if (error.message?.includes('refresh_token_not_found') || error.message?.includes('invalid_refresh_token')) {
+              console.log('[AuthStore] Attempting to clear invalid session')
+              await supabase.auth.signOut()
+            }
             set({ 
               session: null, 
               user: null, 
@@ -84,6 +89,8 @@ export const useAuthStore = create<AuthState>()(
             authListenerSetup = true
             
             supabase.auth.onAuthStateChange(async (event, session) => {
+              console.log('[AuthStore] Auth state change:', event, !!session)
+              
               if (event === 'SIGNED_OUT') {
                 set({ 
                   session: null, 
@@ -96,7 +103,8 @@ export const useAuthStore = create<AuthState>()(
                 const currentUserId = currentState.user?.twitch_id
                 const newUserId = session?.user?.user_metadata?.sub
                 
-                if (currentUserId === newUserId && currentState.session) {
+                // Skip if it's the same user and we already have a session
+                if (currentUserId === newUserId && currentState.session && event !== 'TOKEN_REFRESHED') {
                   return
                 }
                 

@@ -3,11 +3,20 @@
 import { usePathname } from 'next/navigation'
 import { useEffect } from 'react'
 import { Navigation } from '@/components/navigation/Navigation'
+import { useAuthStore } from '@/stores/useAuthStore'
 
 export function LayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const isOverlay = pathname.startsWith('/overlay')
   const isCanvas = pathname.startsWith('/canvas/') && !pathname.endsWith('/settings')
+  const { initialize, isInitialized } = useAuthStore()
+
+  // Initialize auth store on app start
+  useEffect(() => {
+    if (!isInitialized) {
+      initialize()
+    }
+  }, [initialize, isInitialized])
 
   // Ensure page loads at top on route change
   useEffect(() => {
@@ -35,7 +44,7 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
   return (
     <div className="relative min-h-screen">
       <Navigation />
-      <div className="pb-20 sm:pb-0">
+      <div>
         {children}
       </div>
     </div>

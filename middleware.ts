@@ -12,36 +12,55 @@ export async function middleware(req: NextRequest) {
 
   const supabase = createMiddlewareClient({ req, res });
 
-  // Refresh session if expired
-  const {
-    data: { session },
-    error,
-  } = await supabase.auth.getSession();
+  try {
+    // Refresh session if expired - this will automatically refresh tokens
+    const {
+      data: { session },
+      error,
+    } = await supabase.auth.getSession();
 
-  // Log session state for debugging (only in development)
-  if (process.env.NODE_ENV === 'development') {
-    console.log("Middleware session check:", {
-      path: req.nextUrl.pathname,
-      hasSession: !!session,
-      error: error?.message,
-    });
-  }
-
-  // Handle protected routes
-  if (req.nextUrl.pathname.startsWith("/dashboard") || req.nextUrl.pathname.startsWith("/canvas")) {
-    if (!session) {
-      return NextResponse.redirect(new URL("/auth/signin", req.url));
+    // Log session state for debugging (only in development)
+    if (process.env.NODE_ENV === 'development') {
+      console.log("Middleware session check:", {
+        path: req.nextUrl.pathname,
+        hasSession: !!session,
+        error: error?.message,
+        sessionExpiry: session?.expires_at ? new Date(session.expires_at * 1000).toISOString() : null,
+      });
     }
-  }
 
-  // Handle auth routes
-  if (req.nextUrl.pathname.startsWith("/auth/signin")) {
-    if (session) {
-      return NextResponse.redirect(new URL("/dashboard", req.url));
+    // Handle protected routes
+    if (req.nextUrl.pathname.startsWith("/dashboard") || req.nextUrl.pathname.startsWith("/canvas")) {
+      if (!session) {
+        // Clear any stale cookies before redirecting
+        const response = NextResponse.redirect(new URL("/auth/signin", req.url));
+        response.cookies.delete('sb-access-token');
+        response.cookies.delete('sb-refresh-token');
+        return response;
+      }
     }
-  }
 
-  return res;
+    // Handle auth routes
+    if (req.nextUrl.pathname.startsWith("/auth/signin")) {
+      if (session) {
+        return NextResponse.redirect(new URL("/dashboard", req.url));
+      }
+    }
+
+    return res;
+  } catch (error) {
+    console.error("Middleware error:", error);
+    
+    // If there's an auth error on protected routes, redirect to signin
+    if (req.nextUrl.pathname.startsWith("/dashboard") || req.nextUrl.pathname.startsWith("/canvas")) {
+      const response = NextResponse.redirect(new URL("/auth/signin", req.url));
+      response.cookies.delete('sb-access-token');
+      response.cookies.delete('sb-refresh-token');
+      return response;
+    }
+    
+    return res;
+  }
 }
 
 // Ensure the middleware is only called for relevant paths

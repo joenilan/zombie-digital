@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import { Pencil, Trash2, Check, X } from "lucide-react";
 import { format } from "date-fns";
+import { useAuthStore } from '@/stores/useAuthStore'
 
 interface NotificationForm {
   message: string;
@@ -26,8 +27,8 @@ interface Notification extends NotificationForm {
 export default function NotificationsPage() {
   const queryClient = useQueryClient();
   const supabase = createClientComponentClient();
-  const [userId, setUserId] = useState<string | null>(null);
-  
+  const { user } = useAuthStore();
+
   const { register, handleSubmit, reset } = useForm<NotificationForm>({
     defaultValues: {
       message: "",
@@ -37,60 +38,16 @@ export default function NotificationsPage() {
     }
   });
 
-  // Get the current user's Twitch ID when component mounts
-  useEffect(() => {
-    async function getTwitchUser() {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        console.log('Auth Session:', session?.user);
-
-        if (session?.user) {
-          // Get the user's Twitch ID from the session metadata
-          const twitchId = session.user.user_metadata?.provider_id;
-          console.log('Looking up user with Twitch ID:', twitchId);
-
-          // Find user by Twitch ID
-          const { data: twitchUser, error } = await supabase
-            .from('twitch_users')
-            .select('*')
-            .eq('twitch_id', twitchId)
-            .single();
-
-          if (error) {
-            console.error('Error finding user:', error);
-            return;
-          }
-
-          if (twitchUser) {
-            console.log('Found user by Twitch ID:', twitchUser);
-            setUserId(twitchUser.id);
-          } else {
-            console.error('No matching Twitch user found for ID:', twitchId);
-            toast.error('User not properly authenticated');
-          }
-        } else {
-          console.error('No session found');
-          toast.error('Please sign in');
-        }
-      } catch (error) {
-        console.error('Error in getTwitchUser:', error);
-        toast.error('Error getting user data');
-      }
-    }
-
-    getTwitchUser();
-  }, [supabase]);
-
   // Create notification mutation
   const createMutation = useMutation({
     mutationFn: async (notification: NotificationForm) => {
-      if (!userId) {
+      if (!user) {
         throw new Error('Not authenticated');
       }
 
       console.log('Creating notification with:', {
         ...notification,
-        createdBy: userId
+        createdBy: user.id
       });
 
       const { data, error } = await supabase
@@ -100,7 +57,7 @@ export default function NotificationsPage() {
           type: notification.type,
           showOnlyToAuth: notification.showOnlyToAuth,
           expiresAt: notification.expiresAt,
-          createdBy: userId,
+          createdBy: user.id,
           active: true
         }])
         .select()
@@ -126,7 +83,7 @@ export default function NotificationsPage() {
   });
 
   const onSubmit = (data: NotificationForm) => {
-    if (!userId) {
+    if (!user) {
       toast.error("Not authenticated");
       return;
     }
@@ -152,7 +109,7 @@ export default function NotificationsPage() {
         .from('notifications')
         .delete()
         .eq('id', id);
-      
+
       if (error) throw error;
     },
     onSuccess: () => {
@@ -170,7 +127,7 @@ export default function NotificationsPage() {
         .from('notifications')
         .update({ active })
         .eq('id', id);
-      
+
       if (error) throw error;
     },
     onSuccess: () => {
@@ -262,12 +219,11 @@ export default function NotificationsPage() {
               >
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
-                    <span className={`px-2 py-1 rounded text-sm ${
-                      notification.type === 'info' ? 'bg-blue-500/20 text-blue-300' :
-                      notification.type === 'warning' ? 'bg-yellow-500/20 text-yellow-300' :
-                      notification.type === 'error' ? 'bg-red-500/20 text-red-300' :
-                      'bg-green-500/20 text-green-300'
-                    }`}>
+                    <span className={`px-2 py-1 rounded text-sm ${notification.type === 'info' ? 'bg-blue-500/20 text-blue-300' :
+                        notification.type === 'warning' ? 'bg-yellow-500/20 text-yellow-300' :
+                          notification.type === 'error' ? 'bg-red-500/20 text-red-300' :
+                            'bg-green-500/20 text-green-300'
+                      }`}>
                       {notification.type}
                     </span>
                     <span className="text-sm text-white/60">
@@ -283,9 +239,9 @@ export default function NotificationsPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={() => toggleMutation.mutate({ 
-                      id: notification.id, 
-                      active: !notification.active 
+                    onClick={() => toggleMutation.mutate({
+                      id: notification.id,
+                      active: !notification.active
                     })}
                     className="p-2 hover:bg-white/10 rounded-lg transition-colors"
                     title={notification.active ? 'Deactivate' : 'Activate'}

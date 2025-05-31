@@ -319,42 +319,53 @@ export default function SocialLinksPage() {
       <div className="container mx-auto px-4 py-8">
         {/* Page header */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
+          transition={{ duration: 0.8 }}
+          className="text-center mb-12"
         >
-          <h1 className="text-4xl font-bold text-white mb-2">Social Presence</h1>
-          <p className="text-gray-300">Manage your social media presence, customize your profile, and track engagement with your audience.</p>
+          <h1 className="text-4xl md:text-6xl font-bold mb-4 leading-tight">
+            <span className="gradient-brand">Social</span>
+            <span className="text-foreground/90"> Presence</span>
+          </h1>
+          <p className="text-xl md:text-2xl text-foreground/80 mb-3 font-medium">
+            Manage Your Digital Identity
+          </p>
+          <p className="text-foreground/60 text-base md:text-lg max-w-2xl mx-auto leading-relaxed">
+            Create, customize, and track your social media presence with powerful tools and analytics
+          </p>
         </motion.div>
 
         {/* Profile summary and preview */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           <motion.div
-            className="lg:col-span-2 p-6 rounded-xl bg-background"
+            className="lg:col-span-2 p-6 rounded-xl bg-glass/30 backdrop-blur-xl border border-white/10 
+                       hover:bg-glass/40 transition-all duration-300"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
           >
             <div className="flex items-center gap-6 mb-6">
               <div className="relative">
-                <div className="absolute inset-0 bg-primary/10 rounded-full blur-lg"></div>
+                <div className="absolute inset-0 bg-gradient-to-br from-cyber-pink/20 to-purple-500/20 rounded-full blur-lg"></div>
                 <Image
                   src={twitchUser.profile_image_url || '/placeholder-avatar.png'}
                   alt="Profile"
                   width={80}
                   height={80}
-                  className="rounded-full relative z-10 object-cover border-0"
+                  className="rounded-full relative z-10 object-cover border-2 border-white/10"
                 />
               </div>
 
               <div className="flex-1 min-w-0">
-                <h2 className="text-2xl font-semibold">{twitchUser.display_name || twitchUser.username}</h2>
-                <p className="text-muted-foreground">@{twitchUser.username}</p>
+                <h2 className="text-2xl font-semibold text-foreground">{twitchUser.display_name || twitchUser.username}</h2>
+                <p className="text-foreground/70">@{twitchUser.username}</p>
               </div>
 
               <Button
                 variant="outline"
-                className="gap-2 border-0 bg-muted/20"
+                className="gap-2 bg-glass/30 border-white/10 hover:bg-glass/50 hover:border-white/20 
+                          backdrop-blur-xl transition-all duration-300"
                 onClick={handleOpenProfile}
               >
                 <Eye className="w-4 h-4" />
@@ -365,21 +376,30 @@ export default function SocialLinksPage() {
             <div className="space-y-4">
               <div className="flex flex-col md:flex-row gap-3">
                 <div className="flex-1 relative">
-                  <CopyIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+                  <CopyIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-foreground/60" />
                   <Input
                     value={profileUrl}
                     readOnly
-                    className="pl-10 pr-24 bg-muted/20 border-0"
+                    className="pl-10 pr-24 bg-glass/20 border-white/10 backdrop-blur-xl 
+                              focus:bg-glass/30 focus:border-white/20 transition-all duration-300"
                   />
                   <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex gap-1">
-                    <Button size="icon" variant="ghost" onClick={handleCopyUrl} className="h-8 w-8">
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={handleCopyUrl}
+                      className="h-8 w-8 hover:bg-glass/30 transition-all duration-300"
+                    >
                       <Copy className="w-4 h-4" />
                     </Button>
                     <QRDialog username={twitchUser.username} />
                   </div>
                 </div>
 
-                <Button className="gap-2 bg-primary hover:bg-primary/90 text-white" onClick={handleOpenProfile}>
+                <Button
+                  className="ethereal-button gap-2"
+                  onClick={handleOpenProfile}
+                >
                   <ExternalLink className="w-4 h-4" />
                   Open Profile
                 </Button>
@@ -388,42 +408,58 @@ export default function SocialLinksPage() {
           </motion.div>
 
           <motion.div
-            className="p-6 rounded-xl bg-background"
+            className="p-6 rounded-xl bg-glass/30 backdrop-blur-xl border border-white/10 
+                       hover:bg-glass/40 transition-all duration-300"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.1 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
           >
-            <h3 className="text-lg font-medium mb-4">Quick Stats</h3>
+            <h3 className="text-lg font-medium mb-4 text-foreground">Quick Stats</h3>
             <div className="grid grid-cols-1 gap-4">
-              <StatCard
-                title="Social Links"
-                value={links.length}
-                icon={LinkIcon}
-              />
-              <StatCard
-                title="Profile Views"
-                value={profileViews !== null ? profileViews : "--"}
-                icon={Eye}
-                color="blue"
-              />
-              {/* More stats can be added here */}
+              <div className="p-4 rounded-lg bg-glass/20 border border-white/5 backdrop-blur-xl">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-gradient-to-br from-cyber-pink/20 to-purple-500/20">
+                    <LinkIcon className="w-4 h-4 text-cyber-pink" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-foreground/70">Social Links</p>
+                    <p className="text-lg font-semibold text-foreground">{links.length}</p>
+                  </div>
+                </div>
+              </div>
+              <div className="p-4 rounded-lg bg-glass/20 border border-white/5 backdrop-blur-xl">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-gradient-to-br from-cyber-cyan/20 to-blue-500/20">
+                    <Eye className="w-4 h-4 text-cyber-cyan" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-foreground/70">Profile Views</p>
+                    <p className="text-lg font-semibold text-foreground">{profileViews !== null ? profileViews : "--"}</p>
+                  </div>
+                </div>
+              </div>
             </div>
           </motion.div>
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-border/10 mb-8 gap-2">
+        <motion.div
+          className="flex border-b border-white/10 mb-8 gap-2"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.4 }}
+        >
           <button
             onClick={() => setActiveTab('links')}
-            className={`pb-3 px-4 font-medium transition-colors relative ${activeTab === 'links'
-              ? 'text-primary'
-              : 'text-muted-foreground hover:text-foreground'
+            className={`pb-3 px-4 font-medium transition-all duration-300 relative ${activeTab === 'links'
+              ? 'text-foreground'
+              : 'text-foreground/70 hover:text-foreground'
               }`}
           >
             Social Links
             {activeTab === 'links' && (
               <motion.div
-                className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"
+                className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-cyber-pink to-purple-500"
                 layoutId="activeTab"
               />
             )}
@@ -431,15 +467,15 @@ export default function SocialLinksPage() {
 
           <button
             onClick={() => setActiveTab('appearance')}
-            className={`pb-3 px-4 font-medium transition-colors relative ${activeTab === 'appearance'
-              ? 'text-primary'
-              : 'text-muted-foreground hover:text-foreground'
+            className={`pb-3 px-4 font-medium transition-all duration-300 relative ${activeTab === 'appearance'
+              ? 'text-foreground'
+              : 'text-foreground/70 hover:text-foreground'
               }`}
           >
             Profile Appearance
             {activeTab === 'appearance' && (
               <motion.div
-                className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"
+                className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-cyber-pink to-purple-500"
                 layoutId="activeTab"
               />
             )}
@@ -447,34 +483,34 @@ export default function SocialLinksPage() {
 
           <button
             onClick={() => setActiveTab('analytics')}
-            className={`pb-3 px-4 font-medium transition-colors relative ${activeTab === 'analytics'
-              ? 'text-primary'
-              : 'text-muted-foreground hover:text-foreground'
+            className={`pb-3 px-4 font-medium transition-all duration-300 relative ${activeTab === 'analytics'
+              ? 'text-foreground'
+              : 'text-foreground/70 hover:text-foreground'
               }`}
           >
             Analytics
             {activeTab === 'analytics' && (
               <motion.div
-                className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary"
+                className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-cyber-pink to-purple-500"
                 layoutId="activeTab"
               />
             )}
           </button>
-        </div>
+        </motion.div>
 
         {/* Tab content */}
         <div className="min-h-[500px]">
           {activeTab === 'links' && (
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
+              transition={{ duration: 0.5 }}
               className="w-full"
             >
-              <div className="mb-6">
-                <h2 className="text-2xl font-semibold mb-2">Manage Your Links</h2>
-                <p className="text-muted-foreground mb-6">
+              <div className="mb-8 text-center">
+                <h2 className="text-2xl md:text-3xl font-semibold mb-3 text-foreground">Manage Your Links</h2>
+                <p className="text-foreground/70 max-w-2xl mx-auto">
                   Add, edit and arrange the links that appear on your public profile page.
                 </p>
               </div>
@@ -489,141 +525,118 @@ export default function SocialLinksPage() {
 
           {activeTab === 'appearance' && (
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
+              transition={{ duration: 0.5 }}
               className="space-y-8"
             >
-              <div className="mb-6">
-                <h2 className="text-2xl font-semibold mb-2">Profile Background</h2>
-                <p className="text-muted-foreground mb-6">
-                  Customize your profile background to match your brand.
+              <div className="text-center mb-8">
+                <h2 className="text-2xl md:text-3xl font-semibold mb-3 text-foreground">Profile Background</h2>
+                <p className="text-foreground/70 max-w-2xl mx-auto">
+                  Customize your profile's visual appearance with background images and themes.
                 </p>
+              </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* Background Upload */}
-                  <div className="bg-background rounded-xl p-6">
-                    <h3 className="text-lg font-medium mb-4">Background Settings</h3>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div className="space-y-6">
+                  <div className="p-6 rounded-xl bg-glass/30 backdrop-blur-xl border border-white/10">
+                    <h3 className="text-lg font-semibold mb-4 text-foreground">Background Settings</h3>
                     <BackgroundUpload
                       userId={twitchUser.id}
                       showPreview={true}
                       onSuccess={(url, type) => {
-                        handleBackgroundUpdate({ url, type })
+                        updateBackground({ url, type })
                       }}
                     />
                   </div>
 
-                  {/* Profile Preview */}
-                  <div className="bg-background rounded-xl p-6">
-                    <h3 className="text-lg font-medium mb-4">Profile Preview</h3>
-                    <div className="relative">
-                      {/* Scaled down version of the actual profile card */}
-                      <div className="max-w-[320px] mx-auto relative">
-                        <div className="bg-background/20 backdrop-blur-xl rounded-xl shadow-glass overflow-hidden border border-white/10 relative">
-                          {/* Background */}
-                          {twitchUser.background_media_url && (
-                            <div className="absolute inset-0">
-                              <img
-                                src={twitchUser.background_media_url}
-                                alt="Profile Background"
-                                className="w-full h-full object-cover"
-                              />
-                            </div>
-                          )}
+                  <div className="p-6 rounded-xl bg-glass/30 backdrop-blur-xl border border-white/10">
+                    <h3 className="text-lg font-semibold mb-4 text-foreground">Profile Settings</h3>
+                    <p className="text-foreground/70 mb-6">
+                      Additional profile customization options will be available soon.
+                    </p>
 
-                          {/* Glass Overlay */}
-                          <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" />
-
-                          {/* Content - scaled down but proportionally identical */}
-                          <div className="relative space-y-4 p-3">
-                            {/* Profile Header */}
-                            <div className="flex flex-col items-center text-center">
-                              <div className="relative mb-3">
-                                <div className="absolute inset-0 rounded-full bg-gradient-to-r from-cyber-pink to-cyber-cyan animate-pulse blur-lg opacity-50"></div>
-                                <Image
-                                  src={twitchUser.profile_image_url || '/placeholder-avatar.png'}
-                                  alt="Profile"
-                                  width={65}
-                                  height={65}
-                                  className="rounded-full relative border-2 border-background/50"
-                                />
-                              </div>
-                              <h4 className="text-xl font-bold mb-1 bg-clip-text text-transparent bg-gradient-to-r from-cyber-pink to-cyber-cyan">
-                                {twitchUser.display_name || twitchUser.username}
-                              </h4>
-
-                              {/* Username */}
-                              <div className="flex items-center justify-center gap-1 mb-4">
-                                <p className="text-sm text-muted-foreground">@{twitchUser.username}</p>
-                              </div>
-                            </div>
-
-                            {/* Social Links - simple but with correct icons and hover effects */}
-                            <div className="space-y-2">
-                              {links.slice(0, 3).map((link) => {
-                                const Icon = getPlatformIcon(link.platform)
-                                return (
-                                  <div
-                                    key={link.id}
-                                    className="block w-full p-2 bg-glass shadow-glass hover:shadow-cyber transition-all duration-300 text-center group relative overflow-hidden rounded-xl"
-                                  >
-                                    <div className="absolute inset-0 bg-gradient-to-r from-cyber-pink/10 to-cyber-cyan/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                                    <div className="relative flex items-center justify-center gap-2">
-                                      <Icon className="w-4 h-4 flex-shrink-0" />
-                                      <span className="font-medium text-xs truncate">{link.title}</span>
-                                    </div>
-                                  </div>
-                                )
-                              })}
-                              {links.length === 0 && (
-                                <div className="block w-full p-2 bg-glass/50 rounded-xl text-center">
-                                  <div className="flex items-center justify-center gap-2">
-                                    <LinkIcon className="w-4 h-4 text-muted-foreground/50 flex-shrink-0" />
-                                    <span className="text-xs text-muted-foreground">Add your first link</span>
-                                  </div>
-                                </div>
-                              )}
-                              {links.length > 3 && (
-                                <div className="text-center">
-                                  <span className="text-xs text-muted-foreground">+{links.length - 3} more links</span>
-                                </div>
-                              )}
-                            </div>
-                          </div>
+                    <div className="grid grid-cols-1 gap-4">
+                      <div className="p-4 rounded-xl bg-glass/20 border border-white/5 flex items-center">
+                        <div className="flex-1">
+                          <h4 className="font-medium text-foreground">Custom Theme</h4>
+                          <p className="text-sm text-foreground/60">Set colors for your profile page</p>
                         </div>
-
+                        <div className="text-foreground/50">Coming soon</div>
                       </div>
 
-                      <p className="text-xs text-muted-foreground text-center mt-3">
-                        Live preview of your public profile
-                      </p>
+                      <div className="p-4 rounded-xl bg-glass/20 border border-white/5 flex items-center">
+                        <div className="flex-1">
+                          <h4 className="font-medium text-foreground">Link Animations</h4>
+                          <p className="text-sm text-foreground/60">Add animations to your links</p>
+                        </div>
+                        <div className="text-foreground/50">Coming soon</div>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              <div>
-                <h2 className="text-2xl font-semibold mb-2">Profile Settings</h2>
-                <p className="text-muted-foreground mb-6">
-                  Additional profile customization options will be available soon.
-                </p>
+                <div className="p-6 rounded-xl bg-glass/30 backdrop-blur-xl border border-white/10">
+                  <h3 className="text-lg font-semibold mb-4 text-foreground">Live Preview</h3>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="p-4 rounded-xl bg-background flex items-center">
-                    <div className="flex-1">
-                      <h3 className="font-medium">Custom Theme</h3>
-                      <p className="text-sm text-muted-foreground">Set colors for your profile page</p>
+                  <div className="relative">
+                    <div className="aspect-[9/16] max-w-[280px] mx-auto rounded-2xl overflow-hidden border-2 border-white/10 bg-glass/20 backdrop-blur-xl">
+                      <div
+                        className="w-full h-full relative"
+                        style={{
+                          backgroundImage: twitchUser.background_media_url
+                            ? `url(${twitchUser.background_media_url})`
+                            : 'linear-gradient(135deg, rgba(236, 72, 153, 0.3), rgba(145, 70, 255, 0.3), rgba(103, 232, 249, 0.3))',
+                          backgroundSize: 'cover',
+                          backgroundPosition: 'center',
+                        }}
+                      >
+                        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/60"></div>
+
+                        <div className="absolute bottom-0 left-0 right-0 p-4 text-center">
+                          <div className="mb-4">
+                            <Image
+                              src={twitchUser.profile_image_url || '/placeholder-avatar.png'}
+                              alt="Profile"
+                              width={60}
+                              height={60}
+                              className="rounded-full mx-auto border-2 border-white/20"
+                            />
+                          </div>
+
+                          <h4 className="text-white font-semibold mb-1">
+                            {twitchUser.display_name || twitchUser.username}
+                          </h4>
+                          <p className="text-white/80 text-sm mb-4">@{twitchUser.username}</p>
+
+                          <div className="space-y-2">
+                            {links.slice(0, 3).map((link, index) => (
+                              <div key={link.id} className="block w-full p-2 bg-white/10 backdrop-blur-sm rounded-xl text-center">
+                                <span className="text-white text-xs font-medium">{link.title}</span>
+                              </div>
+                            ))}
+                            {links.length === 0 && (
+                              <div className="block w-full p-2 bg-glass/50 rounded-xl text-center">
+                                <div className="flex items-center justify-center gap-2">
+                                  <LinkIcon className="w-4 h-4 text-white/50 flex-shrink-0" />
+                                  <span className="text-xs text-white/70">Add your first link</span>
+                                </div>
+                              </div>
+                            )}
+                            {links.length > 3 && (
+                              <div className="text-center">
+                                <span className="text-xs text-white/70">+{links.length - 3} more links</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-muted-foreground">Coming soon</div>
-                  </div>
 
-                  <div className="p-4 rounded-xl bg-background flex items-center">
-                    <div className="flex-1">
-                      <h3 className="font-medium">Link Animations</h3>
-                      <p className="text-sm text-muted-foreground">Add animations to your links</p>
-                    </div>
-                    <div className="text-muted-foreground">Coming soon</div>
+                    <p className="text-xs text-foreground/60 text-center mt-3">
+                      Live preview of your public profile
+                    </p>
                   </div>
                 </div>
               </div>
@@ -632,91 +645,89 @@ export default function SocialLinksPage() {
 
           {activeTab === 'analytics' && (
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
+              transition={{ duration: 0.5 }}
               className="space-y-8"
             >
-              <div className="mb-6">
-                <h2 className="text-2xl font-semibold mb-2">Profile Analytics</h2>
-                <p className="text-muted-foreground mb-6">
+              <div className="text-center mb-8">
+                <h2 className="text-2xl md:text-3xl font-semibold mb-3 text-foreground">Profile Analytics</h2>
+                <p className="text-foreground/70 max-w-2xl mx-auto">
                   Track engagement with your profile and understand your audience.
                 </p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <Eye className="w-4 h-4 text-blue-500" />
-                      Total Profile Views
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-baseline gap-2">
-                      <div className="text-3xl font-bold">
-                        {analyticsLoading ? "..." : (analyticsData?.totalViews || profileViews || "0")}
-                      </div>
-                      <div className="text-sm text-blue-500 flex items-center">
-                        <ArrowUpRight className="w-3 h-3 mr-1" />
-                        All time
-                      </div>
+                <div className="p-6 rounded-xl bg-glass/30 backdrop-blur-xl border border-white/10 hover:bg-glass/40 transition-all duration-300">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="p-2 rounded-lg bg-gradient-to-br from-cyber-cyan/20 to-blue-500/20">
+                      <Eye className="w-5 h-5 text-cyber-cyan" />
                     </div>
-                  </CardContent>
-                </Card>
+                    <h3 className="text-lg font-semibold text-foreground">Total Profile Views</h3>
+                  </div>
+                  <div className="flex items-baseline gap-2">
+                    <div className="text-3xl font-bold text-foreground">
+                      {analyticsLoading ? "..." : (analyticsData?.totalViews || profileViews || "0")}
+                    </div>
+                    <div className="text-sm text-cyber-cyan flex items-center">
+                      <ArrowUpRight className="w-3 h-3 mr-1" />
+                      All time
+                    </div>
+                  </div>
+                </div>
 
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <BarChart4 className="w-4 h-4 text-green-500" />
-                      Recent Views
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-baseline gap-2">
-                      <div className="text-3xl font-bold">
-                        {analyticsLoading ? "..." : (analyticsData?.recentViews || "0")}
-                      </div>
-                      <div className={`text-sm flex items-center ${analyticsData?.growthPercentage >= 0 ? 'text-green-500' : 'text-red-500'
-                        }`}>
-                        <ArrowUpRight className="w-3 h-3 mr-1" />
-                        {analyticsData?.growthPercentage ? `${analyticsData.growthPercentage > 0 ? '+' : ''}${analyticsData.growthPercentage}%` : 'Last 7 days'}
-                      </div>
+                <div className="p-6 rounded-xl bg-glass/30 backdrop-blur-xl border border-white/10 hover:bg-glass/40 transition-all duration-300">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="p-2 rounded-lg bg-gradient-to-br from-green-500/20 to-emerald-500/20">
+                      <BarChart4 className="w-5 h-5 text-green-400" />
                     </div>
-                  </CardContent>
-                </Card>
+                    <h3 className="text-lg font-semibold text-foreground">Recent Views</h3>
+                  </div>
+                  <div className="flex items-baseline gap-2">
+                    <div className="text-3xl font-bold text-foreground">
+                      {analyticsLoading ? "..." : (analyticsData?.recentViews || "0")}
+                    </div>
+                    <div className={`text-sm flex items-center ${analyticsData?.growthPercentage >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                      <ArrowUpRight className="w-3 h-3 mr-1" />
+                      {analyticsData?.growthPercentage ? `${analyticsData.growthPercentage > 0 ? '+' : ''}${analyticsData.growthPercentage}%` : 'Last 7 days'}
+                    </div>
+                  </div>
+                </div>
 
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <LinkIcon className="w-4 h-4 text-purple-500" />
-                      Social Links
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-baseline gap-2">
-                      <div className="text-3xl font-bold">{links.length}</div>
-                      <div className="text-sm text-muted-foreground flex items-center">
-                        <ChevronRight className="w-3 h-3 mr-1" />
-                        Active links
-                      </div>
+                <div className="p-6 rounded-xl bg-glass/30 backdrop-blur-xl border border-white/10 hover:bg-glass/40 transition-all duration-300">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="p-2 rounded-lg bg-gradient-to-br from-cyber-pink/20 to-purple-500/20">
+                      <LinkIcon className="w-5 h-5 text-cyber-pink" />
                     </div>
-                  </CardContent>
-                </Card>
+                    <h3 className="text-lg font-semibold text-foreground">Social Links</h3>
+                  </div>
+                  <div className="flex items-baseline gap-2">
+                    <div className="text-3xl font-bold text-foreground">{links.length}</div>
+                    <div className="text-sm text-foreground/60 flex items-center">
+                      <ChevronRight className="w-3 h-3 mr-1" />
+                      Active links
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              <div className="bg-background rounded-xl p-6">
+              <div className="p-6 rounded-xl bg-glass/30 backdrop-blur-xl border border-white/10">
                 <div className="flex justify-between items-center mb-6">
-                  <h3 className="text-xl font-semibold">Views Over Time</h3>
+                  <h3 className="text-xl font-semibold text-foreground">Views Over Time</h3>
                   <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" className="gap-1.5" onClick={() => {
-                      setAnalyticsData(null)
-                      fetchAnalytics()
-                      toast.info("Refreshing analytics...", {
-                        description: "Your analytics data is being updated.",
-                      })
-                    }}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-1.5 bg-glass/30 border-white/10 hover:bg-glass/50 hover:border-white/20 backdrop-blur-xl"
+                      onClick={() => {
+                        setAnalyticsData(null)
+                        fetchAnalytics()
+                        toast.info("Refreshing analytics...", {
+                          description: "Your analytics data is being updated.",
+                        })
+                      }}
+                    >
                       <RefreshCcw className="w-3.5 h-3.5" />
                       Refresh
                     </Button>
@@ -725,48 +736,40 @@ export default function SocialLinksPage() {
 
                 <div className="h-[350px] flex flex-col items-center justify-center text-center">
                   <div className="w-16 h-16 mb-4 relative">
-                    <div className="absolute inset-0 bg-primary/10 rounded-full blur-lg"></div>
-                    <div className="relative flex items-center justify-center w-full h-full rounded-full bg-muted/20">
-                      <BarChart4 className="w-8 h-8 text-primary/70" />
+                    <div className="absolute inset-0 bg-gradient-to-br from-cyber-pink/20 to-purple-500/20 rounded-full blur-lg"></div>
+                    <div className="relative flex items-center justify-center w-full h-full rounded-full bg-glass/20 backdrop-blur-xl border border-white/10">
+                      <BarChart4 className="w-8 h-8 text-cyber-pink" />
                     </div>
                   </div>
 
-                  <h3 className="text-xl font-medium mb-2">Detailed Analytics Coming Soon</h3>
+                  <h3 className="text-xl font-medium mb-2 text-foreground">Detailed Analytics Coming Soon</h3>
 
-                  <p className="text-muted-foreground max-w-md mb-2">
+                  <p className="text-foreground/70 max-w-md mb-2">
                     We're working on detailed charts to show your profile views over time and other engagement metrics.
                   </p>
 
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-foreground/60">
                     Your views are being tracked now and will be displayed in charts soon!
                   </p>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Top Traffic Sources</CardTitle>
-                    <CardDescription>Where your profile visitors come from</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="h-[200px] flex flex-col items-center justify-center text-center">
-                      <p className="text-muted-foreground">Coming soon</p>
-                    </div>
-                  </CardContent>
-                </Card>
+                <div className="p-6 rounded-xl bg-glass/30 backdrop-blur-xl border border-white/10">
+                  <h3 className="text-lg font-semibold mb-2 text-foreground">Top Traffic Sources</h3>
+                  <p className="text-foreground/60 text-sm mb-4">Where your profile visitors come from</p>
+                  <div className="h-[200px] flex flex-col items-center justify-center text-center">
+                    <p className="text-foreground/50">Coming soon</p>
+                  </div>
+                </div>
 
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Link Click Analytics</CardTitle>
-                    <CardDescription>Which links get the most engagement</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="h-[200px] flex flex-col items-center justify-center text-center">
-                      <p className="text-muted-foreground">Coming soon</p>
-                    </div>
-                  </CardContent>
-                </Card>
+                <div className="p-6 rounded-xl bg-glass/30 backdrop-blur-xl border border-white/10">
+                  <h3 className="text-lg font-semibold mb-2 text-foreground">Link Click Analytics</h3>
+                  <p className="text-foreground/60 text-sm mb-4">Which links get the most engagement</p>
+                  <div className="h-[200px] flex flex-col items-center justify-center text-center">
+                    <p className="text-foreground/50">Coming soon</p>
+                  </div>
+                </div>
               </div>
             </motion.div>
           )}

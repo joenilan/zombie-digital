@@ -6,28 +6,28 @@
   :root {
     --background: 0 0% 100%;
     --foreground: 240 10% 3.9%;
-    
+
     --card: 0 0% 100%;
     --card-foreground: 240 10% 3.9%;
-    
+
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 3.9%;
-    
+
     --primary: 240 5.9% 10%;
     --primary-foreground: 0 0% 98%;
-    
+
     --secondary: 240 4.8% 95.9%;
     --secondary-foreground: 240 5.9% 10%;
-    
+
     --muted: 240 4.8% 95.9%;
     --muted-foreground: 240 3.8% 46.1%;
-    
+
     --accent: 240 4.8% 95.9%;
     --accent-foreground: 240 5.9% 10%;
-    
+
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    
+
     --border: 240 5.9% 90%;
     --input: 240 5.9% 90%;
     --ring: 240 5.9% 10%;
@@ -36,28 +36,28 @@
   .dark {
     --background: 240 10% 3.9%;
     --foreground: 0 0% 98%;
-    
+
     --card: 240 10% 3.9%;
     --card-foreground: 0 0% 98%;
-    
+
     --popover: 240 10% 3.9%;
     --popover-foreground: 0 0% 98%;
-    
+
     --primary: 0 0% 98%;
     --primary-foreground: 240 5.9% 10%;
-    
+
     --secondary: 240 3.7% 15.9%;
     --secondary-foreground: 0 0% 98%;
-    
+
     --muted: 240 3.7% 15.9%;
     --muted-foreground: 240 5% 64.9%;
-    
+
     --accent: 240 3.7% 15.9%;
     --accent-foreground: 0 0% 98%;
-    
+
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
-    
+
     --border: 240 3.7% 15.9%;
     --input: 240 3.7% 15.9%;
     --ring: 240 4.9% 83.9%;
@@ -98,7 +98,7 @@
     content: '';
     position: fixed;
     inset: 0;
-    background: 
+    background:
       radial-gradient(circle at top, rgba(145, 70, 255, 0.15) 0%, transparent 50%),
       radial-gradient(circle at bottom right, rgba(0, 240, 255, 0.1) 0%, transparent 50%),
       radial-gradient(circle at bottom left, rgba(255, 46, 147, 0.1) 0%, transparent 50%);
@@ -109,8 +109,7 @@
 
 @layer components {
   .glass-panel {
-    @apply bg-white/5 dark:bg-background/5 backdrop-blur-md
-           border border-white/10;
+    @apply bg-white/5 dark:bg-background/5 backdrop-blur-md border border-white/10;
   }
 
   .glass-panel-hover {
@@ -122,14 +121,11 @@
   }
 
   .nav-content {
-    @apply max-w-7xl h-full mx-auto 
-           flex items-center justify-between;
+    @apply max-w-7xl h-full mx-auto flex items-center justify-between;
   }
 
   .nav-link {
-    @apply px-3 py-1.5 text-sm font-medium 
-           rounded-md transition-all duration-200
-           text-foreground/70 hover:text-foreground;
+    @apply px-3 py-1.5 text-sm font-medium rounded-md transition-all duration-200 text-foreground/70 hover:text-foreground;
   }
 
   .nav-link-active {
@@ -137,8 +133,7 @@
   }
 
   .nav-link-inactive {
-    @apply relative z-10 text-foreground/70 hover:text-foreground 
-           transition-colors duration-200;
+    @apply relative z-10 text-foreground/70 hover:text-foreground transition-colors duration-200;
   }
 
   .cyber-link {
@@ -146,26 +141,30 @@
   }
 
   .ethereal-button {
-    @apply relative overflow-hidden rounded-2xl px-6 py-3 
-           bg-cyber-gradient text-white
-           shadow-cyber hover:shadow-cyber-hover
-           transition-all duration-300 hover:scale-[1.02]
-           before:absolute before:inset-0
-           before:bg-[radial-gradient(circle_at_center,_rgba(255,255,255,0.2)_0%,_transparent_100%)]
-           before:opacity-0 hover:before:opacity-100 before:transition-opacity;
+    @apply relative overflow-hidden rounded-2xl px-6 py-3 bg-cyber-gradient text-white shadow-cyber hover:shadow-cyber-hover transition-all duration-300 hover:scale-[1.02];
+  }
+
+  .ethereal-button::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at center, rgba(255, 255, 255, 0.2) 0%, transparent 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .ethereal-button:hover::before {
+    opacity: 1;
   }
 
   .ethereal-card {
-    @apply rounded-2xl p-6 relative overflow-visible transition-all duration-300
-           bg-white/5 dark:bg-background/5 backdrop-blur-md
-           border border-white/10;
+    @apply rounded-2xl p-6 relative overflow-visible transition-all duration-300 bg-white/5 dark:bg-background/5 backdrop-blur-md border border-white/10;
   }
 }
 
 /* Cards with group hover effects */
 .ethereal-card {
-  @apply rounded-2xl glass-panel p-6 relative overflow-visible
-         transition-all duration-300;
+  @apply rounded-2xl glass-panel p-6 relative overflow-visible transition-all duration-300;
 }
 
 /* Remove the old ethereal-glow styles */
@@ -183,14 +182,12 @@
   inset: 0;
   padding: 1px;
   border-radius: 1rem;
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.1) 0%,
-    rgba(145, 70, 255, 0.2) 50%,
-    rgba(0, 240, 255, 0.1) 100%
-  );
-  -webkit-mask: 
-    linear-gradient(#fff 0 0) content-box, 
+  background: linear-gradient(135deg,
+      rgba(255, 255, 255, 0.1) 0%,
+      rgba(145, 70, 255, 0.2) 50%,
+      rgba(0, 240, 255, 0.1) 100%);
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
     linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
@@ -228,20 +225,20 @@
     scrollbar-width: thin;
     scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
   }
-  
+
   .scrollbar-thin::-webkit-scrollbar {
     width: 4px;
   }
-  
+
   .scrollbar-thin::-webkit-scrollbar-track {
     background: transparent;
   }
-  
+
   .scrollbar-thin::-webkit-scrollbar-thumb {
     background-color: rgba(255, 255, 255, 0.1);
     border-radius: 2px;
   }
-  
+
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
     background-color: rgba(255, 255, 255, 0.2);
   }
@@ -275,7 +272,7 @@
 }
 
 /* Allow pointer events on the card content */
-.ethereal-card > * {
+.ethereal-card>* {
   pointer-events: auto;
 }
 
@@ -285,6 +282,7 @@
     transform: scale(0.95);
     opacity: 0.5;
   }
+
   100% {
     transform: scale(1.05);
     opacity: 0;
@@ -293,11 +291,9 @@
 
 .live-ring {
   @apply absolute -inset-0.5 rounded-full;
-  background: linear-gradient(
-    to right,
-    rgb(239, 68, 68),
-    rgb(248, 113, 113)
-  );
+  background: linear-gradient(to right,
+      rgb(239, 68, 68),
+      rgb(248, 113, 113));
 }
 
 .live-ring::after {
@@ -308,9 +304,7 @@
 }
 
 .live-badge {
-  @apply absolute -bottom-2 left-1/2 -translate-x-1/2 px-2 py-0.5 text-xs font-bold
-         rounded-full bg-red-500 text-white
-         flex items-center gap-1 shadow-lg;
+  @apply absolute -bottom-2 left-1/2 -translate-x-1/2 px-2 py-0.5 text-xs font-bold rounded-full bg-red-500 text-white flex items-center gap-1 shadow-lg;
 }
 
 .live-dot {
@@ -320,11 +314,13 @@
 
 /* Optional: Add hover effect to show scrollbar */
 .scrollbar-thin {
-  scrollbar-width: none; /* Hide by default */
+  scrollbar-width: none;
+  /* Hide by default */
 }
 
 .scrollbar-thin:hover {
-  scrollbar-width: thin; /* Show on hover */
+  scrollbar-width: thin;
+  /* Show on hover */
 }
 
 /* Canvas Page Transparency Rules */
@@ -345,8 +341,8 @@ body:has(.canvas-page),
 main:has(.canvas-page),
 div:has(.canvas-page),
 .canvas-page,
-.canvas-page > *,
-.canvas-page > * > * {
+.canvas-page>*,
+.canvas-page>*>* {
   background: transparent !important;
   background-image: none !important;
   background-color: transparent !important;
@@ -388,7 +384,7 @@ body:has(.canvas-page) [class*="bg-"] {
 
 /* Add smooth page transitions */
 * {
-  @apply transition-[background-color,border-color] duration-300 ease-in-out;
+  @apply transition-colors duration-300 ease-in-out;
 }
 
 /* Smooth page content transitions */
@@ -412,4 +408,16 @@ body:has(.canvas-page) [class*="bg-"] {
   opacity: 0;
   transform: translate3d(0, -20px, 0);
   transition: opacity 300ms, transform 300ms;
+}
+
+/* Homepage specific styles to prevent background scrolling */
+body:has(.homepage-container) {
+  overflow: hidden !important;
+  height: 100vh !important;
+}
+
+body:has(.homepage-container)::before,
+body:has(.homepage-container)::after {
+  position: fixed !important;
+  overflow: hidden !important;
 }

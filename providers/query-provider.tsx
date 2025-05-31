@@ -13,6 +13,12 @@ export default function QueryProvider({ children }: { children: React.ReactNode 
         defaultOptions: {
           queries: {
             staleTime: 60 * 1000,
+            retry: (failureCount, error: any) => {
+              if (error?.status === 401 || error?.status === 403) {
+                return false
+              }
+              return failureCount < 3
+            },
           },
         },
       })

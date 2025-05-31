@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Verified, Crown } from "lucide-react";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useDashboardStore } from "@/stores/useDashboardStore";
+import { handleAuthError } from '@/utils/auth-error-handler'
 
 interface TwitchStats {
   followers: number;
@@ -142,11 +143,17 @@ export default function DashboardPage() {
         const errorText = await response.text();
         console.error('Stats API error:', response.status, errorText);
 
-        if (response.status === 401) {
-          throw new Error('Authentication failed - please sign out and sign back in');
-        } else {
-          throw new Error(`Failed to fetch stats: ${response.status} - ${errorText}`);
+        // Use auth error handler for authentication errors
+        const authErrorHandled = await handleAuthError({
+          status: response.status,
+          message: errorText
+        }, 'Dashboard stats fetch');
+
+        if (authErrorHandled) {
+          return; // Auth error handler will handle the redirect
         }
+
+        throw new Error(`Failed to fetch stats: ${response.status} - ${errorText}`);
       }
 
       const twitchStats = await response.json();

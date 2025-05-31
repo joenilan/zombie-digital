@@ -31,6 +31,15 @@ interface TwitchStats {
 
 async function refreshTwitchToken(userId: string, refreshToken: string) {
   console.log('Attempting to refresh token for user:', userId);
+  console.log('Refresh token length:', refreshToken?.length || 0);
+  
+  if (!refreshToken) {
+    throw new Error('No refresh token provided');
+  }
+
+  if (!process.env.NEXT_PUBLIC_TWITCH_CLIENT_ID || !process.env.TWITCH_CLIENT_SECRET) {
+    throw new Error('Missing Twitch client credentials');
+  }
   
   const response = await fetch("https://id.twitch.tv/oauth2/token", {
     method: "POST",
@@ -48,11 +57,23 @@ async function refreshTwitchToken(userId: string, refreshToken: string) {
   if (!response.ok) {
     const errorText = await response.text();
     console.error('Token refresh failed:', response.status, errorText);
+    
+    // Parse the error response for more specific error handling
+    try {
+      const errorData = JSON.parse(errorText);
+      if (errorData.error === 'invalid_grant') {
+        throw new Error('Refresh token is invalid or expired - user needs to re-authenticate');
+      }
+    } catch (parseError) {
+      // If we can't parse the error, use the raw text
+    }
+    
     throw new Error(`Failed to refresh token: ${response.status} - ${errorText}`);
   }
 
   const data = await response.json();
   console.log('Token refreshed successfully');
+  console.log('New token expires in:', data.expires_in, 'seconds');
   
   // Update the database with new tokens
   const supabase = createRouteHandlerClient({ cookies });
@@ -73,16 +94,12 @@ async function refreshTwitchToken(userId: string, refreshToken: string) {
   return data.access_token;
 }
 
-async function makeApiCall(url: string, headers: any, retryCount = 0): Promise<Response> {
-  console.log(`Making API call to: ${url} (attempt ${retryCount + 1})`);
+async function makeApiCall(url: string, headers: any): Promise<Response> {
+  console.log(`Making API call to: ${url}`);
   
   const response = await fetch(url, { headers });
   
   console.log(`API response status: ${response.status}`);
-  
-  if (response.status === 401 && retryCount === 0) {
-    throw new Error("UNAUTHORIZED");
-  }
   
   return response;
 }
@@ -131,18 +148,37 @@ export async function GET(request: Request) {
     console.log('- Token expires at:', user.token_expires_at);
     console.log('- Has refresh token:', !!user.provider_refresh_token);
 
-    // Check if token is expired
+    // Check if token is expired or about to expire (within 5 minutes)
     const tokenExpiry = new Date(user.token_expires_at);
     const now = new Date();
+    const fiveMinutesFromNow = new Date(now.getTime() + 5 * 60 * 1000);
     const isTokenExpired = tokenExpiry <= now;
+    const isTokenExpiringSoon = tokenExpiry <= fiveMinutesFromNow;
     
     console.log('Token status:');
     console.log('- Current time:', now.toISOString());
     console.log('- Token expires:', tokenExpiry.toISOString());
     console.log('- Is expired:', isTokenExpired);
+    console.log('- Is expiring soon:', isTokenExpiringSoon);
 
     let accessToken = user.provider_token;
-    let retryCount = 0;
+    let hasTriedRefresh = false;
+
+    // Proactively refresh token if it's expired or expiring soon
+    if ((isTokenExpired || isTokenExpiringSoon) && user.provider_refresh_token) {
+      console.log('Token is expired or expiring soon, proactively refreshing...');
+      try {
+        accessToken = await refreshTwitchToken(userId, user.provider_refresh_token);
+        hasTriedRefresh = true;
+        console.log('Proactive token refresh successful');
+      } catch (refreshError) {
+        console.error('Proactive token refresh failed:', refreshError);
+        if (refreshError instanceof Error && refreshError.message.includes('Refresh token is invalid or expired')) {
+          return new NextResponse("Your Twitch authentication has expired. Please sign out and sign back in to continue.", { status: 401 });
+        }
+        // Continue with the old token and let the 401 handling catch it
+      }
+    }
 
     const makeAuthenticatedCall = async (url: string) => {
       const headers = {
@@ -150,36 +186,34 @@ export async function GET(request: Request) {
         "Client-Id": process.env.NEXT_PUBLIC_TWITCH_CLIENT_ID!,
       };
 
-      try {
-        const response = await makeApiCall(url, headers, retryCount);
+      const response = await makeApiCall(url, headers);
+      
+      // If we get a 401 and haven't tried refreshing yet, attempt token refresh
+      if (response.status === 401 && !hasTriedRefresh && user.provider_refresh_token) {
+        console.log('Received 401, attempting token refresh...');
+        hasTriedRefresh = true;
         
-        if (response.status === 401 && retryCount === 0) {
-          console.log('Received 401, attempting token refresh...');
-          retryCount++;
+        try {
+          accessToken = await refreshTwitchToken(userId, user.provider_refresh_token);
+          console.log('Token refreshed successfully, retrying API call...');
           
-          if (user.provider_refresh_token) {
-            accessToken = await refreshTwitchToken(userId, user.provider_refresh_token);
-            console.log('Token refreshed, retrying API call...');
-            
-            // Retry with new token
-            const newHeaders = {
-              Authorization: `Bearer ${accessToken}`,
-              "Client-Id": process.env.NEXT_PUBLIC_TWITCH_CLIENT_ID!,
-            };
-            return await makeApiCall(url, newHeaders, retryCount);
-          } else {
-            console.error('No refresh token available');
-            throw new Error("No refresh token available");
-          }
+          // Retry with new token
+          const newHeaders = {
+            Authorization: `Bearer ${accessToken}`,
+            "Client-Id": process.env.NEXT_PUBLIC_TWITCH_CLIENT_ID!,
+          };
+          return await makeApiCall(url, newHeaders);
+        } catch (refreshError) {
+          console.error('Token refresh failed:', refreshError);
+          throw new Error("UNAUTHORIZED");
         }
-        
-        return response;
-      } catch (error) {
-        if (error instanceof Error && error.message === "UNAUTHORIZED") {
-          throw error;
-        }
-        throw error;
+      } else if (response.status === 401) {
+        // If we still get 401 after refresh attempt, or no refresh token available
+        console.error('Authentication failed - token refresh not available or already attempted');
+        throw new Error("UNAUTHORIZED");
       }
+      
+      return response;
     };
 
     const stats: TwitchStats = {
@@ -374,10 +408,20 @@ export async function GET(request: Request) {
 
     } catch (error) {
       console.error("Error fetching Twitch stats:", error);
-      if (error instanceof Error && error.message === "UNAUTHORIZED") {
-        console.error('Authentication failed after token refresh attempt');
-        return new NextResponse("Token refresh failed - please re-authenticate", { status: 401 });
+      if (error instanceof Error) {
+        if (error.message === "UNAUTHORIZED") {
+          console.error('Authentication failed after token refresh attempt');
+          return new NextResponse("Your Twitch authentication has expired. Please sign out and sign back in to continue.", { status: 401 });
+        } else if (error.message.includes('Refresh token is invalid or expired')) {
+          console.error('Refresh token is invalid - user needs to re-authenticate');
+          return new NextResponse("Your Twitch authentication has expired. Please sign out and sign back in to continue.", { status: 401 });
+        } else if (error.message.includes('No refresh token')) {
+          console.error('No refresh token available');
+          return new NextResponse("Authentication error - please sign out and sign back in.", { status: 401 });
+        }
       }
+      // For other errors, return a generic error message
+      return new NextResponse("Unable to fetch Twitch data. Please try again later.", { status: 500 });
     }
 
     console.log('=== FINAL STATS ===');
