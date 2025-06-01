@@ -1,6 +1,10 @@
+'use client'
+
 import { useState } from "react";
 import { UserLevel } from "@/types/database";
 import { motion, AnimatePresence } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { ArrowRight } from "lucide-react";
 
 const PREVIEW_ROLES: UserLevel[] = ["user", "moderator", "admin", "owner"];
 
@@ -21,28 +25,13 @@ export function RolePreview({ currentRole, previewRole, onPreviewChange }: RoleP
   return (
     <div className="fixed bottom-4 right-4 z-50">
       <div className="relative">
-        <button
+        <Button
           onClick={() => setIsOpen(!isOpen)}
-          className="ethereal-button flex items-center gap-2"
+          variant="ethereal"
+          icon={<ArrowRight className="w-4 h-4" />}
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="opacity-90"
-          >
-            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M13.8 12H3"/>
-          </svg>
-          <span>
-            {previewRole ? `Viewing as ${previewRole}` : 'Role Preview'}
-          </span>
-        </button>
+          {previewRole ? `Viewing as ${previewRole}` : 'Role Preview'}
+        </Button>
 
         <AnimatePresence>
           {isOpen && (
@@ -64,7 +53,7 @@ export function RolePreview({ currentRole, previewRole, onPreviewChange }: RoleP
                   Exit Preview Mode
                 </button>
               )}
-              
+
               {availableRoles.map((role) => (
                 <button
                   key={role}
@@ -74,8 +63,8 @@ export function RolePreview({ currentRole, previewRole, onPreviewChange }: RoleP
                   }}
                   disabled={role === previewRole}
                   className={`w-full text-left px-4 py-2 text-sm transition-colors
-                    ${role === previewRole 
-                      ? 'bg-white/10 text-foreground/50' 
+                    ${role === previewRole
+                      ? 'bg-white/10 text-foreground/50'
                       : 'hover:bg-white/5 text-foreground/90'
                     }`}
                 >

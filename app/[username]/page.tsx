@@ -6,6 +6,15 @@ import { notFound } from 'next/navigation'
 import { OwnershipChecker } from './ownership-checker'
 import { ProfileContent } from './profile-content'
 import { LoadingSpinner } from '@/components/LoadingSpinner'
+import { motion } from 'framer-motion'
+import { ProfileLayout } from "@/components/animations/AnimatedLayout";
+import {
+  fadeInUp,
+  scaleIn,
+  staggerContainer,
+  staggerItem
+} from "@/lib/animations";
+import { AlertCircle } from 'lucide-react'
 
 interface PageProps {
   params: {
@@ -117,29 +126,52 @@ export default function ProfilePage({ params, searchParams }: PageProps) {
 
   if (loading) {
     return (
-      <div className={`min-h-screen py-12 px-4 ${isTransparent ? 'bg-transparent' : ''}`}>
-        <div className="max-w-2xl mx-auto flex items-center justify-center py-16">
-          <LoadingSpinner text="Loading profile..." />
-        </div>
-      </div>
+      <ProfileLayout className={`py-12 px-4 ${isTransparent ? 'bg-transparent' : ''}`}>
+        <motion.div
+          variants={staggerContainer}
+          initial="initial"
+          animate="enter"
+          className="max-w-2xl mx-auto flex items-center justify-center py-16"
+        >
+          <motion.div variants={scaleIn}>
+            <LoadingSpinner text="Loading profile..." />
+          </motion.div>
+        </motion.div>
+      </ProfileLayout>
     )
   }
 
   if (error || !profile) {
     return (
-      <div className={`min-h-screen py-12 px-4 ${isTransparent ? 'bg-transparent' : ''}`}>
-        <div className="max-w-2xl mx-auto text-center py-16">
-          <h1 className="text-2xl font-bold text-red-500 mb-2">Profile Not Found</h1>
-          <p className="text-muted-foreground">
-            {error || 'The profile you are looking for does not exist.'}
-          </p>
-        </div>
-      </div>
+      <ProfileLayout className={`py-12 px-4 ${isTransparent ? 'bg-transparent' : ''}`}>
+        <motion.div
+          variants={staggerContainer}
+          initial="initial"
+          animate="enter"
+          className="max-w-2xl mx-auto text-center py-16"
+        >
+          <motion.div variants={staggerItem} className="space-y-4">
+            <motion.div variants={scaleIn}>
+              <div className="flex items-center justify-center w-16 h-16 mx-auto mb-6 rounded-full bg-gradient-to-r from-red-500/20 to-pink-500/20">
+                <AlertCircle className="w-8 h-8 text-red-400" />
+              </div>
+            </motion.div>
+
+            <motion.h1 variants={fadeInUp} className="text-3xl font-bold text-red-400 mb-2">
+              Profile Not Found
+            </motion.h1>
+
+            <motion.p variants={fadeInUp} className="text-foreground/70 text-lg">
+              {error || 'The profile you are looking for does not exist.'}
+            </motion.p>
+          </motion.div>
+        </motion.div>
+      </ProfileLayout>
     )
   }
 
   return (
-    <div className={`min-h-screen py-12 px-4 ${isTransparent ? 'bg-transparent' : ''}`}>
+    <ProfileLayout className={`py-12 px-4 ${isTransparent ? 'bg-transparent' : ''}`}>
       {/* Client-side ownership checker and conditional rendering */}
       <OwnershipChecker username={username}>
         {(isOwner) => (
@@ -151,6 +183,6 @@ export default function ProfilePage({ params, searchParams }: PageProps) {
           />
         )}
       </OwnershipChecker>
-    </div>
+    </ProfileLayout>
   )
 }

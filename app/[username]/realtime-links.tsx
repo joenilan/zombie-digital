@@ -14,6 +14,8 @@ import {
   Link as LinkIcon
 } from '@/lib/icons'
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion'
+import { Card, CardContent } from "@/components/ui/card"
+import { Button } from '@/components/ui/button'
 
 interface RealtimeLinksProps {
   userId: string
@@ -287,20 +289,19 @@ export function RealtimeLinks({ userId, initialLinks, isOwner }: RealtimeLinksPr
           {isOwner ? (
             <div className="space-y-4">
               <p className="mb-2">You haven't added any social links yet.</p>
-              <a
-                href="/settings/links"
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-glass 
-                         hover:shadow-cyber transition-all duration-300 text-cyber-cyan 
-                         hover:text-cyber-pink"
-              >
-                <LinkIcon className="w-4 h-4" />
-                Get started by adding your first link
-              </a>
+              <Button asChild variant="secondary">
+                <a href="/settings/links" className="gap-2">
+                  <LinkIcon className="w-4 h-4" />
+                  Get started by adding your first link
+                </a>
+              </Button>
             </div>
           ) : (
-            <div className="p-4 rounded-xl bg-glass/50">
-              <p>This user hasn't added any social links yet.</p>
-            </div>
+            <Card variant="glass-subtle">
+              <CardContent className="text-center">
+                <p>This user hasn't added any social links yet.</p>
+              </CardContent>
+            </Card>
           )}
         </div>
       </div>
@@ -365,15 +366,9 @@ export function RealtimeLinks({ userId, initialLinks, isOwner }: RealtimeLinksPr
             // Regular link
             const Icon = getPlatformIcon(link.platform);
             return (
-              <motion.a
+              <motion.div
                 key={link.id}
                 layout
-                href={link.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block w-full p-4 rounded-xl bg-glass shadow-glass 
-                         hover:shadow-cyber transition-all duration-300 transform hover:-translate-y-1
-                         text-center group relative overflow-hidden"
                 initial={{ opacity: 0, y: 20, scale: 0.95 }}
                 animate={{
                   opacity: 1,
@@ -398,15 +393,24 @@ export function RealtimeLinks({ userId, initialLinks, isOwner }: RealtimeLinksPr
                 }}
                 whileTap={{ scale: 0.98 }}
               >
-                <div className="absolute inset-0 bg-gradient-to-r from-cyber-pink/10 to-cyber-cyan/10 
-                              opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                <div className="relative flex items-center justify-center gap-3">
-                  <Icon className="w-6 h-6" style={{ color: getPlatformColor(link.platform) }} />
-                  <span className="font-medium text-lg">
-                    {link.title || link.platform}
-                  </span>
-                </div>
-              </motion.a>
+                <a
+                  href={link.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`block w-full p-4 bg-glass shadow-glass 
+                           hover:shadow-cyber transition-all duration-300
+                           text-center group relative overflow-hidden rounded-xl`}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-r from-cyber-pink/10 to-cyber-cyan/10 
+                                opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  <div className="relative flex items-center justify-center gap-3">
+                    <Icon className="w-6 h-6" style={{ color: getPlatformColor(link.platform) }} />
+                    <span className="font-medium text-lg">
+                      {link.title || link.platform}
+                    </span>
+                  </div>
+                </a>
+              </motion.div>
             );
           })}
         </AnimatePresence>

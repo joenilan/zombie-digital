@@ -1,3 +1,5 @@
+'use client'
+
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -20,7 +22,7 @@ function NavLink({ href, current, children, layoutId = "nav-highlight" }: {
     <Link
       href={href}
       className={cn(
-        "relative px-3 py-2 transition-colors duration-200",
+        "relative px-3 py-2 transition-colors duration-200 font-ui",
         current ? "text-foreground" : "text-muted-foreground hover:text-foreground"
       )}
     >
@@ -54,7 +56,7 @@ function SubNavLink({ href, current, children, layoutId = "subnav-highlight" }: 
     <Link
       href={href}
       className={cn(
-        "relative px-3 py-1.5 transition-colors duration-200",
+        "relative px-3 py-1.5 transition-colors duration-200 font-ui",
         current ? "text-foreground" : "text-muted-foreground hover:text-foreground"
       )}
     >

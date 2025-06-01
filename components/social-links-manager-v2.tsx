@@ -272,12 +272,10 @@ const EditLinkDialog = ({
           </div>
 
           <div className="flex justify-end gap-2 pt-4">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="gap-1 border-0 bg-muted/20">
-              <X className="w-4 h-4" />
+            <Button type="button" variant="outline" icon={<X className="w-4 h-4" />} onClick={() => onOpenChange(false)} className="border-0 bg-muted/20">
               Cancel
             </Button>
-            <Button type="submit" disabled={!url} className="gap-1 bg-primary hover:bg-primary/90 text-white">
-              <Check className="w-4 h-4" />
+            <Button type="submit" disabled={!url} variant="secondary" icon={<Check className="w-4 h-4" />} className="bg-primary hover:bg-primary/90 text-white">
               Save Changes
             </Button>
           </div>
@@ -500,12 +498,10 @@ const AddLink = ({ userId, onAdd, open, onOpenChange }: {
           </div>
 
           <div className="flex justify-end gap-2 pt-2">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="gap-1 border-0 bg-muted/20">
-              <X className="w-4 h-4" />
+            <Button type="button" variant="outline" icon={<X className="w-4 h-4" />} onClick={() => onOpenChange(false)} className="border-0 bg-muted/20">
               Cancel
             </Button>
-            <Button type="submit" disabled={!platform || !username} className="gap-1 bg-primary hover:bg-primary/90 text-white">
-              <Plus className="w-4 h-4" />
+            <Button type="submit" disabled={!platform || !username} variant="ethereal" icon={<Plus className="w-4 h-4" />}>
               Add Link
             </Button>
           </div>
@@ -538,9 +534,10 @@ const EmptyState = ({ onAddClick }: { onAddClick: () => void }) => {
 
       <Button
         onClick={onAddClick}
-        className="gap-2 px-6 py-2 h-auto text-base bg-primary hover:bg-primary/90 text-white"
+        variant="ethereal"
+        icon={<Plus className="w-4 h-4" />}
+        className="px-6 py-2 h-auto text-base"
       >
-        <Plus className="w-4 h-4" />
         Add Your First Link
       </Button>
     </motion.div>
@@ -728,10 +725,11 @@ export function SocialLinksManagerV2({ initialLinks = [], twitchUserId, onLinksC
 
                   <Button
                     onClick={() => openAddDialog()}
-                    className="bg-primary hover:bg-primary/90 text-white gap-1.5 h-9"
+                    variant="secondary"
+                    icon={<Plus className="w-3.5 h-3.5" />}
+                    className="h-9"
                     size="sm"
                   >
-                    <Plus className="w-3.5 h-3.5" />
                     Add Link
                   </Button>
                 </div>
@@ -813,21 +811,22 @@ export function SocialLinksManagerV2({ initialLinks = [], twitchUserId, onLinksC
                   <Button
                     type="button"
                     variant="outline"
+                    icon={<X className="w-4 h-4" />}
                     onClick={() => {
                       closeAddDialog();
                       setNewLinkPlatform('');
                     }}
-                    className="gap-1 border-0 bg-muted/20"
+                    className="border-0 bg-muted/20"
                   >
-                    <X className="w-4 h-4" />
                     Cancel
                   </Button>
                   <Button
                     type="submit"
                     disabled={!newLinkPlatform}
-                    className="gap-1 bg-primary hover:bg-primary/90 text-white"
+                    variant="secondary"
+                    icon={<Plus className="w-4 h-4" />}
+                    className="bg-primary hover:bg-primary/90 text-white"
                   >
-                    <Plus className="w-4 h-4" />
                     Add Link
                   </Button>
                 </div>

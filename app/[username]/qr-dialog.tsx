@@ -60,10 +60,10 @@ export function QRDialog({ username }: QRDialogProps) {
                 <Button
                     size="icon"
                     variant="ghost"
-                    className="h-8 w-8"
+                    className="h-10 w-10 rounded-lg hover:text-white hover:bg-purple-400/20 transition-all duration-300"
                     title="Show QR Code"
                 >
-                    <QrCode className="w-4 h-4" />
+                    <QrCode className="w-4 h-4 text-purple-400" />
                 </Button>
             </DialogTrigger>
             <DialogContent className="max-w-sm border-0 shadow-xl bg-background">

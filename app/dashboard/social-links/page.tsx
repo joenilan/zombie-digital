@@ -34,15 +34,18 @@ import { toast } from 'sonner'
 import { motion } from 'framer-motion'
 import { QRDialog } from '@/app/[username]/qr-dialog'
 import Image from 'next/image'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, StatCard } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { format, subDays, startOfDay, formatDistanceToNow } from 'date-fns'
 import React from 'react'
+import { Users } from 'lucide-react'
 
 import { RealtimeChannel } from '@supabase/supabase-js'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { LoadingSpinner } from '@/components/LoadingSpinner'
 import { useSocialLinksStore } from '@/stores/useSocialLinksStore'
+import { UserAnalytics } from '@/components/user-analytics'
+import { umami } from '@/lib/umami'
 
 interface TwitchUser {
   id: string
@@ -54,25 +57,6 @@ interface TwitchUser {
   created_at?: string
   [key: string]: any
 }
-
-const StatCard = ({ title, value, icon: Icon, color = "primary" }: {
-  title: string,
-  value: string | number,
-  icon: React.ElementType,
-  color?: string
-}) => (
-  <div className="p-4 rounded-lg bg-background/20 border border-white/5">
-    <div className="flex items-center gap-3">
-      <div className={`p-2 rounded-lg ${color === 'blue' ? 'bg-blue-500/10 text-blue-500' : 'bg-primary/10 text-primary'}`}>
-        <Icon className="w-4 h-4" />
-      </div>
-      <div>
-        <p className="text-sm text-muted-foreground">{title}</p>
-        <p className="text-lg font-semibold">{value}</p>
-      </div>
-    </div>
-  </div>
-)
 
 export default function SocialLinksPage() {
   const { user: authUser, session, isLoading: authLoading, isInitialized } = useAuthStore()
@@ -94,9 +78,16 @@ export default function SocialLinksPage() {
   const supabase = createClientComponentClient()
   const { hasFeatureAccess, isLoading: featuresLoading } = useFeatureAccess(authUser)
 
-  // Analytics state
+  // Analytics state - remove mock data
   const [analyticsData, setAnalyticsData] = useState<any>(null)
   const [analyticsLoading, setAnalyticsLoading] = useState(false)
+
+  // Quick stats from Umami
+  const [quickStats, setQuickStats] = useState<{
+    profileViews: number
+    uniqueVisitors: number
+  } | null>(null)
+  const [quickStatsLoading, setQuickStatsLoading] = useState(true)
 
   // Define refs at the component level
   const currentLinkIdsRef = React.useRef(new Set<string>())
@@ -234,6 +225,51 @@ export default function SocialLinksPage() {
     }
   }, [activeTab, authUser, analyticsData])
 
+  // Fetch quick stats from Umami
+  useEffect(() => {
+    async function fetchQuickStats() {
+      if (!twitchUser?.username) return
+
+      try {
+        setQuickStatsLoading(true)
+        await umami.initialize('fffd9866-0f93-4330-b588-08313c1a1af9')
+
+        const startDate = new Date()
+        startDate.setDate(startDate.getDate() - 30) // Last 30 days
+
+        // Get all page views for this user's profile
+        const allPageViews = await umami.getPageViews('fffd9866-0f93-4330-b588-08313c1a1af9', startDate)
+
+        // Filter to only this user's profile views
+        const userProfilePath = `/${twitchUser.username}`
+        const profileViews = allPageViews?.filter(view =>
+          view.url_path === userProfilePath
+        ) || []
+
+        // Get unique visitors to this profile
+        const uniqueSessionIds = new Set(profileViews.map(view => view.session_id))
+
+        setQuickStats({
+          profileViews: profileViews.length,
+          uniqueVisitors: uniqueSessionIds.size
+        })
+      } catch (error) {
+        console.error('Error fetching quick stats:', error)
+        // Fallback to 0 if there's an error
+        setQuickStats({
+          profileViews: 0,
+          uniqueVisitors: 0
+        })
+      } finally {
+        setQuickStatsLoading(false)
+      }
+    }
+
+    if (twitchUser?.username) {
+      fetchQuickStats()
+    }
+  }, [twitchUser?.username])
+
   const handleBackgroundUpdate = (background: { url: string | null; type: string | null }) => {
     updateBackground(background)
 
@@ -279,7 +315,7 @@ export default function SocialLinksPage() {
   // Feature access check
   if (!featuresLoading && !hasFeatureAccess('SOCIALS')) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-background/90 flex items-center justify-center">
+      <div className="bg-gradient-to-br from-background via-background/95 to-background/90 flex items-center justify-center py-16">
         <Card className="max-w-md w-full mx-4 bg-glass border-amber-500/20">
           <CardHeader className="text-center">
             <CardTitle className="text-amber-400 flex items-center justify-center gap-2">
@@ -315,7 +351,7 @@ export default function SocialLinksPage() {
   const profileUrl = `${window.location.origin}/${twitchUser.username}`
 
   return (
-    <div className="min-h-screen">
+    <div>
       <div className="container mx-auto px-4 py-8">
         {/* Page header */}
         <motion.div
@@ -339,106 +375,129 @@ export default function SocialLinksPage() {
         {/* Profile summary and preview */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           <motion.div
-            className="lg:col-span-2 p-6 rounded-xl bg-glass/30 backdrop-blur-xl border border-white/10 
-                       hover:bg-glass/40 transition-all duration-300"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
+            className="lg:col-span-2"
           >
-            <div className="flex items-center gap-6 mb-6">
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-br from-cyber-pink/20 to-purple-500/20 rounded-full blur-lg"></div>
-                <Image
-                  src={twitchUser.profile_image_url || '/placeholder-avatar.png'}
-                  alt="Profile"
-                  width={80}
-                  height={80}
-                  className="rounded-full relative z-10 object-cover border-2 border-white/10"
-                />
-              </div>
+            <Card variant="glass-interactive" className="hover:bg-glass/40 cursor-default">
+              <CardContent>
+                <div className="flex items-center gap-6 mb-6">
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-gradient-to-br from-cyber-pink/20 to-purple-500/20 rounded-full blur-lg"></div>
+                    <Image
+                      src={twitchUser.profile_image_url || '/placeholder-avatar.png'}
+                      alt="Profile"
+                      width={80}
+                      height={80}
+                      className="rounded-full relative z-10 object-cover border-2 border-white/10"
+                    />
+                  </div>
 
-              <div className="flex-1 min-w-0">
-                <h2 className="text-2xl font-semibold text-foreground">{twitchUser.display_name || twitchUser.username}</h2>
-                <p className="text-foreground/70">@{twitchUser.username}</p>
-              </div>
-
-              <Button
-                variant="outline"
-                className="gap-2 bg-glass/30 border-white/10 hover:bg-glass/50 hover:border-white/20 
-                          backdrop-blur-xl transition-all duration-300"
-                onClick={handleOpenProfile}
-              >
-                <Eye className="w-4 h-4" />
-                View Profile
-              </Button>
-            </div>
-
-            <div className="space-y-4">
-              <div className="flex flex-col md:flex-row gap-3">
-                <div className="flex-1 relative">
-                  <CopyIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-foreground/60" />
-                  <Input
-                    value={profileUrl}
-                    readOnly
-                    className="pl-10 pr-24 bg-glass/20 border-white/10 backdrop-blur-xl 
-                              focus:bg-glass/30 focus:border-white/20 transition-all duration-300"
-                  />
-                  <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex gap-1">
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={handleCopyUrl}
-                      className="h-8 w-8 hover:bg-glass/30 transition-all duration-300"
-                    >
-                      <Copy className="w-4 h-4" />
-                    </Button>
-                    <QRDialog username={twitchUser.username} />
+                  <div className="flex-1 min-w-0">
+                    <h2 className="text-2xl font-semibold text-foreground">{twitchUser.display_name || twitchUser.username}</h2>
+                    <p className="text-foreground/70">@{twitchUser.username}</p>
                   </div>
                 </div>
 
-                <Button
-                  className="ethereal-button gap-2"
-                  onClick={handleOpenProfile}
-                >
-                  <ExternalLink className="w-4 h-4" />
-                  Open Profile
-                </Button>
-              </div>
-            </div>
+                <div className="space-y-4">
+                  <div className="flex flex-col md:flex-row gap-3">
+                    <div className="flex-1 relative">
+                      <CopyIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-foreground/60" />
+                      <Input
+                        value={profileUrl}
+                        readOnly
+                        className="pl-10 bg-glass/20 border-white/10 backdrop-blur-xl 
+                              focus:bg-glass/30 focus:border-white/20 transition-all duration-300"
+                      />
+                    </div>
+
+                    <div className="flex gap-2">
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={handleCopyUrl}
+                        className="h-10 w-10 rounded-lg hover:text-white hover:bg-cyber-cyan/20 transition-all duration-300"
+                      >
+                        <Copy className="w-4 h-4 text-cyber-cyan" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        onClick={handleOpenProfile}
+                        className="h-10 w-10 rounded-lg hover:text-white hover:bg-cyber-pink/20 transition-all duration-300"
+                      >
+                        <ExternalLink className="w-4 h-4 text-cyber-pink" />
+                      </Button>
+                      <QRDialog username={twitchUser.username} />
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </motion.div>
 
           <motion.div
-            className="p-6 rounded-xl bg-glass/30 backdrop-blur-xl border border-white/10 
-                       hover:bg-glass/40 transition-all duration-300"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.3 }}
           >
-            <h3 className="text-lg font-medium mb-4 text-foreground">Quick Stats</h3>
-            <div className="grid grid-cols-1 gap-4">
-              <div className="p-4 rounded-lg bg-glass/20 border border-white/5 backdrop-blur-xl">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-gradient-to-br from-cyber-pink/20 to-purple-500/20">
-                    <LinkIcon className="w-4 h-4 text-cyber-pink" />
+            <Card variant="glass-interactive" className="hover:bg-glass/40 cursor-default">
+              <CardHeader>
+                <CardTitle size="lg">Quick Stats</CardTitle>
+              </CardHeader>
+              <CardContent spacing="tight">
+                <div className="grid grid-cols-1 gap-4">
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-glass/20 border border-white/5">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-cyber-pink/10 text-cyber-pink">
+                        <LinkIcon className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground font-ui">Social Links</p>
+                        <p className="text-2xl font-bold font-heading">{links.length}</p>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm text-foreground/70">Social Links</p>
-                    <p className="text-lg font-semibold text-foreground">{links.length}</p>
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-glass/20 border border-white/5">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-cyber-cyan/10 text-cyber-cyan">
+                        <Eye className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground font-ui">Profile Views</p>
+                        <p className="text-2xl font-bold font-heading">
+                          {quickStatsLoading ? (
+                            <span className="animate-pulse">--</span>
+                          ) : (
+                            quickStats?.profileViews?.toLocaleString() || "0"
+                          )}
+                        </p>
+                        <p className="text-xs text-muted-foreground">Last 30 days</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-glass/20 border border-white/5">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-purple-500/10 text-purple-400">
+                        <Users className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground font-ui">Unique Visitors</p>
+                        <p className="text-2xl font-bold font-heading">
+                          {quickStatsLoading ? (
+                            <span className="animate-pulse">--</span>
+                          ) : (
+                            quickStats?.uniqueVisitors?.toLocaleString() || "0"
+                          )}
+                        </p>
+                        <p className="text-xs text-muted-foreground">Last 30 days</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div className="p-4 rounded-lg bg-glass/20 border border-white/5 backdrop-blur-xl">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-lg bg-gradient-to-br from-cyber-cyan/20 to-blue-500/20">
-                    <Eye className="w-4 h-4 text-cyber-cyan" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-foreground/70">Profile Views</p>
-                    <p className="text-lg font-semibold text-foreground">{profileViews !== null ? profileViews : "--"}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           </motion.div>
         </div>
 
@@ -456,7 +515,7 @@ export default function SocialLinksPage() {
               : 'text-foreground/70 hover:text-foreground'
               }`}
           >
-            Social Links
+            Manage Links
             {activeTab === 'links' && (
               <motion.div
                 className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-cyber-pink to-purple-500"
@@ -472,7 +531,7 @@ export default function SocialLinksPage() {
               : 'text-foreground/70 hover:text-foreground'
               }`}
           >
-            Profile Appearance
+            Background Settings
             {activeTab === 'appearance' && (
               <motion.div
                 className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-cyber-pink to-purple-500"
@@ -508,18 +567,177 @@ export default function SocialLinksPage() {
               transition={{ duration: 0.5 }}
               className="w-full"
             >
-              <div className="mb-8 text-center">
-                <h2 className="text-2xl md:text-3xl font-semibold mb-3 text-foreground">Manage Your Links</h2>
-                <p className="text-foreground/70 max-w-2xl mx-auto">
-                  Add, edit and arrange the links that appear on your public profile page.
+              <div className="mb-12 text-center">
+                <h2 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">Manage Your Links</h2>
+                <p className="text-lg text-foreground/70 max-w-3xl mx-auto leading-relaxed">
+                  Add, edit and arrange your social links. Upload backgrounds and see how they look in real-time.
                 </p>
               </div>
 
-              <SocialLinksManagerV2
-                twitchUserId={twitchUser.id}
-                initialLinks={links}
-                onLinksChange={setLinks}
-              />
+              <div className="grid grid-cols-1 xl:grid-cols-5 gap-8">
+                {/* Social Links Manager */}
+                <div className="xl:col-span-3">
+                  <Card variant="glass-interactive" className="h-fit cursor-default">
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <CardTitle className="text-xl">Social Links</CardTitle>
+                          <CardDescription className="mt-1">
+                            Double-click any link to edit its details • Drag to reorder
+                          </CardDescription>
+                        </div>
+                        <div className="text-sm text-foreground/60 bg-glass/20 px-3 py-1 rounded-full border border-white/10">
+                          {links.length} {links.length === 1 ? 'link' : 'links'}
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <SocialLinksManagerV2
+                        twitchUserId={twitchUser.id}
+                        initialLinks={links}
+                        onLinksChange={setLinks}
+                      />
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Preview & Background Combined */}
+                <div className="xl:col-span-2 space-y-6">
+                  {/* Background Settings */}
+                  <Card variant="glass-interactive" className="cursor-default">
+                    <CardHeader>
+                      <CardTitle className="text-lg">Background</CardTitle>
+                      <CardDescription>
+                        Upload a custom background for your profile
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <BackgroundUpload
+                        userId={twitchUser.id}
+                        onSuccess={(url, type) => {
+                          handleBackgroundUpdate({ url, type })
+                        }}
+                        showPreview={true}
+                      />
+                    </CardContent>
+                  </Card>
+
+                  {/* Live Profile Preview */}
+                  <Card variant="glass-interactive" className="cursor-default">
+                    <CardHeader>
+                      <CardTitle className="text-lg">Live Preview</CardTitle>
+                      <CardDescription>
+                        See exactly how your profile looks to visitors
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {/* Scaled down version of the actual profile card */}
+                      <div className="flex justify-center">
+                        <div className="relative scale-90 origin-center">
+                          <div className="w-72 bg-background/20 backdrop-blur-xl rounded-xl shadow-glass overflow-hidden border border-white/10">
+                            {/* Background - same as real profile */}
+                            {twitchUser.background_media_url && (
+                              <div className="absolute inset-0">
+                                {twitchUser.background_media_type === 'video' ? (
+                                  <video
+                                    autoPlay
+                                    muted
+                                    loop
+                                    playsInline
+                                    className="w-full h-full object-cover"
+                                  >
+                                    <source src={twitchUser.background_media_url} type="video/mp4" />
+                                  </video>
+                                ) : (
+                                  <Image
+                                    src={twitchUser.background_media_url}
+                                    alt="Background"
+                                    fill
+                                    className="object-cover"
+                                  />
+                                )}
+                              </div>
+                            )}
+
+                            {/* Glass Overlay - same as real profile */}
+                            <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" />
+
+                            {/* Content - same structure as real profile */}
+                            <div className="relative space-y-4 p-5">
+                              {/* Profile Header - exact same as real profile */}
+                              <div className="flex flex-col items-center text-center">
+                                <div className="relative mb-4">
+                                  <div className="absolute inset-0 rounded-full bg-gradient-to-r from-cyber-pink to-cyber-cyan animate-pulse blur-xl opacity-50"></div>
+                                  <Image
+                                    src={twitchUser.profile_image_url || '/placeholder-avatar.png'}
+                                    alt={twitchUser.display_name || twitchUser.username}
+                                    width={70}
+                                    height={70}
+                                    className="rounded-full relative border-2 border-background/50"
+                                  />
+                                </div>
+                                <h1 className="text-xl font-bold mb-1 bg-clip-text text-transparent bg-gradient-to-r from-cyber-pink to-cyber-cyan">
+                                  {twitchUser.display_name || twitchUser.username}
+                                </h1>
+                                <div className="flex items-center justify-center gap-2 mb-4">
+                                  <p className="text-xs text-muted-foreground">@{twitchUser.username}</p>
+                                </div>
+                              </div>
+
+                              {/* Social Links - same as real profile but compacted */}
+                              <div className="space-y-2">
+                                {links.length > 0 ? (
+                                  links.slice(0, 4).map((link) => {
+                                    const Icon = getPlatformIcon(link.platform)
+                                    return (
+                                      <div
+                                        key={link.id}
+                                        className="block w-full p-2.5 bg-glass shadow-glass hover:shadow-cyber transition-all duration-300 text-center group relative overflow-hidden rounded-lg"
+                                      >
+                                        <div className="absolute inset-0 bg-gradient-to-r from-cyber-pink/10 to-cyber-cyan/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                                        <div className="relative flex items-center justify-center gap-2">
+                                          <Icon className="w-4 h-4" />
+                                          <span className="font-medium text-sm">
+                                            {link.title || link.platform}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    )
+                                  })
+                                ) : (
+                                  <div className="text-center py-6 text-sm text-muted-foreground">
+                                    <div className="w-12 h-12 mx-auto mb-3 rounded-full bg-glass/20 flex items-center justify-center">
+                                      <LinkIcon className="w-6 h-6 text-foreground/40" />
+                                    </div>
+                                    <p>No social links added yet</p>
+                                    <p className="text-xs mt-1">Add your first link to get started</p>
+                                  </div>
+                                )}
+                                {links.length > 4 && (
+                                  <div className="text-center py-2 text-xs text-muted-foreground bg-glass/20 rounded-lg border border-white/5">
+                                    +{links.length - 4} more {links.length - 4 === 1 ? 'link' : 'links'}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Footer - same as real profile */}
+                          <div className="text-center text-xs text-muted-foreground/60 pt-4">
+                            <p>
+                              Powered by{" "}
+                              <span className="font-bold">
+                                <span className="gradient-brand">Zombie</span>
+                                <span className="text-foreground/80">.Digital</span>
+                              </span>
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
             </motion.div>
           )}
 
@@ -529,116 +747,35 @@ export default function SocialLinksPage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.5 }}
-              className="space-y-8"
+              className="w-full"
             >
-              <div className="text-center mb-8">
-                <h2 className="text-2xl md:text-3xl font-semibold mb-3 text-foreground">Profile Background</h2>
+              <div className="mb-8 text-center">
+                <h2 className="text-2xl md:text-3xl font-semibold mb-3 text-foreground">Customization</h2>
                 <p className="text-foreground/70 max-w-2xl mx-auto">
-                  Customize your profile's visual appearance with background images and themes.
+                  Advanced customization options for themes, colors, and styling.
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div className="space-y-6">
-                  <div className="p-6 rounded-xl bg-glass/30 backdrop-blur-xl border border-white/10">
-                    <h3 className="text-lg font-semibold mb-4 text-foreground">Background Settings</h3>
-                    <BackgroundUpload
-                      userId={twitchUser.id}
-                      showPreview={true}
-                      onSuccess={(url, type) => {
-                        updateBackground({ url, type })
-                      }}
-                    />
-                  </div>
-
-                  <div className="p-6 rounded-xl bg-glass/30 backdrop-blur-xl border border-white/10">
-                    <h3 className="text-lg font-semibold mb-4 text-foreground">Profile Settings</h3>
-                    <p className="text-foreground/70 mb-6">
-                      Additional profile customization options will be available soon.
-                    </p>
-
-                    <div className="grid grid-cols-1 gap-4">
-                      <div className="p-4 rounded-xl bg-glass/20 border border-white/5 flex items-center">
-                        <div className="flex-1">
-                          <h4 className="font-medium text-foreground">Custom Theme</h4>
-                          <p className="text-sm text-foreground/60">Set colors for your profile page</p>
-                        </div>
-                        <div className="text-foreground/50">Coming soon</div>
+              <div className="max-w-4xl mx-auto">
+                <Card variant="glass">
+                  <CardHeader>
+                    <CardTitle>Coming Soon</CardTitle>
+                    <CardDescription>
+                      Theme selection, custom colors, sliders, and advanced styling options
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-center py-12 text-muted-foreground">
+                      <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-cyber-pink/20 to-purple-500/20 flex items-center justify-center">
+                        <Settings className="w-8 h-8 text-cyber-pink" />
                       </div>
-
-                      <div className="p-4 rounded-xl bg-glass/20 border border-white/5 flex items-center">
-                        <div className="flex-1">
-                          <h4 className="font-medium text-foreground">Link Animations</h4>
-                          <p className="text-sm text-foreground/60">Add animations to your links</p>
-                        </div>
-                        <div className="text-foreground/50">Coming soon</div>
-                      </div>
+                      <h3 className="text-lg font-semibold mb-2">Advanced Customization</h3>
+                      <p className="text-sm">
+                        Theme selection, custom color palettes, typography options, and more coming soon.
+                      </p>
                     </div>
-                  </div>
-                </div>
-
-                <div className="p-6 rounded-xl bg-glass/30 backdrop-blur-xl border border-white/10">
-                  <h3 className="text-lg font-semibold mb-4 text-foreground">Live Preview</h3>
-
-                  <div className="relative">
-                    <div className="aspect-[9/16] max-w-[280px] mx-auto rounded-2xl overflow-hidden border-2 border-white/10 bg-glass/20 backdrop-blur-xl">
-                      <div
-                        className="w-full h-full relative"
-                        style={{
-                          backgroundImage: twitchUser.background_media_url
-                            ? `url(${twitchUser.background_media_url})`
-                            : 'linear-gradient(135deg, rgba(236, 72, 153, 0.3), rgba(145, 70, 255, 0.3), rgba(103, 232, 249, 0.3))',
-                          backgroundSize: 'cover',
-                          backgroundPosition: 'center',
-                        }}
-                      >
-                        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/60"></div>
-
-                        <div className="absolute bottom-0 left-0 right-0 p-4 text-center">
-                          <div className="mb-4">
-                            <Image
-                              src={twitchUser.profile_image_url || '/placeholder-avatar.png'}
-                              alt="Profile"
-                              width={60}
-                              height={60}
-                              className="rounded-full mx-auto border-2 border-white/20"
-                            />
-                          </div>
-
-                          <h4 className="text-white font-semibold mb-1">
-                            {twitchUser.display_name || twitchUser.username}
-                          </h4>
-                          <p className="text-white/80 text-sm mb-4">@{twitchUser.username}</p>
-
-                          <div className="space-y-2">
-                            {links.slice(0, 3).map((link, index) => (
-                              <div key={link.id} className="block w-full p-2 bg-white/10 backdrop-blur-sm rounded-xl text-center">
-                                <span className="text-white text-xs font-medium">{link.title}</span>
-                              </div>
-                            ))}
-                            {links.length === 0 && (
-                              <div className="block w-full p-2 bg-glass/50 rounded-xl text-center">
-                                <div className="flex items-center justify-center gap-2">
-                                  <LinkIcon className="w-4 h-4 text-white/50 flex-shrink-0" />
-                                  <span className="text-xs text-white/70">Add your first link</span>
-                                </div>
-                              </div>
-                            )}
-                            {links.length > 3 && (
-                              <div className="text-center">
-                                <span className="text-xs text-white/70">+{links.length - 3} more links</span>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <p className="text-xs text-foreground/60 text-center mt-3">
-                      Live preview of your public profile
-                    </p>
-                  </div>
-                </div>
+                  </CardContent>
+                </Card>
               </div>
             </motion.div>
           )}
@@ -648,129 +785,14 @@ export default function SocialLinksPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.5 }}
-              className="space-y-8"
+              className="space-y-6"
             >
-              <div className="text-center mb-8">
-                <h2 className="text-2xl md:text-3xl font-semibold mb-3 text-foreground">Profile Analytics</h2>
-                <p className="text-foreground/70 max-w-2xl mx-auto">
-                  Track engagement with your profile and understand your audience.
-                </p>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div className="p-6 rounded-xl bg-glass/30 backdrop-blur-xl border border-white/10 hover:bg-glass/40 transition-all duration-300">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="p-2 rounded-lg bg-gradient-to-br from-cyber-cyan/20 to-blue-500/20">
-                      <Eye className="w-5 h-5 text-cyber-cyan" />
-                    </div>
-                    <h3 className="text-lg font-semibold text-foreground">Total Profile Views</h3>
-                  </div>
-                  <div className="flex items-baseline gap-2">
-                    <div className="text-3xl font-bold text-foreground">
-                      {analyticsLoading ? "..." : (analyticsData?.totalViews || profileViews || "0")}
-                    </div>
-                    <div className="text-sm text-cyber-cyan flex items-center">
-                      <ArrowUpRight className="w-3 h-3 mr-1" />
-                      All time
-                    </div>
-                  </div>
-                </div>
-
-                <div className="p-6 rounded-xl bg-glass/30 backdrop-blur-xl border border-white/10 hover:bg-glass/40 transition-all duration-300">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="p-2 rounded-lg bg-gradient-to-br from-green-500/20 to-emerald-500/20">
-                      <BarChart4 className="w-5 h-5 text-green-400" />
-                    </div>
-                    <h3 className="text-lg font-semibold text-foreground">Recent Views</h3>
-                  </div>
-                  <div className="flex items-baseline gap-2">
-                    <div className="text-3xl font-bold text-foreground">
-                      {analyticsLoading ? "..." : (analyticsData?.recentViews || "0")}
-                    </div>
-                    <div className={`text-sm flex items-center ${analyticsData?.growthPercentage >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                      <ArrowUpRight className="w-3 h-3 mr-1" />
-                      {analyticsData?.growthPercentage ? `${analyticsData.growthPercentage > 0 ? '+' : ''}${analyticsData.growthPercentage}%` : 'Last 7 days'}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="p-6 rounded-xl bg-glass/30 backdrop-blur-xl border border-white/10 hover:bg-glass/40 transition-all duration-300">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="p-2 rounded-lg bg-gradient-to-br from-cyber-pink/20 to-purple-500/20">
-                      <LinkIcon className="w-5 h-5 text-cyber-pink" />
-                    </div>
-                    <h3 className="text-lg font-semibold text-foreground">Social Links</h3>
-                  </div>
-                  <div className="flex items-baseline gap-2">
-                    <div className="text-3xl font-bold text-foreground">{links.length}</div>
-                    <div className="text-sm text-foreground/60 flex items-center">
-                      <ChevronRight className="w-3 h-3 mr-1" />
-                      Active links
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="p-6 rounded-xl bg-glass/30 backdrop-blur-xl border border-white/10">
-                <div className="flex justify-between items-center mb-6">
-                  <h3 className="text-xl font-semibold text-foreground">Views Over Time</h3>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="gap-1.5 bg-glass/30 border-white/10 hover:bg-glass/50 hover:border-white/20 backdrop-blur-xl"
-                      onClick={() => {
-                        setAnalyticsData(null)
-                        fetchAnalytics()
-                        toast.info("Refreshing analytics...", {
-                          description: "Your analytics data is being updated.",
-                        })
-                      }}
-                    >
-                      <RefreshCcw className="w-3.5 h-3.5" />
-                      Refresh
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="h-[350px] flex flex-col items-center justify-center text-center">
-                  <div className="w-16 h-16 mb-4 relative">
-                    <div className="absolute inset-0 bg-gradient-to-br from-cyber-pink/20 to-purple-500/20 rounded-full blur-lg"></div>
-                    <div className="relative flex items-center justify-center w-full h-full rounded-full bg-glass/20 backdrop-blur-xl border border-white/10">
-                      <BarChart4 className="w-8 h-8 text-cyber-pink" />
-                    </div>
-                  </div>
-
-                  <h3 className="text-xl font-medium mb-2 text-foreground">Detailed Analytics Coming Soon</h3>
-
-                  <p className="text-foreground/70 max-w-md mb-2">
-                    We're working on detailed charts to show your profile views over time and other engagement metrics.
-                  </p>
-
-                  <p className="text-sm text-foreground/60">
-                    Your views are being tracked now and will be displayed in charts soon!
-                  </p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="p-6 rounded-xl bg-glass/30 backdrop-blur-xl border border-white/10">
-                  <h3 className="text-lg font-semibold mb-2 text-foreground">Top Traffic Sources</h3>
-                  <p className="text-foreground/60 text-sm mb-4">Where your profile visitors come from</p>
-                  <div className="h-[200px] flex flex-col items-center justify-center text-center">
-                    <p className="text-foreground/50">Coming soon</p>
-                  </div>
-                </div>
-
-                <div className="p-6 rounded-xl bg-glass/30 backdrop-blur-xl border border-white/10">
-                  <h3 className="text-lg font-semibold mb-2 text-foreground">Link Click Analytics</h3>
-                  <p className="text-foreground/60 text-sm mb-4">Which links get the most engagement</p>
-                  <div className="h-[200px] flex flex-col items-center justify-center text-center">
-                    <p className="text-foreground/50">Coming soon</p>
-                  </div>
-                </div>
-              </div>
+              <UserAnalytics
+                userId={twitchUser.twitch_id}
+                username={twitchUser.username}
+                websiteId="fffd9866-0f93-4330-b588-08313c1a1af9"
+                initialDays={30}
+              />
             </motion.div>
           )}
         </div>

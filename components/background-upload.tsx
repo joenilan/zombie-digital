@@ -250,47 +250,49 @@ export function BackgroundUpload({ userId, onSuccess, showPreview }: BackgroundU
     return (
         <div className="space-y-6">
             {/* Current Background Preview */}
-            {showPreview && (
-                <div className="space-y-3">
-                    <h3 className="text-sm font-medium">Current Background</h3>
-                    {currentBackground.url ? (
-                        <div className="relative group">
-                            <div className="relative h-48 w-full rounded-lg overflow-hidden bg-muted/20">
-                                <Image
-                                    src={currentBackground.url}
-                                    alt="Current background"
-                                    fill
-                                    className="object-cover"
-                                    sizes="400px"
-                                />
-                            </div>
+            {showPreview && currentBackground.url && (
+                <div className="flex justify-center">
+                    <div className="relative group max-w-sm w-full">
+                        <div className="relative h-48 w-full rounded-xl overflow-hidden">
+                            <Image
+                                src={currentBackground.url}
+                                alt="Current background"
+                                fill
+                                className="object-contain"
+                                sizes="400px"
+                            />
                             <Button
                                 variant="destructive"
                                 size="sm"
-                                className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 p-0"
+                                className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-all duration-200 h-8 w-8 p-0 bg-red-500/90 hover:bg-red-500 backdrop-blur-sm"
                                 onClick={handleRemoveBackground}
                                 disabled={isUploading}
                             >
                                 <X className="w-4 h-4" />
                             </Button>
                         </div>
-                    ) : (
-                        <div className="h-48 w-full rounded-lg border-2 border-dashed border-muted-foreground/25 flex items-center justify-center">
-                            <div className="text-center">
-                                <ImageIcon className="w-8 h-8 text-muted-foreground/50 mx-auto mb-2" />
-                                <p className="text-sm text-muted-foreground">No background set</p>
-                            </div>
-                        </div>
-                    )}
+                    </div>
                 </div>
             )}
 
-            {/* Upload Section */}
-            <div className="space-y-3">
-                <h3 className="text-sm font-medium">
-                    {currentBackground.url ? 'Replace Background' : 'Upload Background'}
-                </h3>
+            {/* Empty state or upload area */}
+            {!currentBackground.url && showPreview && (
+                <div className="h-48 w-full rounded-xl border-2 border-dashed border-cyber-pink/30 flex items-center justify-center transition-colors hover:border-cyber-pink/50 cursor-pointer"
+                    onClick={() => fileInputRef.current?.click()}>
+                    <div className="text-center space-y-3">
+                        <div className="w-16 h-16 rounded-full bg-cyber-pink/20 flex items-center justify-center mx-auto">
+                            <ImageIcon className="w-8 h-8 text-cyber-pink" />
+                        </div>
+                        <div>
+                            <p className="text-sm font-medium text-foreground/80">No background set</p>
+                            <p className="text-xs text-muted-foreground">Click here or use the button below to upload</p>
+                        </div>
+                    </div>
+                </div>
+            )}
 
+            {/* Upload Controls */}
+            <div className="space-y-4">
                 <input
                     ref={fileInputRef}
                     type="file"
@@ -300,27 +302,27 @@ export function BackgroundUpload({ userId, onSuccess, showPreview }: BackgroundU
                     disabled={isUploading}
                 />
 
-                <Button
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={isUploading}
-                    className="w-full"
-                >
-                    {isUploading ? (
-                        <>
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            Uploading...
-                        </>
-                    ) : (
-                        <>
-                            <Upload className="w-4 h-4 mr-2" />
-                            {currentBackground.url ? 'Replace Background' : 'Upload Background'}
-                        </>
-                    )}
-                </Button>
+                <div className="text-center space-y-4">
+                    <p className="text-xs text-muted-foreground">
+                        Drag and drop or click to browse
+                    </p>
 
-                <p className="text-xs text-muted-foreground">
-                    Supports JPEG, PNG, GIF, and WebP. Maximum file size: 10MB
-                </p>
+                    <Button
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={isUploading}
+                        variant="default"
+                        size="lg"
+                        className="bg-gradient-to-r from-cyber-pink to-purple-500 hover:from-cyber-pink/90 hover:to-purple-500/90 text-white border-0 shadow-cyber transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed px-8 py-3 rounded-lg font-medium"
+                        icon={isUploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Upload className="w-5 h-5" />}
+                        loading={isUploading}
+                    >
+                        {isUploading ? 'Uploading...' : (currentBackground.url ? 'Replace Background' : 'Choose File')}
+                    </Button>
+
+                    <p className="text-xs text-muted-foreground">
+                        Supports JPEG, PNG, GIF, and WebP • Maximum file size: 10MB
+                    </p>
+                </div>
             </div>
         </div>
     )

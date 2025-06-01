@@ -26,17 +26,25 @@ export async function POST(request: NextRequest) {
     // Check for recent views from the same session (within last 30 minutes)
     const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString()
     
-    const { data: recentView } = await supabase
+    const { data: recentViews, error: dedupeError } = await supabase
       .from('profile_view_logs')
       .select('id')
       .eq('profile_id', userId)
       .eq('session_id', sessionId)
       .gte('viewed_at', thirtyMinutesAgo)
       .limit(1)
-      .single()
+
+    console.log('Deduplication check:', {
+      sessionId,
+      thirtyMinutesAgo,
+      recentViews,
+      dedupeError,
+      hasRecentViews: recentViews && recentViews.length > 0
+    })
 
     // If there's a recent view from this session, don't count it again
-    if (recentView) {
+    if (recentViews && recentViews.length > 0) {
+      console.log('Blocking duplicate view for session:', sessionId)
       return NextResponse.json({ 
         success: true, 
         counted: false, 
@@ -62,7 +70,8 @@ export async function POST(request: NextRequest) {
         .from('profile_views')
         .update({ 
           view_count: existingViews.view_count + 1,
-          last_viewed_at: new Date().toISOString()
+          last_viewed_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
         })
         .eq('user_id', userId)
 

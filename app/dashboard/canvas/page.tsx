@@ -5,13 +5,15 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Eye, EyeOff, Trash2, Settings, ExternalLink, Calendar, Users, Layers, Copy, BarChart3 } from 'lucide-react'
+import { Plus, Eye, EyeOff, Trash2, Settings, ExternalLink, Calendar, Users, Layers, Copy, BarChart3, X } from 'lucide-react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { useCanvasStore } from '@/stores/useCanvasStore'
 import { LoadingSpinner } from '@/components/LoadingSpinner'
 import { toast } from 'sonner'
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { UserCircle } from 'lucide-react'
 
 export default function CanvasPage() {
   const { user } = useAuthStore()
@@ -153,22 +155,26 @@ export default function CanvasPage() {
 
   if (canvasesError) {
     return (
-      <div className="min-h-screen">
+      <div>
         <div className="container mx-auto px-4 py-8">
-          <div className="p-6 rounded-xl bg-glass/30 backdrop-blur-xl border border-red-500/20">
-            <h1 className="text-2xl font-bold text-red-400 mb-2">Error</h1>
-            <p className="text-foreground/70">{canvasesError}</p>
-            <Button onClick={fetchCanvases} className="mt-4 ethereal-button">
-              Try Again
-            </Button>
-          </div>
+          <Card variant="error">
+            <CardHeader>
+              <CardTitle className="text-red-400">Error</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-foreground/70 mb-4">{canvasesError}</p>
+              <Button onClick={fetchCanvases} className="ethereal-button">
+                Try Again
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen">
+    <div>
       <div className="container mx-auto px-4 py-8">
         {/* Page Header */}
         <motion.div
@@ -188,8 +194,8 @@ export default function CanvasPage() {
             Create and manage interactive canvases for your streaming overlays with widgets, images, and real-time elements
           </p>
 
-          <Button asChild className="ethereal-button gap-2 px-8 py-4 text-lg">
-            <Link href="/dashboard/canvas/new">
+          <Button asChild className="ethereal-button px-8 py-4 text-lg">
+            <Link href="/dashboard/canvas/new" className="gap-2">
               <Plus className="w-5 h-5" />
               Create New Canvas
             </Link>
@@ -204,24 +210,26 @@ export default function CanvasPage() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="text-center py-16"
           >
-            <div className="max-w-md mx-auto p-8 rounded-xl bg-glass/30 backdrop-blur-xl border border-white/10">
-              <div className="w-16 h-16 mx-auto mb-4 relative">
-                <div className="absolute inset-0 bg-gradient-to-br from-cyber-pink/20 to-purple-500/20 rounded-full blur-lg"></div>
-                <div className="relative flex items-center justify-center w-full h-full rounded-full bg-glass/20 backdrop-blur-xl border border-white/10">
-                  <Layers className="w-8 h-8 text-cyber-pink" />
+            <Card variant="glass" className="max-w-md mx-auto">
+              <CardContent className="text-center">
+                <div className="w-16 h-16 mx-auto mb-4 relative">
+                  <div className="absolute inset-0 bg-gradient-to-br from-cyber-pink/20 to-purple-500/20 rounded-full blur-lg"></div>
+                  <div className="relative flex items-center justify-center w-full h-full rounded-full bg-glass/20 backdrop-blur-xl border border-white/10">
+                    <Layers className="w-8 h-8 text-cyber-pink" />
+                  </div>
                 </div>
-              </div>
-              <h3 className="text-xl font-semibold mb-2 text-foreground">No canvases yet</h3>
-              <p className="text-foreground/70 mb-6">
-                Create your first canvas to start building interactive streaming overlays.
-              </p>
-              <Button asChild className="ethereal-button">
-                <Link href="/dashboard/canvas/new">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Create Canvas
-                </Link>
-              </Button>
-            </div>
+                <h3 className="text-xl font-semibold mb-2 text-foreground">No canvases yet</h3>
+                <p className="text-foreground/70 mb-6">
+                  Create your first canvas to start building interactive streaming overlays.
+                </p>
+                <Button asChild className="ethereal-button">
+                  <Link href="/dashboard/canvas/new" className="gap-2">
+                    <Plus className="w-4 h-4" />
+                    Create Canvas
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
           </motion.div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -231,141 +239,137 @@ export default function CanvasPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1, duration: 0.5 }}
-                className="group p-6 rounded-xl bg-glass/30 backdrop-blur-xl border border-white/10 
-                           hover:bg-glass/40 hover:border-white/20 transition-all duration-300 
-                           hover:shadow-[0_8px_32px_rgba(145,70,255,0.15)]"
               >
-                {/* Header */}
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-lg font-semibold text-foreground group-hover:text-white transition-colors duration-300 truncate">
-                      {canvas.name}
-                    </h3>
-                    <p className="text-sm text-foreground/70 group-hover:text-foreground/90 transition-colors duration-300 line-clamp-2">
-                      {canvas.description || 'No description provided'}
-                    </p>
-                  </div>
-                  <Badge
-                    variant={canvas.is_public ? "default" : "secondary"}
-                    className={`ml-2 ${canvas.is_public ? 'bg-green-500/20 text-green-400' : 'bg-glass/30 text-foreground/70'}`}
-                  >
-                    {canvas.is_public ? 'Public' : 'Private'}
-                  </Badge>
-                </div>
-
-                {/* Stats */}
-                <div className="grid grid-cols-3 gap-3 mb-4">
-                  <div className="text-center p-2 rounded-lg bg-glass/20 border border-white/5">
-                    <div className="flex items-center justify-center gap-1 mb-1">
-                      <Layers className="w-3 h-3 text-cyber-pink" />
+                <Card variant="glass-interactive" className="group hover:shadow-[0_8px_32px_rgba(145,70,255,0.15)]">
+                  <CardContent>
+                    {/* Header */}
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-lg font-semibold text-foreground group-hover:text-white transition-colors duration-300 truncate">
+                          {canvas.name}
+                        </h3>
+                        <p className="text-sm text-foreground/70 group-hover:text-foreground/90 transition-colors duration-300 line-clamp-2">
+                          {canvas.description || 'No description provided'}
+                        </p>
+                      </div>
+                      <Badge
+                        variant={canvas.is_public ? "default" : "secondary"}
+                        className={`ml-2 ${canvas.is_public ? 'bg-green-500/20 text-green-400' : 'bg-glass/30 text-foreground/70'}`}
+                      >
+                        {canvas.is_public ? 'Public' : 'Private'}
+                      </Badge>
                     </div>
-                    <div className="text-lg font-semibold text-foreground">{widgetCounts[canvas.id] || 0}</div>
-                    <div className="text-xs text-foreground/60">Widgets</div>
-                  </div>
 
-                  <div className="text-center p-2 rounded-lg bg-glass/20 border border-white/5">
-                    <div className="flex items-center justify-center gap-1 mb-1">
-                      <Calendar className="w-3 h-3 text-cyber-cyan" />
-                    </div>
-                    <div className="text-xs font-semibold text-foreground">
-                      {new Date(canvas.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                    </div>
-                    <div className="text-xs text-foreground/60">Created</div>
-                  </div>
+                    {/* Stats */}
+                    <div className="grid grid-cols-3 gap-3 mb-4">
+                      <div className="text-center p-2 rounded-lg bg-glass/20 border border-white/5">
+                        <div className="flex items-center justify-center gap-1 mb-1">
+                          <Layers className="w-3 h-3 text-cyber-pink" />
+                        </div>
+                        <div className="text-lg font-semibold text-foreground">{widgetCounts[canvas.id] || 0}</div>
+                        <div className="text-xs text-foreground/60">Widgets</div>
+                      </div>
 
-                  <div className="text-center p-2 rounded-lg bg-glass/20 border border-white/5">
-                    <div className="flex items-center justify-center gap-1 mb-1">
-                      <Users className="w-3 h-3 text-purple-400" />
-                    </div>
-                    <div className="text-xs font-semibold text-foreground">
-                      {canvas.is_public ? 'Public' : 'Private'}
-                    </div>
-                    <div className="text-xs text-foreground/60">Access</div>
-                  </div>
-                </div>
+                      <div className="text-center p-2 rounded-lg bg-glass/20 border border-white/5">
+                        <div className="flex items-center justify-center gap-1 mb-1">
+                          <Calendar className="w-3 h-3 text-cyber-cyan" />
+                        </div>
+                        <div className="text-xs font-semibold text-foreground">
+                          {new Date(canvas.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                        </div>
+                        <div className="text-xs text-foreground/60">Created</div>
+                      </div>
 
-                {/* Overlay URL */}
-                <div className="space-y-2 mb-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-foreground">Overlay URL</span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => toggleUrlVisibility(canvas.id)}
-                      className="h-6 w-6 p-0 hover:bg-glass/30"
-                    >
-                      {visibleUrls.has(canvas.id) ? (
-                        <EyeOff className="w-3 h-3" />
-                      ) : (
-                        <Eye className="w-3 h-3" />
-                      )}
-                    </Button>
-                  </div>
+                      <div className="text-center p-2 rounded-lg bg-glass/20 border border-white/5">
+                        <div className="flex items-center justify-center gap-1 mb-1">
+                          <UserCircle className="w-3 h-3 text-purple-400" />
+                        </div>
+                        <div className="text-xs font-semibold text-foreground">
+                          {canvas.is_public ? 'Public' : 'Private'}
+                        </div>
+                        <div className="text-xs text-foreground/60">Access</div>
+                      </div>
+                    </div>
 
-                  {visibleUrls.has(canvas.id) && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, height: 0 }}
-                      className="space-y-2"
-                    >
-                      <div className="flex gap-1">
-                        <Input
-                          value={`${window.location.origin}/overlay/canvas/${canvas.id}`}
-                          readOnly
-                          className="text-xs font-mono bg-glass/20 border-white/10 text-foreground/80"
-                        />
+                    {/* Overlay URL */}
+                    <div className="space-y-2 mb-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium text-foreground">Overlay URL</span>
                         <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => copyOverlayUrl(canvas.id)}
-                          className="px-2 bg-glass/30 border-white/10 hover:bg-glass/50"
+                          variant="ghost"
+                          size="default"
+                          onClick={() => toggleUrlVisibility(canvas.id)}
+                          className="h-8 w-8 p-0 hover:bg-glass/30"
                         >
-                          <Copy className="w-3 h-3" />
+                          {visibleUrls.has(canvas.id) ? (
+                            <EyeOff className="w-4 h-4" />
+                          ) : (
+                            <Eye className="w-4 h-4" />
+                          )}
                         </Button>
                       </div>
+
+                      {visibleUrls.has(canvas.id) && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="space-y-2"
+                        >
+                          <div className="flex gap-2">
+                            <Input
+                              value={`${window.location.origin}/overlay/canvas/${canvas.id}`}
+                              readOnly
+                              className="text-xs font-mono bg-glass/20 border-white/10 text-foreground/80"
+                            />
+                            <Button
+                              variant="secondary"
+                              size="default"
+                              icon={<Copy className="w-4 h-4" />}
+                              onClick={() => copyOverlayUrl(canvas.id)}
+                              className="px-3"
+                            >
+                            </Button>
+                          </div>
+                          <Button
+                            variant="secondary"
+                            size="default"
+                            icon={<ExternalLink className="w-4 h-4" />}
+                            onClick={() => openOverlay(canvas.id)}
+                            className="w-full"
+                          >
+                            Open Overlay in New Window
+                          </Button>
+                        </motion.div>
+                      )}
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex gap-2">
+                      <Button asChild variant="secondary" size="default" className="flex-1">
+                        <Link href={`/dashboard/canvas/${canvas.id}`} className="gap-2">
+                          <ExternalLink className="w-4 h-4" />
+                          Interact
+                        </Link>
+                      </Button>
+
+                      <Button asChild variant="secondary" size="default" className="px-3">
+                        <Link href={`/dashboard/canvas/${canvas.id}/settings`}>
+                          <Settings className="w-4 h-4" />
+                        </Link>
+                      </Button>
+
                       <Button
                         variant="outline"
-                        size="sm"
-                        onClick={() => openOverlay(canvas.id)}
-                        className="w-full bg-glass/30 border-white/10 hover:bg-glass/50 text-xs"
+                        size="default"
+                        icon={<X className="w-4 h-4" />}
+                        onClick={() => deleteCanvas(canvas.id)}
+                        className="text-red-400 hover:text-red-300 hover:bg-red-500/10 border-red-500/30 px-3"
                       >
-                        <ExternalLink className="w-3 h-3 mr-1" />
-                        Open Overlay in New Window
                       </Button>
-                    </motion.div>
-                  )}
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex gap-2">
-                  <Button asChild variant="outline" size="sm" className="flex-1 bg-glass/30 border-white/10 hover:bg-glass/50">
-                    <Link href={`/dashboard/canvas/${canvas.id}`}>
-                      <ExternalLink className="w-3 h-3 mr-1" />
-                      Interact
-                    </Link>
-                  </Button>
-
-                  <Button asChild variant="outline" size="sm" className="bg-glass/30 border-white/10 hover:bg-glass/50">
-                    <Link href={`/dashboard/canvas/${canvas.id}/settings`}>
-                      <Settings className="w-3 h-3" />
-                    </Link>
-                  </Button>
-
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => deleteCanvas(canvas.id)}
-                    disabled={isDeleting === canvas.id}
-                    className="text-red-400 hover:text-red-300 hover:bg-red-500/10 bg-glass/30 border-white/10"
-                  >
-                    {isDeleting === canvas.id ? (
-                      <div className="w-3 h-3 animate-spin rounded-full border border-current border-t-transparent" />
-                    ) : (
-                      <Trash2 className="w-3 h-3" />
-                    )}
-                  </Button>
-                </div>
+                    </div>
+                  </CardContent>
+                </Card>
               </motion.div>
             ))}
           </div>

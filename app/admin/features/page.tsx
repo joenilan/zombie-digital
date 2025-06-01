@@ -124,7 +124,7 @@ export default function FeaturesPage() {
     }
 
     return (
-        <div className="min-h-screen">
+        <div>
             <div className="container mx-auto px-4 py-8">
                 {/* Page Header */}
                 <motion.div
@@ -134,13 +134,12 @@ export default function FeaturesPage() {
                 >
                     <div className="flex items-center justify-between">
                         <div>
-                            <h1 className="text-4xl font-bold text-white mb-2">Feature Management</h1>
+                            <h1 className="text-4xl font-bold text-foreground mb-2">Feature Management</h1>
                             <p className="text-gray-300">Control which features are available to users across the platform.</p>
                         </div>
                         <Dialog open={showNewFeatureDialog} onOpenChange={setShowNewFeatureDialog}>
                             <DialogTrigger asChild>
-                                <Button className="gap-2">
-                                    <Plus className="w-4 h-4" />
+                                <Button icon={<Plus className="w-4 h-4" />}>
                                     New Feature
                                 </Button>
                             </DialogTrigger>
@@ -271,16 +270,16 @@ export default function FeaturesPage() {
                                                         description: editingFeature.description,
                                                         enabled: editingFeature.enabled
                                                     })}
+                                                    icon={<Check className="w-3 h-3" />}
                                                 >
-                                                    <Check className="w-3 h-3 mr-1" />
                                                     Save
                                                 </Button>
                                                 <Button
                                                     variant="outline"
                                                     size="sm"
                                                     onClick={() => setEditingFeature(null)}
+                                                    icon={<X className="w-3 h-3" />}
                                                 >
-                                                    <X className="w-3 h-3" />
                                                 </Button>
                                             </>
                                         ) : (
@@ -289,8 +288,8 @@ export default function FeaturesPage() {
                                                 size="sm"
                                                 className="flex-1"
                                                 onClick={() => setEditingFeature(feature)}
+                                                icon={<Edit className="w-3 h-3" />}
                                             >
-                                                <Edit className="w-3 h-3 mr-1" />
                                                 Edit
                                             </Button>
                                         )}
@@ -324,8 +323,7 @@ export default function FeaturesPage() {
                             <p className="text-muted-foreground mb-6">
                                 Create your first feature flag to start controlling platform functionality.
                             </p>
-                            <Button onClick={() => setShowNewFeatureDialog(true)}>
-                                <Plus className="w-4 h-4 mr-2" />
+                            <Button onClick={() => setShowNewFeatureDialog(true)} icon={<Plus className="w-4 h-4" />}>
                                 Create Feature
                             </Button>
                         </div>

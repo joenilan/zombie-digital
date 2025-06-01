@@ -2,141 +2,177 @@
 
 import TwitchLoginButton from "@/components/TwitchLoginButton";
 import Link from "next/link";
-import PageTransitionLayout from "@/components/PageTransitionLayout";
-import { Footer } from "@/components/Footer";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { motion } from "framer-motion";
-import { ArrowRight } from "lucide-react";
-import { Settings, Shield, BarChart3 } from "lucide-react";
-
-function FeatureCard({ title, description, icon, delay = 0 }: {
-  title: string;
-  description: string;
-  icon: React.ReactNode;
-  delay?: number;
-}) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay, duration: 0.5 }}
-      className="group p-4 rounded-xl bg-glass/30 backdrop-blur-xl border border-white/10 
-                 hover:bg-glass/50 hover:border-white/20 transition-all duration-300 
-                 hover:shadow-[0_8px_32px_rgba(145,70,255,0.15)]"
-    >
-      <div className="flex items-center gap-3 mb-2">
-        <div className="p-2 rounded-lg bg-gradient-to-br from-cyber-pink/20 to-purple-500/20 
-                        group-hover:from-cyber-pink/30 group-hover:to-purple-500/30 transition-all duration-300">
-          {icon}
-        </div>
-        <h3 className="font-semibold text-foreground group-hover:text-white transition-colors duration-300">
-          {title}
-        </h3>
-      </div>
-      <p className="text-sm text-foreground/70 group-hover:text-foreground/90 transition-colors duration-300 leading-relaxed">
-        {description}
-      </p>
-    </motion.div>
-  );
-}
+import { ArrowRight, Settings, Shield, BarChart3, Zap, Users, TrendingUp } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { StatsCard, CyberCard } from "@/components/animations/AnimatedCard";
+import {
+  staggerContainer,
+  staggerItem,
+  fadeInUp,
+  scaleIn,
+  slideInLeft,
+  slideInRight,
+  textGlowWithFade,
+} from "@/lib/animations";
 
 export default function HomePage() {
   const { user, isLoading, isInitialized } = useAuthStore();
 
   if (!isInitialized || isLoading) {
     return (
-      <PageTransitionLayout>
-        <div className="fixed inset-0 flex items-center justify-center">
-          <LoadingSpinner />
-        </div>
-      </PageTransitionLayout>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="w-full h-full flex items-center justify-center"
+      >
+        <LoadingSpinner />
+      </motion.div>
     );
   }
 
   return (
-    <PageTransitionLayout>
-      <div className="homepage-container fixed inset-0 flex flex-col overflow-hidden">
-        {/* Navigation spacer */}
-        <div className="h-14 flex-shrink-0" />
-
-        {/* Main content */}
-        <div className="flex-1 flex items-center justify-center px-4 overflow-hidden">
-          <div className="w-full max-w-4xl mx-auto text-center space-y-6">
-            {/* Hero Section */}
-            <motion.div
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8 }}
-              className="space-y-3"
+    <motion.div
+      key="homepage"
+      variants={staggerContainer}
+      initial="initial"
+      animate="enter"
+      className="w-full h-full flex items-center justify-center px-4 relative z-10"
+    >
+      <motion.div
+        key="homepage-content"
+        variants={staggerContainer}
+        initial="initial"
+        animate="enter"
+        className="w-full max-w-5xl mx-auto text-center space-y-6"
+      >
+        {/* Hero Section */}
+        <motion.div variants={staggerItem} className="space-y-3">
+          <motion.h1
+            variants={fadeInUp}
+            className="text-3xl md:text-5xl lg:text-6xl font-heading font-bold leading-none"
+          >
+            <motion.span
+              className="gradient-brand inline-block"
+              variants={textGlowWithFade}
             >
-              <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold leading-none">
-                <span className="gradient-brand">Zombie</span>
-                <span className="text-foreground/80">.Digital</span>
-              </h1>
-              <p className="text-lg md:text-xl lg:text-2xl text-foreground/90 font-medium">
-                Twitch Management Platform
-              </p>
-            </motion.div>
+              Zombie
+            </motion.span>
+            <span className="text-foreground">.Digital</span>
+          </motion.h1>
 
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="text-sm md:text-base text-foreground/80 max-w-2xl mx-auto leading-relaxed"
-            >
-              Take control of your Twitch presence with professional management tools, analytics, and automation.
-            </motion.p>
+          <motion.p
+            variants={fadeInUp}
+            className="text-lg md:text-xl text-foreground font-body font-medium"
+          >
+            Your Digital Presence, <span className="text-cyber-cyan">Simplified</span>
+          </motion.p>
 
-            {/* CTA Button */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.4 }}
-              className="flex justify-center"
-            >
-              {user ? (
-                <Link href="/dashboard" className="ethereal-button inline-flex items-center gap-2 text-sm md:text-base px-6 py-3">
+          <motion.p
+            variants={fadeInUp}
+            className="text-sm md:text-base text-foreground/80 max-w-xl mx-auto leading-relaxed"
+          >
+            Take control of your Twitch presence with professional management tools and real-time analytics.
+          </motion.p>
+        </motion.div>
+
+        {/* CTA Section */}
+        <motion.div variants={staggerItem} className="flex justify-center py-2">
+          {user ? (
+            <motion.div variants={scaleIn}>
+              <Button asChild variant="ethereal" icon={<ArrowRight className="w-4 h-4" />}>
+                <Link href="/dashboard">
                   Go to Dashboard
-                  <ArrowRight className="w-4 h-4" />
                 </Link>
-              ) : (
-                <TwitchLoginButton />
-              )}
+              </Button>
             </motion.div>
-
-            {/* Feature Cards */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.6 }}
-              className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto"
-            >
-              <FeatureCard
-                icon={<Settings className="w-4 h-4" />}
-                title="Stream Management"
-                description="Control your stream settings, chat, and channel points"
-                delay={0.1}
-              />
-              <FeatureCard
-                icon={<Shield className="w-4 h-4" />}
-                title="Moderation Tools"
-                description="Powerful tools to keep your chat clean and engaging"
-                delay={0.2}
-              />
-              <FeatureCard
-                icon={<BarChart3 className="w-4 h-4" />}
-                title="Analytics"
-                description="Track your growth and understand your audience"
-                delay={0.3}
-              />
+          ) : (
+            <motion.div variants={scaleIn}>
+              <TwitchLoginButton />
             </motion.div>
-          </div>
-        </div>
+          )}
+        </motion.div>
 
-        {/* Footer */}
-        <Footer />
-      </div>
-    </PageTransitionLayout>
+        {/* Stats Section */}
+        <motion.div
+          variants={staggerItem}
+          className="grid grid-cols-3 gap-3 max-w-2xl mx-auto"
+        >
+          <motion.div variants={slideInLeft}>
+            <StatsCard className="text-center py-3">
+              <div className="flex items-center justify-center w-8 h-8 mx-auto mb-2 rounded-full bg-gradient-to-r from-cyber-pink/20 to-purple-500/20">
+                <Users className="w-4 h-4 text-cyber-pink" />
+              </div>
+              <h3 className="text-lg font-bold text-foreground mb-1">500+</h3>
+              <p className="text-xs text-foreground/70">Active Users</p>
+            </StatsCard>
+          </motion.div>
+
+          <motion.div variants={fadeInUp}>
+            <StatsCard className="text-center py-3">
+              <div className="flex items-center justify-center w-8 h-8 mx-auto mb-2 rounded-full bg-gradient-to-r from-cyber-cyan/20 to-blue-500/20">
+                <TrendingUp className="w-4 h-4 text-cyber-cyan" />
+              </div>
+              <h3 className="text-lg font-bold text-foreground mb-1">99.5%</h3>
+              <p className="text-xs text-foreground/70">Uptime</p>
+            </StatsCard>
+          </motion.div>
+
+          <motion.div variants={slideInRight}>
+            <StatsCard className="text-center py-3">
+              <div className="flex items-center justify-center w-8 h-8 mx-auto mb-2 rounded-full bg-gradient-to-r from-green-500/20 to-emerald-500/20">
+                <Zap className="w-4 h-4 text-green-400" />
+              </div>
+              <h3 className="text-lg font-bold text-foreground mb-1">&lt;200ms</h3>
+              <p className="text-xs text-foreground/70">Response</p>
+            </StatsCard>
+          </motion.div>
+        </motion.div>
+
+        {/* Feature Cards */}
+        <motion.div
+          variants={staggerItem}
+          className="grid grid-cols-1 md:grid-cols-3 gap-3 max-w-4xl mx-auto"
+        >
+          <motion.div variants={slideInLeft}>
+            <CyberCard className="p-4 h-full">
+              <div className="flex items-center justify-center w-10 h-10 mx-auto mb-3 rounded-xl bg-gradient-to-r from-blue-500/20 to-cyan-500/20">
+                <Settings className="w-5 h-5 text-blue-400" />
+              </div>
+              <h3 className="text-base font-semibold text-foreground mb-2">Stream Management</h3>
+              <p className="text-xs text-foreground/70 leading-relaxed">
+                Complete control over your stream settings and channel customization.
+              </p>
+            </CyberCard>
+          </motion.div>
+
+          <motion.div variants={fadeInUp}>
+            <CyberCard className="p-4 h-full">
+              <div className="flex items-center justify-center w-10 h-10 mx-auto mb-3 rounded-xl bg-gradient-to-r from-red-500/20 to-pink-500/20">
+                <Shield className="w-5 h-5 text-red-400" />
+              </div>
+              <h3 className="text-base font-semibold text-foreground mb-2">Social Link Management</h3>
+              <p className="text-xs text-foreground/70 leading-relaxed">
+                Centralized hub for all your social media links and online presence.
+              </p>
+            </CyberCard>
+          </motion.div>
+
+          <motion.div variants={slideInRight}>
+            <CyberCard className="p-4 h-full">
+              <div className="flex items-center justify-center w-10 h-10 mx-auto mb-3 rounded-xl bg-gradient-to-r from-purple-500/20 to-indigo-500/20">
+                <BarChart3 className="w-5 h-5 text-purple-400" />
+              </div>
+              <h3 className="text-base font-semibold text-foreground mb-2">Analytics & Insights</h3>
+              <p className="text-xs text-foreground/70 leading-relaxed">
+                Real-time analytics and detailed insights into your channel performance.
+              </p>
+            </CyberCard>
+          </motion.div>
+        </motion.div>
+      </motion.div>
+    </motion.div>
   );
 }

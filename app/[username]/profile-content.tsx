@@ -6,7 +6,7 @@ import { RealtimeLinks } from './realtime-links'
 import { BackgroundUpload } from '@/components/background-upload'
 import { RealtimeBackground } from './realtime-background'
 import { ShareButton } from './share-button'
-import { ViewTracker } from './view-tracker'
+import { UmamiTracker } from '@/components/umami-tracker'
 
 interface Profile {
     user_id: string
@@ -42,7 +42,7 @@ export function ProfileContent({ profile, initialLinks, isTransparent, isOwner }
     return (
         <>
             {/* Track page view */}
-            <ViewTracker userId={profile.user_id} isOwner={isOwner} />
+            <UmamiTracker userId={profile.user_id} isOwner={isOwner} />
 
             {/* Main Content Card */}
             <div className="max-w-2xl mx-auto relative">

@@ -6,13 +6,14 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuthStore } from "@/stores/useAuthStore";
+import { ChevronDown, LayoutDashboard, Shield, LogOut, User } from "lucide-react";
 import type { TwitchUser } from '@/types/auth'
 
 const menuVariants = {
   hidden: {
     opacity: 0,
     scale: 0.95,
-    y: -20
+    y: -10
   },
   visible: {
     opacity: 1,
@@ -20,18 +21,24 @@ const menuVariants = {
     y: 0,
     transition: {
       type: "spring",
-      stiffness: 300,
-      damping: 20
+      stiffness: 400,
+      damping: 25,
+      duration: 0.2
     }
   },
   exit: {
     opacity: 0,
     scale: 0.95,
-    y: -20,
+    y: -10,
     transition: {
-      duration: 0.2
+      duration: 0.15
     }
   }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, x: -10 },
+  visible: { opacity: 1, x: 0 }
 };
 
 export default function UserMenu({ user }: { user: TwitchUser }) {
@@ -60,80 +67,140 @@ export default function UserMenu({ user }: { user: TwitchUser }) {
 
   return (
     <div className="relative">
-      <button
+      <motion.button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 hover:opacity-80 transition-opacity p-1 rounded-lg hover:bg-white/5"
+        className="relative p-1 rounded-full bg-glass/30 backdrop-blur-xl border border-white/10 
+                   hover:bg-glass/50 hover:border-white/20 transition-all duration-300 
+                   hover:shadow-glass group"
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
       >
-        <div className="relative w-8 h-8">
+        <div className="relative">
+          <div className="absolute inset-0 rounded-full bg-gradient-to-r from-cyber-pink/20 to-cyber-cyan/20 blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
           <Image
             src={user.profile_image_url}
             alt={user.display_name}
-            width={32}
-            height={32}
-            className="rounded-full"
+            width={36}
+            height={36}
+            className="rounded-full relative z-10 border-2 border-white/10 group-hover:border-cyber-pink/50 transition-colors duration-300"
             onError={(e) => {
               e.currentTarget.src = `https://ui-avatars.com/api/?name=${user.display_name}&background=random`;
             }}
           />
-          <div className="absolute inset-0 rounded-full ring-2 ring-purple-500/20" />
         </div>
-        <span className="hidden md:inline-block text-sm">{user.display_name}</span>
-        <motion.svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          animate={{ rotate: isOpen ? 180 : 0 }}
-          transition={{ duration: 0.2 }}
-          className="hidden md:block opacity-60"
-        >
-          <path d="m6 9 6 6 6-6" />
-        </motion.svg>
-      </button>
+      </motion.button>
 
       <AnimatePresence>
         {isOpen && (
-          <motion.div
-            variants={menuVariants}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
-            className="absolute right-0 mt-2 w-48 py-2 bg-glass-dark backdrop-blur-xl border border-white/10 rounded-lg shadow-lg"
-          >
-            {isAdmin && (
-              <>
-                <Link
-                  href="/admin"
-                  className="block px-4 py-2 text-sm hover:bg-white/5 transition-colors"
-                  onClick={() => setIsOpen(false)}
-                >
-                  Admin
-                </Link>
-                <div className="my-2 border-t border-white/10" />
-              </>
-            )}
-
-            <Link
-              href="/dashboard"
-              className="block px-4 py-2 text-sm hover:bg-white/5 transition-colors"
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-40"
               onClick={() => setIsOpen(false)}
-            >
-              Dashboard
-            </Link>
+            />
 
-            <button
-              onClick={handleSignOut}
-              disabled={isSigningOut}
-              className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-white/5 transition-colors disabled:opacity-50"
+            {/* Menu */}
+            <motion.div
+              variants={menuVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+              className="absolute right-0 mt-3 w-64 z-50 bg-cyber-darker/95 backdrop-blur-xl border border-white/20 
+                         rounded-xl shadow-cyber overflow-hidden"
             >
-              {isSigningOut ? 'Signing out...' : 'Sign Out'}
-            </button>
-          </motion.div>
+              {/* User Info Header */}
+              <div className="p-4 border-b border-white/10 bg-gradient-to-r from-cyber-pink/5 to-cyber-cyan/5">
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    <Image
+                      src={user.profile_image_url}
+                      alt={user.display_name}
+                      width={40}
+                      height={40}
+                      className="rounded-full border-2 border-white/20"
+                      onError={(e) => {
+                        e.currentTarget.src = `https://ui-avatars.com/api/?name=${user.display_name}&background=random`;
+                      }}
+                    />
+                    <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-background"></div>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">{user.display_name}</p>
+                    <p className="text-xs text-muted-foreground truncate">@{user.username}</p>
+                    {user.site_role !== 'user' && (
+                      <div className="mt-1">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
+                          ${user.site_role === 'owner' ? 'bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-400 border border-amber-500/30' :
+                            user.site_role === 'admin' ? 'bg-gradient-to-r from-red-500/20 to-pink-500/20 text-red-400 border border-red-500/30' :
+                              'bg-gradient-to-r from-blue-500/20 to-cyan-500/20 text-blue-400 border border-blue-500/30'}`}>
+                          {user.site_role}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Menu Items */}
+              <div className="py-2">
+                {isAdmin && (
+                  <motion.div variants={itemVariants}>
+                    <Link
+                      href="/admin"
+                      className="flex items-center gap-3 px-4 py-3 text-sm text-foreground hover:bg-gradient-to-r 
+                                 hover:from-cyber-pink/10 hover:to-cyber-cyan/10 transition-all duration-200 group"
+                      onClick={() => setIsOpen(false)}
+                    >
+                      <div className="p-1.5 rounded-lg bg-gradient-to-r from-red-500/20 to-pink-500/20 text-red-400 
+                                      group-hover:from-red-500/30 group-hover:to-pink-500/30 transition-all duration-200">
+                        <Shield className="w-4 h-4" />
+                      </div>
+                      <span className="font-medium">Admin Dashboard</span>
+                    </Link>
+                  </motion.div>
+                )}
+
+                <motion.div variants={itemVariants}>
+                  <Link
+                    href="/dashboard"
+                    className="flex items-center gap-3 px-4 py-3 text-sm text-foreground hover:bg-gradient-to-r 
+                               hover:from-cyber-pink/10 hover:to-cyber-cyan/10 transition-all duration-200 group"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    <div className="p-1.5 rounded-lg bg-gradient-to-r from-blue-500/20 to-cyan-500/20 text-blue-400 
+                                    group-hover:from-blue-500/30 group-hover:to-cyan-500/30 transition-all duration-200">
+                      <LayoutDashboard className="w-4 h-4" />
+                    </div>
+                    <span className="font-medium">Dashboard</span>
+                  </Link>
+                </motion.div>
+
+                {/* Separator */}
+                <div className="my-2 mx-4 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent"></div>
+
+                <motion.div variants={itemVariants}>
+                  <button
+                    onClick={handleSignOut}
+                    disabled={isSigningOut}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-400 hover:bg-gradient-to-r 
+                               hover:from-red-500/10 hover:to-pink-500/10 transition-all duration-200 group
+                               disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <div className="p-1.5 rounded-lg bg-gradient-to-r from-red-500/20 to-pink-500/20 text-red-400 
+                                    group-hover:from-red-500/30 group-hover:to-pink-500/30 transition-all duration-200">
+                      <LogOut className="w-4 h-4" />
+                    </div>
+                    <span className="font-medium">
+                      {isSigningOut ? 'Signing out...' : 'Sign Out'}
+                    </span>
+                  </button>
+                </motion.div>
+              </div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
     </div>

@@ -9,6 +9,7 @@ import { Loader2 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useQuery } from '@tanstack/react-query'
 import { SkeletonForm } from '@/components/ui/skeleton'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 
 export default function CanvasSettingsPage() {
   const params = useParams()
@@ -79,12 +80,16 @@ export default function CanvasSettingsPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen">
+      <div>
         <div className="container mx-auto px-4 py-8">
-          <div className="rounded-xl bg-glass/50 backdrop-blur-xl p-8 border border-white/5">
-            <h1 className="text-2xl font-bold text-red-500 mb-2">Error</h1>
-            <p className="text-muted-foreground">{error}</p>
-          </div>
+          <Card variant="error">
+            <CardHeader>
+              <CardTitle className="text-red-400">Error</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-foreground/70">{error}</p>
+            </CardContent>
+          </Card>
         </div>
       </div>
     )
@@ -92,48 +97,49 @@ export default function CanvasSettingsPage() {
 
   if (!canvasSettings) {
     return (
-      <div className="min-h-screen">
+      <div>
         <div className="container mx-auto px-4 py-8">
-          <div className="rounded-xl bg-glass/50 backdrop-blur-xl p-8 border border-white/5">
-            <h1 className="text-2xl font-bold mb-2">No Canvas Found</h1>
-            <p className="text-muted-foreground">This canvas does not exist.</p>
-          </div>
+          <Card variant="glass">
+            <CardHeader>
+              <CardTitle>No Canvas Found</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-foreground/70">This canvas does not exist.</p>
+            </CardContent>
+          </Card>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen">
+    <div>
       <div className="container mx-auto px-4 py-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
-          <h1 className="text-4xl font-bold text-white mb-2">Canvas Settings</h1>
+          <h1 className="text-4xl font-bold text-foreground mb-2">Canvas Settings</h1>
           <p className="text-gray-300">Customize your canvas appearance and behavior.</p>
         </motion.div>
 
         <div className="space-y-8">
-          <motion.div
-            className="rounded-xl bg-glass/50 backdrop-blur-xl p-8 border border-white/5"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            <div className="mb-8">
-              <h2 className="text-2xl font-semibold mb-2">Configure Canvas</h2>
-              <p className="text-muted-foreground">
-                Adjust settings and customize your stream overlay.
-              </p>
-            </div>
-
-            <CanvasSettingsForm
-              canvasId={canvasId}
-              initialData={canvasSettings}
-            />
-          </motion.div>
+          {/* Canvas Settings */}
+          <Card variant="glass">
+            <CardHeader>
+              <CardTitle>Canvas Settings</CardTitle>
+              <CardDescription>
+                Configure your canvas properties and visibility settings
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <CanvasSettingsForm
+                canvasId={canvasId}
+                initialData={canvasSettings}
+              />
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

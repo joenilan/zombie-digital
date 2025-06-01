@@ -27,10 +27,10 @@ export function Navigation() {
             <div className="flex items-center gap-6 pointer-events-auto">
               <Link
                 href="/"
-                className="text-lg font-bold"
+                className="text-lg font-heading font-bold"
               >
                 <span className="gradient-brand">Zombie</span>
-                <span className="text-foreground/80">.Digital</span>
+                <span className="text-foreground/90">.Digital</span>
               </Link>
 
               <DesktopNav user={user} pathname={pathname} />

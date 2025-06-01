@@ -5,13 +5,22 @@ import { Toaster } from 'sonner'
 import { cn } from "@/lib/utils"
 import { LayoutWrapper } from './layout-wrapper'
 import "./globals.css"
-import { Sofia_Sans } from 'next/font/google'
+import { Sofia_Sans, Sofia_Sans_Condensed } from 'next/font/google'
 
 const sofia = Sofia_Sans({
   subsets: ['latin'],
   display: 'swap',
-  weight: ['400', '500', '600', '700'],
+  weight: ['300', '400', '500', '600'],
   variable: '--font-sofia-sans',
+  fallback: ['system-ui', 'sans-serif'],
+  preload: true,
+});
+
+const sofiaCondensed = Sofia_Sans_Condensed({
+  subsets: ['latin'],
+  display: 'swap',
+  weight: ['400', '500', '600', '700', '800'],
+  variable: '--font-sofia-condensed',
   fallback: ['system-ui', 'sans-serif'],
   preload: true,
 });
@@ -27,15 +36,35 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" suppressHydrationWarning className={sofia.variable}>
+    <html lang="en" suppressHydrationWarning className={cn(sofia.variable, sofiaCondensed.variable)}>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              try {
+                if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                  document.documentElement.classList.add('dark')
+                } else {
+                  document.documentElement.classList.remove('dark')
+                }
+              } catch (_) {}
+            `,
+          }}
+        />
+      </head>
       <body className={cn(
         "min-h-screen antialiased transition-colors duration-300 ease-in-out",
         sofia.className
       )}>
         <QueryProvider>
-          <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="dark"
+            enableSystem
+            disableTransitionOnChange
+          >
             <LayoutWrapper>
-              <main className="min-h-screen transition-all duration-300 ease-in-out">
+              <main>
                 {children}
               </main>
             </LayoutWrapper>
