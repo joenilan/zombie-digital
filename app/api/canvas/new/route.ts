@@ -1,16 +1,22 @@
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
+import { NextResponse } from "next/server";
 
-export async function GET() {
+export const dynamic = 'force-dynamic'
+
+export async function POST() {
   const supabase = createRouteHandlerClient({ cookies });
 
   try {
     const {
       data: { user },
     } = await supabase.auth.getUser();
+    
     if (!user) {
-      return redirect("/auth/signin");
+      return NextResponse.json(
+        { error: "Authentication required" },
+        { status: 401 }
+      );
     }
 
     // Get user's Twitch info
@@ -21,12 +27,18 @@ export async function GET() {
       .single();
 
     if (!twitchUser) {
-      throw new Error("Twitch user not found");
+      return NextResponse.json(
+        { error: "Twitch user not found" },
+        { status: 404 }
+      );
     }
 
     // Check if user has Canvas access (admin or owner only)
     if (!['admin', 'owner'].includes(twitchUser.site_role)) {
-      return redirect("/dashboard?error=canvas-access-denied");
+      return NextResponse.json(
+        { error: "Canvas access denied. Admin or owner role required." },
+        { status: 403 }
+      );
     }
 
     // Create a new canvas
@@ -56,10 +68,16 @@ export async function GET() {
 
     if (permissionError) throw permissionError;
 
-    // Redirect to the canvas settings page
-    return redirect(`/dashboard/canvas/${canvas.id}/settings?status=created`);
+    return NextResponse.json({
+      success: true,
+      canvas: canvas,
+      redirectUrl: `/dashboard/canvas/${canvas.id}/settings?status=created`
+    });
   } catch (error) {
     console.error("Error creating canvas:", error);
-    return redirect("/dashboard/canvas?status=failed-to-create");
+    return NextResponse.json(
+      { error: "Failed to create canvas" },
+      { status: 500 }
+    );
   }
 }

@@ -17,6 +17,7 @@ import { handleAuthError } from '@/utils/auth-error-handler'
 import { Card, CardContent, StatCard } from "@/components/ui/card"
 import { DashboardLayout } from "@/components/animations/AnimatedLayout";
 import { StatsCard } from "@/components/animations/AnimatedCard";
+import { AnimatedBreadcrumb } from "@/components/ui/breadcrumb";
 import {
   staggerContainer,
   staggerItem,
@@ -283,6 +284,11 @@ export default function DashboardPage() {
           animate="enter"
           className="space-y-8"
         >
+          {/* Breadcrumb */}
+          <motion.div variants={staggerItem}>
+            <AnimatedBreadcrumb variant="glass" />
+          </motion.div>
+
           {/* Header */}
           <motion.div variants={staggerItem} className="flex items-center justify-between">
             <div>

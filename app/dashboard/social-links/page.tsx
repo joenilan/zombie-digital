@@ -39,6 +39,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { format, subDays, startOfDay, formatDistanceToNow } from 'date-fns'
 import React from 'react'
 import { Users } from 'lucide-react'
+import { AnimatedBreadcrumb } from '@/components/ui/breadcrumb'
 
 import { RealtimeChannel } from '@supabase/supabase-js'
 import { useAuthStore } from '@/stores/useAuthStore'
@@ -353,6 +354,16 @@ export default function SocialLinksPage() {
   return (
     <div>
       <div className="container mx-auto px-4 py-8">
+        {/* Breadcrumb */}
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="mb-8"
+        >
+          <AnimatedBreadcrumb variant="glass" />
+        </motion.div>
+
         {/* Page header */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}

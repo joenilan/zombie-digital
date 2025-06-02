@@ -25,6 +25,7 @@ interface UserAnalyticsProps {
     username: string
     websiteId?: string
     initialDays?: number
+    isAdminView?: boolean
 }
 
 const DATE_RANGE_OPTIONS = [
@@ -34,7 +35,7 @@ const DATE_RANGE_OPTIONS = [
     { label: '90 days', value: 90 }
 ]
 
-export function UserAnalytics({ userId, username, websiteId, initialDays = 30 }: UserAnalyticsProps) {
+export function UserAnalytics({ userId, username, websiteId, initialDays = 30, isAdminView }: UserAnalyticsProps) {
     const [data, setData] = useState<UserAnalyticsData | null>(null)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
@@ -212,8 +213,15 @@ export function UserAnalytics({ userId, username, websiteId, initialDays = 30 }:
             {/* Header with Date Range Selector */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
-                    <h2 className="text-2xl font-semibold text-foreground">Profile Analytics</h2>
-                    <p className="text-sm text-muted-foreground">Track your profile performance over time</p>
+                    <h2 className="text-2xl font-semibold text-foreground">
+                        {isAdminView ? `Analytics for @${username}` : 'Profile Analytics'}
+                    </h2>
+                    <p className="text-sm text-muted-foreground">
+                        {isAdminView
+                            ? `Detailed analytics for ${username}'s profile performance`
+                            : 'Track your profile performance over time'
+                        }
+                    </p>
                 </div>
 
                 <div className="flex gap-2">
@@ -224,8 +232,8 @@ export function UserAnalytics({ userId, username, websiteId, initialDays = 30 }:
                             size="sm"
                             onClick={() => handleDateRangeChange(option.value)}
                             className={`transition-all duration-200 ${selectedDays === option.value
-                                    ? 'bg-cyber-pink hover:bg-cyber-pink/80 text-white'
-                                    : 'hover:bg-glass/40 hover:border-cyber-pink/50'
+                                ? 'bg-cyber-pink hover:bg-cyber-pink/80 text-white'
+                                : 'hover:bg-glass/40 hover:border-cyber-pink/50'
                                 }`}
                         >
                             {option.label}
@@ -379,7 +387,12 @@ export function UserAnalytics({ userId, username, websiteId, initialDays = 30 }:
                 <Card variant="glass">
                     <CardHeader>
                         <CardTitle>Recent Profile Views</CardTitle>
-                        <p className="text-sm text-muted-foreground">Latest 10 visits to your profile</p>
+                        <p className="text-sm text-muted-foreground">
+                            {isAdminView
+                                ? `Latest 10 visits to @${username}'s profile`
+                                : 'Latest 10 visits to your profile'
+                            }
+                        </p>
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-3">
@@ -407,7 +420,12 @@ export function UserAnalytics({ userId, username, websiteId, initialDays = 30 }:
                                 <div className="text-center py-6 text-sm text-muted-foreground">
                                     <Eye className="w-8 h-8 mx-auto mb-2 opacity-50" />
                                     <p>No recent views</p>
-                                    <p className="text-xs mt-1">Views will appear here as people visit your profile</p>
+                                    <p className="text-xs mt-1">
+                                        {isAdminView
+                                            ? `Views will appear here as people visit @${username}'s profile`
+                                            : 'Views will appear here as people visit your profile'
+                                        }
+                                    </p>
                                 </div>
                             )}
                         </div>

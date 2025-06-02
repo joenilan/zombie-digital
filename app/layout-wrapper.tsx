@@ -5,6 +5,8 @@ import { useEffect } from 'react'
 import { Navigation } from '@/components/navigation/Navigation'
 import { Footer } from '@/components/Footer'
 import { useAuthStore } from '@/stores/useAuthStore'
+import { ScrollIndicator } from '@/components/ui/back-to-top'
+import { KeyboardShortcuts } from '@/components/ui/keyboard-shortcuts'
 
 export function LayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
@@ -48,29 +50,22 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
     return children;
   }
 
-  // Homepage gets special centered layout - single page, non-scrollable
-  if (isHomepage) {
-    return (
-      <div className="h-screen flex flex-col overflow-hidden">
-        <Navigation />
-        <main className="flex-1 flex items-center justify-center overflow-hidden">
-          {children}
-        </main>
-        <Footer />
-      </div>
-    )
-  }
-
-  // All other pages get normal scrolling layout with FIXED footer
+  // All pages get normal scrolling layout with fixed footer
   return (
-    <div className="relative">
+    <div className="min-h-screen flex flex-col">
       <Navigation />
-      <main className="pb-16">
+      <main id="main-content" className="relative z-10 flex-1">
         {children}
       </main>
-      <div className="fixed bottom-0 left-0 right-0 z-10">
-        <Footer />
-      </div>
+      <Footer />
+
+      {/* Add scroll indicator and back to top for all pages except overlay/canvas */}
+      <ScrollIndicator
+        threshold={400}
+        showProgress={true}
+        variant="cyber"
+      />
+      <KeyboardShortcuts />
     </div>
   )
 } 
