@@ -21,6 +21,7 @@ interface TwitchUser {
   background_media_url: string | null
   background_media_type: string | null
   created_at?: string
+  custom_bio?: string
   [key: string]: any
 }
 
@@ -30,7 +31,7 @@ interface SocialLinksState {
   links: SocialLink[]
   profileViews: number
   isLoading: boolean
-  activeTab: 'links' | 'appearance' | 'analytics'
+  activeTab: 'links' | 'analytics' | 'settings'
   showAddLinkDialog: boolean
 
   // Actions
@@ -38,7 +39,7 @@ interface SocialLinksState {
   setLinks: (links: SocialLink[]) => void
   setProfileViews: (views: number) => void
   setIsLoading: (loading: boolean) => void
-  setActiveTab: (tab: 'links' | 'appearance' | 'analytics') => void
+  setActiveTab: (tab: 'links' | 'analytics' | 'settings') => void
   setShowAddLinkDialog: (show: boolean) => void
   updateBackground: (background: { url: string | null; type: string | null }) => void
   reset: () => void
