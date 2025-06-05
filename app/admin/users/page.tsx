@@ -58,7 +58,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useAdminUsersStore, type Role, type SortField, type SortDirection, type PageSize } from "@/stores/useAdminUsersStore";
-import { UserAnalytics } from "@/components/user-analytics";
+import dynamic from 'next/dynamic'
 
 interface TwitchUser {
   id: string;
@@ -78,6 +78,21 @@ interface UserStats {
   lastActivity: string;
   accountAge: number;
 }
+
+// Dynamic import for heavy analytics component
+const UserAnalyticsDynamic = dynamic(() => import('@/components/user-analytics').then(mod => ({ default: mod.UserAnalytics })), {
+  loading: () => (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="h-24 bg-glass/50 animate-pulse rounded-xl" />
+        ))}
+      </div>
+      <div className="h-64 bg-glass/50 animate-pulse rounded-xl" />
+    </div>
+  ),
+  ssr: false
+})
 
 // Individual user email visibility component
 function SensitiveInfo({ text, userId }: { text: string; userId: string }) {
@@ -138,7 +153,7 @@ function UserAnalyticsDialog({ user }: { user: TwitchUser }) {
         </DialogHeader>
 
         <div className="mt-6">
-          <UserAnalytics
+          <UserAnalyticsDynamic
             userId={user.twitch_id}
             username={user.username}
             websiteId="fffd9866-0f93-4330-b588-08313c1a1af9"

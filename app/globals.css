@@ -107,6 +107,7 @@
         font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1;
         text-rendering: optimizeLegibility;
         scroll-behavior: smooth;
+        padding-bottom: 260px !important;
     }
 
     /* Typography Hierarchy - Sofia Sans Condensed for headings */

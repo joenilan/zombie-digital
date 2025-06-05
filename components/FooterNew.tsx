@@ -22,8 +22,8 @@ export function Footer() {
         let userHasScrolled = false
 
         const handleScroll = () => {
-            // Mark that user has scrolled at least 30px
-            if (!userHasScrolled && window.scrollY > 30) {
+            // Mark that user has scrolled at least 100px
+            if (!userHasScrolled && window.scrollY > 100) {
                 userHasScrolled = true
             }
 
@@ -35,17 +35,11 @@ export function Footer() {
 
             const { scrollTop, scrollHeight, clientHeight } = document.documentElement
 
-            // Calculate how much scrollable content there is
-            const scrollableContent = scrollHeight - clientHeight
-
-            // Use a smaller threshold for pages with less content
-            const bottomThreshold = Math.min(50, scrollableContent * 0.8)
-
-            // Check if we're near the bottom
-            const nearBottom = scrollTop >= scrollableContent - bottomThreshold
+            // Check if we're near the bottom (within 150px)
+            const nearBottom = scrollTop + clientHeight >= scrollHeight - 150
 
             // Check if page has enough content to scroll
-            const hasScrollableContent = scrollableContent > 30
+            const hasScrollableContent = scrollHeight > clientHeight + 200
 
             // Expand only if both conditions are met
             setIsExpanded(nearBottom && hasScrollableContent)

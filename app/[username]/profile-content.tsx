@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { RealtimeLinks } from './realtime-links'
@@ -7,6 +8,7 @@ import { BackgroundUpload } from '@/components/background-upload'
 import { RealtimeBackground } from './realtime-background'
 import { ShareButton } from './share-button'
 import { UmamiTracker } from '@/components/umami-tracker'
+import { BioEditor } from '@/components/bio-editor'
 
 interface Profile {
     user_id: string
@@ -39,6 +41,12 @@ interface ProfileContentProps {
 }
 
 export function ProfileContent({ profile, initialLinks, isTransparent, isOwner }: ProfileContentProps) {
+    const [currentBio, setCurrentBio] = useState(profile.description || '')
+
+    const handleBioUpdate = (newBio: string) => {
+        setCurrentBio(newBio)
+    }
+
     return (
         <>
             {/* Track page view */}
@@ -89,22 +97,43 @@ export function ProfileContent({ profile, initialLinks, isTransparent, isOwner }
                                 )}
                             </div>
 
-                            {profile.description && (
-                                <p className="text-muted-foreground max-w-lg">
-                                    {profile.description}
-                                </p>
+                            {/* Bio Display */}
+                            {currentBio && (
+                                <div className="mb-6 w-full">
+                                    {isOwner && !isTransparent ? (
+                                        <BioEditor
+                                            userId={profile.user_id}
+                                            initialBio={currentBio}
+                                            onBioUpdate={handleBioUpdate}
+                                        />
+                                    ) : (
+                                        <p className="text-muted-foreground max-w-lg mx-auto font-body leading-relaxed whitespace-pre-wrap">
+                                            {currentBio}
+                                        </p>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* Add Bio prompt for owners when no bio exists */}
+                            {!currentBio && isOwner && !isTransparent && (
+                                <div className="mb-6 w-full">
+                                    <BioEditor
+                                        userId={profile.user_id}
+                                        initialBio=""
+                                        onBioUpdate={handleBioUpdate}
+                                    />
+                                </div>
                             )}
                         </div>
 
                         {/* Background Manager (only shown to profile owner) */}
                         {isOwner && !isTransparent && (
-                            <div className="border border-amber-500/20 rounded-lg p-4 bg-amber-500/5">
+                            <div className="border border-white/10 rounded-lg p-4 bg-glass/20 backdrop-blur-sm">
                                 <div className="flex items-center gap-2 mb-3">
-                                    <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
-                                    <span className="text-sm text-amber-400 font-medium">Owner View</span>
-                                    <span className="text-xs text-muted-foreground">Only you can see this</span>
+                                    <div className="w-1.5 h-1.5 bg-muted-foreground/60 rounded-full"></div>
+                                    <span className="text-xs text-muted-foreground/80 font-medium">Owner Only</span>
                                 </div>
-                                <h2 className="text-xl font-semibold mb-4">Profile Background</h2>
+                                <h2 className="text-sm font-medium mb-3 text-foreground/90">Background Settings</h2>
                                 <BackgroundUpload
                                     userId={profile.user_id}
                                     showPreview={false}

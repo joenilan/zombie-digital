@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import Image from 'next/image'
 
 interface RealtimeBackgroundProps {
   userId: string
@@ -59,10 +60,14 @@ export function RealtimeBackground({ userId, initialBackground }: RealtimeBackgr
           playsInline
         />
       ) : (
-        <img
+        <Image
           src={background.url}
           alt="Profile Background"
-          className="w-full h-full object-cover"
+          fill
+          className="object-cover"
+          priority={false}
+          quality={85}
+          sizes="100vw"
         />
       )}
     </div>

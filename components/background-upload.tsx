@@ -259,7 +259,7 @@ export function BackgroundUpload({ userId, onSuccess, showPreview }: BackgroundU
                                 alt="Current background"
                                 fill
                                 className="object-contain"
-                                sizes="400px"
+                                sizes="(max-width: 768px) 100vw, 400px"
                             />
                             <Button
                                 variant="destructive"

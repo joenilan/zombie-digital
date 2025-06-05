@@ -3,7 +3,7 @@
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { useEffect, useState } from 'react';
-import { AdminAnalytics } from '@/components/admin-analytics';
+import dynamicImport from 'next/dynamic';
 import { BarChart4, Users, Bell, Activity, Shield, Database, TrendingUp } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { StatsCard, CyberCard } from "@/components/animations/AnimatedCard";
@@ -16,6 +16,21 @@ import {
   scaleIn,
   pulseAnimation
 } from "@/lib/animations";
+
+// Dynamic import for heavy analytics component
+const AdminAnalytics = dynamicImport(() => import('@/components/admin-analytics').then(mod => ({ default: mod.AdminAnalytics })), {
+  loading: () => (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="h-24 bg-glass/50 animate-pulse rounded-xl" />
+        ))}
+      </div>
+      <div className="h-64 bg-glass/50 animate-pulse rounded-xl" />
+    </div>
+  ),
+  ssr: false
+})
 
 // Force dynamic rendering since we use cookies
 export const dynamic = 'force-dynamic';

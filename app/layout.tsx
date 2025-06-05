@@ -48,6 +48,11 @@ export default function RootLayout({
                   document.documentElement.classList.remove('dark')
                 }
               } catch (_) {}
+              
+              // Suppress React DevTools warning in production
+              if (typeof window !== 'undefined' && !window.location.hostname.includes('localhost')) {
+                window.__REACT_DEVTOOLS_GLOBAL_HOOK__ = { isDisabled: true };
+              }
             `,
           }}
         />

@@ -2,7 +2,7 @@
 
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { useEffect, useState } from 'react'
-import { FlowCanvasV2 } from '@/components/canvas/FlowCanvasV2'
+import dynamic from 'next/dynamic'
 import { useParams } from 'next/navigation'
 import { useAuthStore } from '@/stores/useAuthStore'
 
@@ -15,6 +15,19 @@ interface CanvasData {
   created_at: string
   updated_at: string
 }
+
+// Dynamic import for heavy canvas component
+const FlowCanvasV2 = dynamic(() => import('@/components/canvas/FlowCanvasV2').then(mod => ({ default: mod.FlowCanvasV2 })), {
+  loading: () => (
+    <div className="h-screen w-full bg-background flex items-center justify-center">
+      <div className="text-center">
+        <div className="w-8 h-8 border-2 border-cyber-pink/30 border-t-cyber-pink rounded-full animate-spin mx-auto mb-4" />
+        <p className="text-foreground/70">Loading Canvas...</p>
+      </div>
+    </div>
+  ),
+  ssr: false
+})
 
 export default function CanvasPage() {
   const params = useParams()

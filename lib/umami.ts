@@ -78,7 +78,7 @@ class UmamiAnalytics {
     if (!error && data) {
       this.sessionId = data.session_id
       if (this.sessionId) {
-        localStorage.setItem('umami_session_id', this.sessionId)
+      localStorage.setItem('umami_session_id', this.sessionId)
       }
     }
   }
