@@ -175,7 +175,26 @@ export const useAuthStore = create<AuthState>()(
       signOut: async () => {
         set({ isLoading: true }, false, 'signOut:start')
         try {
-          await supabase.auth.signOut()
+          // Force sign out with scope 'global' to clear all sessions
+          await supabase.auth.signOut({ scope: 'global' })
+          
+          // Clear any local storage items that might persist
+          if (typeof window !== 'undefined') {
+            // Clear Supabase auth tokens
+            Object.keys(localStorage).forEach(key => {
+              if (key.startsWith('sb-') || key.includes('supabase')) {
+                localStorage.removeItem(key)
+              }
+            })
+            
+            // Clear session storage too
+            Object.keys(sessionStorage).forEach(key => {
+              if (key.startsWith('sb-') || key.includes('supabase')) {
+                sessionStorage.removeItem(key)
+              }
+            })
+          }
+          
           set({ 
             session: null, 
             user: null, 
