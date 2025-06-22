@@ -96,7 +96,15 @@ export default function SocialLinksPage() {
   // FIXED: Use twitchUser (which has site_role) instead of authUser
   console.log('[DEBUG] Social Links Page - twitchUser:', twitchUser)
   console.log('[DEBUG] Social Links Page - authUser:', authUser)
-  const { hasFeatureAccess, isLoading: featuresLoading } = useFeatureAccess(twitchUser)
+  console.log('[DEBUG] Social Links Page - isLoading:', isLoading)
+  console.log('[DEBUG] Social Links Page - authLoading:', authLoading)
+  console.log('[DEBUG] Social Links Page - isInitialized:', isInitialized)
+
+  // Wait for auth to initialize and user data to load before checking feature access
+  const shouldCheckFeatureAccess = isInitialized && !authLoading && twitchUser
+  console.log('[DEBUG] shouldCheckFeatureAccess:', shouldCheckFeatureAccess)
+
+  const { hasFeatureAccess, isLoading: featuresLoading } = useFeatureAccess(shouldCheckFeatureAccess ? twitchUser : null)
 
   // Analytics state - remove mock data
   const [analyticsData, setAnalyticsData] = useState<any>(null)
@@ -369,10 +377,12 @@ export default function SocialLinksPage() {
   }
 
   // Feature access check - MOVED AFTER loading check so twitchUser is available
-  if (!featuresLoading && !hasFeatureAccess('SOCIALS')) {
+  // Only check feature access if we have a user and features are loaded
+  if (shouldCheckFeatureAccess && !featuresLoading && !hasFeatureAccess('SOCIALS')) {
     console.log('[DEBUG] Feature access denied. TwitchUser:', twitchUser)
     console.log('[DEBUG] Features loading:', featuresLoading)
     console.log('[DEBUG] Has SOCIALS access:', hasFeatureAccess('SOCIALS'))
+    console.log('[DEBUG] shouldCheckFeatureAccess:', shouldCheckFeatureAccess)
 
     return (
       <div className="bg-gradient-to-br from-background via-background/95 to-background/90 flex items-center justify-center py-16">
