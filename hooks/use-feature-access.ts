@@ -28,6 +28,7 @@ interface UseFeatureAccessReturn {
 }
 
 export function useFeatureAccess(user: TwitchUser | null): UseFeatureAccessReturn {
+  console.log('[FeatureAccess] Hook called with user:', user)
   const [features, setFeatures] = useState<Feature[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)

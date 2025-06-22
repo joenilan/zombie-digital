@@ -94,6 +94,8 @@ export default function SocialLinksPage() {
   } = useSocialLinksStore()
   const supabase = createClientComponentClient()
   // FIXED: Use twitchUser (which has site_role) instead of authUser
+  console.log('[DEBUG] Social Links Page - twitchUser:', twitchUser)
+  console.log('[DEBUG] Social Links Page - authUser:', authUser)
   const { hasFeatureAccess, isLoading: featuresLoading } = useFeatureAccess(twitchUser)
 
   // Analytics state - remove mock data
@@ -362,7 +364,11 @@ export default function SocialLinksPage() {
     )
   }
 
-  // Feature access check
+  if (isLoading || !twitchUser) {
+    return <LoadingSpinner text="Loading social links..." />
+  }
+
+  // Feature access check - MOVED AFTER loading check so twitchUser is available
   if (!featuresLoading && !hasFeatureAccess('SOCIALS')) {
     console.log('[DEBUG] Feature access denied. TwitchUser:', twitchUser)
     console.log('[DEBUG] Features loading:', featuresLoading)
@@ -399,10 +405,6 @@ export default function SocialLinksPage() {
         </Card>
       </div>
     )
-  }
-
-  if (isLoading || !twitchUser) {
-    return <LoadingSpinner text="Loading social links..." />
   }
 
   const profileUrl = `${window.location.origin}/${twitchUser.username}`
