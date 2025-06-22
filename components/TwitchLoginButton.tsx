@@ -21,6 +21,7 @@ export default function TwitchLoginButton({ size = "default" }: { size?: "defaul
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
           scopes: TWITCH_SCOPES.join(' '),
+          queryParams: { force_verify: 'true' },
         },
       });
 

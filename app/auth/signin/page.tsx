@@ -24,6 +24,7 @@ export default function SignIn() {
       options: {
         redirectTo: `${window.location.origin}/auth/callback`,
         scopes: TWITCH_SCOPES.join(' '),
+        queryParams: { force_verify: 'true' },
       },
     })
   }

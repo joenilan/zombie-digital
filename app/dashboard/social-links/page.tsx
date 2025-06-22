@@ -93,7 +93,8 @@ export default function SocialLinksPage() {
     updateBackground
   } = useSocialLinksStore()
   const supabase = createClientComponentClient()
-  const { hasFeatureAccess, isLoading: featuresLoading } = useFeatureAccess(authUser)
+  // FIXED: Use twitchUser (which has site_role) instead of authUser
+  const { hasFeatureAccess, isLoading: featuresLoading } = useFeatureAccess(twitchUser)
 
   // Analytics state - remove mock data
   const [analyticsData, setAnalyticsData] = useState<any>(null)

@@ -133,7 +133,7 @@ export function DataOverview({ session, user, effectiveRole }: DataOverviewProps
     { label: "Refresh Token", value: session.refresh_token, sensitive: true },
     { label: "Token Expires", value: new Date(session.expires_at * 1000).toLocaleString() },
     { label: "Session ID", value: session.user.session_id, sensitive: true },
-    { label: "Auth Role", value: session.user.role },
+    { label: "Auth Role", value: session.user.role || "authenticated" },
   ];
 
   const twitchInfo = [

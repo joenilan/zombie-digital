@@ -1,3 +1,10 @@
+export const TWITCH_SCOPES_MINIMAL = [
+  'user:read:email',
+  'user:edit',
+  'channel:read:subscriptions',
+  'moderator:read:followers'
+] as const;
+
 export const TWITCH_SCOPES = [
   // User info and profile
   'user:read:email',

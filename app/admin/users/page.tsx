@@ -339,17 +339,28 @@ export default function UsersPage() {
   } = useAdminUsersStore()
 
   // Fetch users
-  const { data: users, isLoading } = useQuery({
+  const { data: users, isLoading, refetch } = useQuery({
     queryKey: ['admin-users', sortField, sortDirection],
     queryFn: async () => {
+      console.log('🔄 Fetching users from database...', new Date().toISOString());
       const { data, error } = await supabase
         .from('twitch_users')
         .select('*')
         .order(sortField, { ascending: sortDirection === 'asc' });
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Error fetching users:', error);
+        throw error;
+      }
+
+      console.log('✅ Users fetched:', data?.map(u => ({ username: u.username, site_role: u.site_role })));
+      console.log('🔍 Full user data:', data);
       return data as TwitchUser[];
-    }
+    },
+    staleTime: 0, // Always fetch fresh data
+    gcTime: 0, // Don't cache
+    refetchOnMount: true, // Always refetch when component mounts
+    refetchOnWindowFocus: true, // Refetch when window gains focus
   });
 
   // Fetch user stats for enhanced info
@@ -417,15 +428,20 @@ export default function UsersPage() {
 
   const updateRoleMutation = useMutation({
     mutationFn: async ({ userId, role }: { userId: string; role: string }) => {
-      const { data, error } = await fetch('/api/admin/users/update-role', {
+      const response = await fetch('/api/admin/users/update-role', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ userId, role }),
-      }).then(res => res.json());
+      });
 
-      if (error) throw error;
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to update role');
+      }
+
+      const data = await response.json();
       return data;
     },
     onMutate: async (newData) => {
@@ -446,7 +462,7 @@ export default function UsersPage() {
     },
     onSuccess: (data) => {
       toast.dismiss();
-      toast.success(`Role updated to ${data.role}`);
+      toast.success(`Role updated to ${data.site_role}`);
     },
     onError: (error: any, newData, context) => {
       if (context?.previousUsers) {
@@ -472,11 +488,25 @@ export default function UsersPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold gradient-brand">User Management</h1>
-        <p className="text-muted-foreground mt-2">
-          Comprehensive user account management with analytics and detailed insights
-        </p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold gradient-brand">User Management</h1>
+          <p className="text-muted-foreground mt-2">
+            Comprehensive user account management with analytics and detailed insights
+          </p>
+        </div>
+        <Button
+          onClick={() => {
+            console.log('🔄 Manually refreshing user data...');
+            queryClient.clear();
+            refetch();
+          }}
+          variant="outline"
+          className="bg-glass/20 border-white/10 hover:bg-glass/30"
+        >
+          <RefreshCcw className="w-4 h-4 mr-2" />
+          Refresh Data
+        </Button>
       </div>
 
       {/* Stats Overview */}
@@ -877,6 +907,20 @@ export default function UsersPage() {
                                 <Settings className="h-4 w-4" />
                               </div>
                               <span className="font-medium">Set as Admin</span>
+                            </DropdownMenuItem>
+
+                            <DropdownMenuItem
+                              onClick={() => updateRoleMutation.mutate({ userId: user.id, role: 'owner' })}
+                              disabled={user.site_role === 'owner'}
+                              className="flex items-center gap-3 px-4 py-3 text-sm text-foreground hover:bg-gradient-to-r 
+                                       hover:from-amber-500/10 hover:to-orange-500/10 transition-all duration-200 group cursor-pointer
+                                       disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              <div className="p-1.5 rounded-lg bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-400 
+                                            group-hover:from-amber-500/30 group-hover:to-orange-500/30 transition-all duration-200">
+                                <Settings className="h-4 w-4" />
+                              </div>
+                              <span className="font-medium">Set as Owner</span>
                             </DropdownMenuItem>
                           </div>
                         </DropdownMenuContent>

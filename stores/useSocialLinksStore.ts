@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
+import type { TwitchUser } from '@/types/auth'
 
 export interface SocialLink {
   id: string
@@ -10,18 +11,6 @@ export interface SocialLink {
   order_index: number
   created_at?: string
   updated_at?: string
-  [key: string]: any
-}
-
-interface TwitchUser {
-  id: string
-  username: string
-  display_name?: string
-  profile_image_url?: string
-  background_media_url: string | null
-  background_media_type: string | null
-  created_at?: string
-  custom_bio?: string
   [key: string]: any
 }
 
