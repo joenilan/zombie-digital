@@ -364,6 +364,10 @@ export default function SocialLinksPage() {
 
   // Feature access check
   if (!featuresLoading && !hasFeatureAccess('SOCIALS')) {
+    console.log('[DEBUG] Feature access denied. TwitchUser:', twitchUser)
+    console.log('[DEBUG] Features loading:', featuresLoading)
+    console.log('[DEBUG] Has SOCIALS access:', hasFeatureAccess('SOCIALS'))
+
     return (
       <div className="bg-gradient-to-br from-background via-background/95 to-background/90 flex items-center justify-center py-16">
         <Card className="max-w-md w-full mx-4 bg-glass border-amber-500/20">
@@ -383,6 +387,9 @@ export default function SocialLinksPage() {
             <p className="text-sm text-muted-foreground">
               Contact an administrator if you believe this is an error.
             </p>
+            <div className="text-xs font-mono bg-glass/20 p-2 rounded">
+              Debug: User role = {twitchUser?.site_role || 'null'}
+            </div>
             <Button asChild variant="outline">
               <Link href="/dashboard">
                 Back to Dashboard
@@ -431,6 +438,18 @@ export default function SocialLinksPage() {
 
           {/* Quick Actions */}
           <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              onClick={() => {
+                console.log('[DEBUG] Current user:', twitchUser)
+                console.log('[DEBUG] Current user role:', twitchUser?.site_role)
+                useAuthStore.getState().refreshUser()
+              }}
+              className="bg-red-500/20 border-red-500/30 hover:bg-red-500/30"
+            >
+              <RefreshCcw className="w-4 h-4 mr-2" />
+              Debug Refresh
+            </Button>
             <Button
               variant="outline"
               onClick={handleCopyUrl}

@@ -71,7 +71,10 @@ export function useFeatureAccess(user: TwitchUser | null): UseFeatureAccessRetur
   }, [userRole, supabase])
 
   const hasRoleAccess = (userRole: string | null, requiredRole: string): boolean => {
-    if (!userRole) return false
+    if (!userRole) {
+      console.log('[FeatureAccess] No user role provided')
+      return false
+    }
     
     const roleHierarchy = {
       user: 1,
@@ -82,13 +85,18 @@ export function useFeatureAccess(user: TwitchUser | null): UseFeatureAccessRetur
 
     const userLevel = roleHierarchy[userRole as keyof typeof roleHierarchy] || 0
     const requiredLevel = roleHierarchy[requiredRole as keyof typeof roleHierarchy] || 0
+    const hasAccess = userLevel >= requiredLevel
 
-    return userLevel >= requiredLevel
+    console.log(`[FeatureAccess] Role check: ${userRole}(${userLevel}) >= ${requiredRole}(${requiredLevel}) = ${hasAccess}`)
+    
+    return hasAccess
   }
 
   const hasFeatureAccess = (featureId: string): boolean => {
     const feature = features.find(f => f.feature_id === featureId)
-    return feature?.user_has_access || false
+    const hasAccess = feature?.user_has_access || false
+    console.log(`[FeatureAccess] Feature ${featureId}: ${hasAccess} (feature found: ${!!feature}, enabled: ${feature?.enabled})`)
+    return hasAccess
   }
 
   const getFeature = (featureId: string): Feature | undefined => {
