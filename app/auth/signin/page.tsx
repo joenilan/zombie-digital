@@ -4,7 +4,7 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 import { useAuthStore } from '@/stores/useAuthStore'
-import { TWITCH_SCOPES_MINIMAL } from '@/utils/twitch-constants'
+import { TWITCH_SCOPES_DASHBOARD } from '@/utils/twitch-constants'
 
 export default function SignIn() {
   const router = useRouter()
@@ -23,7 +23,7 @@ export default function SignIn() {
       provider: 'twitch',
       options: {
         redirectTo: `${window.location.origin}/auth/callback`,
-        scopes: TWITCH_SCOPES_MINIMAL.join(' '),
+        scopes: TWITCH_SCOPES_DASHBOARD.join(' '),
         queryParams: { force_verify: 'true' },
       },
     })
@@ -56,7 +56,7 @@ export default function SignIn() {
       provider: 'twitch',
       options: {
         redirectTo: `${window.location.origin}/auth/callback`,
-        scopes: TWITCH_SCOPES_MINIMAL.join(' '),
+        scopes: TWITCH_SCOPES_DASHBOARD.join(' '),
         queryParams: { force_verify: 'true' },
       },
     })

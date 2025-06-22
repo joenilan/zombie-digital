@@ -4,7 +4,7 @@ import { useState } from "react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { Button } from "@/components/ui/button";
-import { TWITCH_SCOPES_MINIMAL } from "@/utils/twitch-constants";
+import { TWITCH_SCOPES_DASHBOARD } from "@/utils/twitch-constants";
 
 export default function TwitchLoginButton({ size = "default" }: { size?: "default" | "lg" }) {
   const [isLoading, setIsLoading] = useState(false);
@@ -20,7 +20,7 @@ export default function TwitchLoginButton({ size = "default" }: { size?: "defaul
         provider: 'twitch',
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
-          scopes: TWITCH_SCOPES_MINIMAL.join(' '),
+          scopes: TWITCH_SCOPES_DASHBOARD.join(' '),
           queryParams: { force_verify: 'true' },
         },
       });

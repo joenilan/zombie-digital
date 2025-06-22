@@ -5,6 +5,21 @@ export const TWITCH_SCOPES_MINIMAL = [
   'moderator:read:followers'
 ] as const;
 
+export const TWITCH_SCOPES_DASHBOARD = [
+  // Essential user info
+  'user:read:email',
+  'user:edit',
+  
+  // Channel stats for dashboard
+  'channel:read:subscriptions',  // Subscriber count (affiliates/partners)
+  'moderator:read:followers',    // Follower count
+  'moderation:read',            // Moderator access and counts
+  'channel:read:vips',          // VIP list access
+  
+  // Optional: Channel points for affiliates/partners
+  'channel:read:redemptions',   // Channel points rewards
+] as const;
+
 export const TWITCH_SCOPES = [
   // User info and profile
   'user:read:email',
