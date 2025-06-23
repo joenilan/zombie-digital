@@ -1,10 +1,11 @@
 "use client"
 
 import { useState } from 'react'
-import { Share2, Twitter, Facebook, Linkedin, Link as LinkIcon, CheckCircle } from 'lucide-react'
+import { Share2, Facebook, Twitter, Copy, Check } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { CopyButton, ViewButton, QRButton, EditButton, DeleteButton, SuccessButton } from '@/components/ui/action-button'
+import { toast } from 'sonner'
+import { CopyButton, ViewButton } from '@/components/ui/action-button'
 
 
 interface SocialShareDialogProps {
@@ -80,7 +81,7 @@ export function SocialShareDialog({ username, displayName }: SocialShareDialogPr
                             className="flex flex-col items-center gap-2"
                         >
                             <Button variant="cyber-purple" size="icon" className="h-12 w-12 rounded-full">
-                                <Linkedin className="text-white" />
+                                <Copy className="text-white" />
                             </Button>
                             <span className="text-xs">LinkedIn</span>
                         </a>
@@ -100,7 +101,7 @@ export function SocialShareDialog({ username, displayName }: SocialShareDialogPr
                             tooltip={copied ? 'Copied!' : 'Copy link'}
                             className="absolute right-0 h-9"
                         >
-                            {copied ? <CheckCircle size={16} className="text-green-500" /> : <LinkIcon size={16} />}
+                            {copied ? <Check size={16} className="text-green-500" /> : <Copy size={16} />}
                         </CopyButton>
                     </div>
                 </div>

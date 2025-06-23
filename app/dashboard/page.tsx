@@ -3,18 +3,15 @@
 import { useEffect, useCallback } from "react";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { SkeletonStats } from "@/components/ui/skeleton";
-import { AlertCircle, Hash, Gamepad2, Type, Code, RefreshCw } from "lucide-react";
+import { RefreshCw, AlertCircle, Hash, Gamepad2, Type, Code } from "lucide-react";
 import { UsersIcon, StarIcon, PointsIcon, ShieldIcon, SparklesIcon } from "@/components/icons";
-import Image from "next/image";
-import Link from "next/link";
 import { motion, useSpring, useTransform } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Verified, Crown } from "lucide-react";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { useDashboardStore } from "@/stores/useDashboardStore";
 import { handleAuthError } from '@/utils/auth-error-handler'
-import { Card, CardContent, StatCard } from "@/components/ui/card"
 import { DashboardLayout } from "@/components/animations/AnimatedLayout";
 import { StatsCard } from "@/components/animations/AnimatedCard";
 import { AnimatedBreadcrumb } from "@/components/ui/breadcrumb";
@@ -24,10 +21,9 @@ import {
   fadeInUp,
   slideInLeft,
   slideInRight,
-  cardAnimations,
   spinAnimation
 } from "@/lib/animations";
-import { CopyButton, ViewButton, QRButton, EditButton, DeleteButton, SuccessButton } from '@/components/ui/action-button'
+import { ViewButton } from '@/components/ui/action-button'
 
 
 interface TwitchStats {
@@ -287,7 +283,7 @@ export default function DashboardPage() {
           <motion.div variants={staggerItem} className="flex items-center justify-between">
             <div>
               <h1 className="text-4xl font-bold text-foreground mb-2">Dashboard</h1>
-              <p className="text-gray-300">Welcome back! Here's your channel overview.</p>
+              <p className="text-gray-300">Welcome back! Here&apos;s your channel overview.</p>
             </div>
             <ViewButton
               onClick={handleRefresh}

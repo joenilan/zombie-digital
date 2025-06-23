@@ -1,11 +1,11 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { useEffect } from "react";
+
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { motion, AnimatePresence } from "framer-motion";
+
 import {
   Table,
   TableBody,
@@ -39,18 +39,18 @@ import {
   ArrowUpRight,
   RefreshCcw,
   MoreHorizontal,
-  X,
+
   ExternalLink,
 } from "@/lib/icons";
 import { Button } from "@/components/ui/button";
-import { ViewButton, CopyButton, QRButton, EditButton, DeleteButton, SuccessButton } from '@/components/ui/action-button'
+import { ViewButton } from '@/components/ui/action-button'
 
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  DropdownMenuSeparator,
+
 } from "@/components/ui/dropdown-menu";
 import {
   Dialog,

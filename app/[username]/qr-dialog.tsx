@@ -5,7 +5,6 @@ import QRCode from 'react-qr-code'
 import { QrCode, Download } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 
 interface QRDialogProps {
     username: string
@@ -114,7 +113,7 @@ export function QRDialog({ username, variant = 'default' }: QRDialogProps) {
                         />
                     </div>
                     <p className="text-sm text-muted-foreground mt-4 text-center">
-                        Scan this QR code to visit {username}'s profile
+                        Scan this QR code to visit {username}&apos;s profile
                     </p>
                     <Button
                         onClick={downloadQRCode}
