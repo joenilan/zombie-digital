@@ -13,6 +13,9 @@ export interface TwitchUser {
   background_media_type?: string | null
   background_media_url?: string | null
   custom_bio?: string | null
+  colored_icons?: boolean
+  theme_scheme?: string | null
+  seasonal_themes?: boolean | null
   created_at?: string
   updated_at?: string
   last_sign_in_at?: string

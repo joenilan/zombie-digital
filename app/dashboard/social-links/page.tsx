@@ -12,6 +12,9 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { CopyButton, ViewButton, QRButton } from '@/components/ui/action-button'
 import { TooltipProvider } from '@/components/ui/tooltip'
+import { Switch } from '@/components/ui/switch'
+import { useThemeSystem } from '@/hooks/useThemeSystem'
+import { colorSchemes } from '@/lib/theme-system'
 import {
   Copy,
   ExternalLink,
@@ -106,6 +109,20 @@ export default function SocialLinksPage() {
   const [analyticsData, setAnalyticsData] = useState<any>(null)
   const [analyticsLoading, setAnalyticsLoading] = useState(false)
 
+  // Theme system hooks
+  const {
+    activeTheme,
+    currentScheme,
+    seasonalEnabled,
+    currentSeason,
+    colorSchemes: availableSchemes,
+    seasonalThemes,
+    updateColorScheme,
+    toggleSeasonalThemes,
+    previewColorScheme,
+    isUpdating: themeLoading
+  } = useThemeSystem()
+
   // Quick stats from Umami
   const [quickStats, setQuickStats] = useState<{
     profileViews: number
@@ -119,6 +136,19 @@ export default function SocialLinksPage() {
   const channelRef = React.useRef<RealtimeChannel | null>(null)
 
   // Auth is handled by dashboard layout - no need for redirect logic here
+
+  // Sync local twitchUser state with auth store user when it changes
+  useEffect(() => {
+    if (authUser && twitchUser && authUser.twitch_id === twitchUser.twitch_id) {
+      // Update local state with auth store changes (particularly theme fields)
+      setTwitchUser({
+        ...twitchUser,
+        theme_scheme: authUser.theme_scheme,
+        seasonal_themes: authUser.seasonal_themes,
+        colored_icons: authUser.colored_icons
+      })
+    }
+  }, [authUser?.theme_scheme, authUser?.seasonal_themes, authUser?.colored_icons])
 
   // Initial data loading
   useEffect(() => {
@@ -352,6 +382,41 @@ export default function SocialLinksPage() {
     if (twitchUser) {
       setTwitchUser({ ...twitchUser, custom_bio: newBio })
     }
+  }
+
+  const handleIconColorUpdate = async (useColoredIcons: boolean) => {
+    if (!twitchUser) return
+
+    try {
+      // Update the local state immediately for UI responsiveness
+      setTwitchUser({ ...twitchUser, colored_icons: useColoredIcons })
+
+      // Update the database
+      const { error } = await supabase
+        .from('twitch_users')
+        .update({ colored_icons: useColoredIcons })
+        .eq('id', twitchUser.id)
+
+      if (error) throw error
+
+      toast.success(`Icon style updated to ${useColoredIcons ? 'colored' : 'monochrome'}`, {
+        description: 'Your profile will reflect this change immediately',
+        duration: 3000,
+      })
+    } catch (error) {
+      console.error('Error updating icon color preference:', error)
+      // Revert the local state if the update fails
+      setTwitchUser({ ...twitchUser, colored_icons: !useColoredIcons })
+      toast.error('Failed to update icon style')
+    }
+  }
+
+  const handleThemeSchemeUpdate = async (schemeKey: string) => {
+    await updateColorScheme(schemeKey)
+  }
+
+  const handleSeasonalThemesToggle = async (enabled: boolean) => {
+    await toggleSeasonalThemes(enabled)
   }
 
   // Show loading while auth is initializing
@@ -711,7 +776,10 @@ export default function SocialLinksPage() {
                                       >
                                         <div className="absolute inset-0 bg-gradient-to-r from-cyber-pink/10 to-cyber-cyan/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                                         <div className="relative flex items-center justify-center gap-2">
-                                          <Icon className="w-4 h-4" />
+                                          <Icon
+                                            className="w-4 h-4"
+                                            style={twitchUser.colored_icons !== false ? { color: getPlatformColor(link.platform) } : undefined}
+                                          />
                                           <span className="font-medium text-sm">
                                             {link.title || link.platform}
                                           </span>
@@ -874,18 +942,153 @@ export default function SocialLinksPage() {
                 <CardHeader>
                   <CardTitle>Theme & Appearance</CardTitle>
                   <CardDescription>
-                    Customize the look and feel of your profile
+                    Customize colors, themes, and the visual style of your profile
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <div className="text-center py-12 text-muted-foreground">
-                    <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-cyber-pink/20 to-purple-500/20 flex items-center justify-center">
-                      <Settings className="w-8 h-8 text-cyber-pink" />
+                <CardContent className="space-y-6">
+                  {/* Current Theme Preview */}
+                  <div className="p-4 bg-glass/10 rounded-lg border border-white/5">
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <p className="text-sm font-medium text-foreground">Current Theme</p>
+                        <p className="text-xs text-muted-foreground">{activeTheme?.displayName || 'Default'}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-4 h-4 rounded-full border border-white/20"
+                          style={{ backgroundColor: activeTheme?.colors.primary || '#ec4899' }}
+                        />
+                        <div
+                          className="w-4 h-4 rounded-full border border-white/20"
+                          style={{ backgroundColor: activeTheme?.colors.secondary || '#9147ff' }}
+                        />
+                        <div
+                          className="w-4 h-4 rounded-full border border-white/20"
+                          style={{ backgroundColor: activeTheme?.colors.accent || '#67e8f9' }}
+                        />
+                      </div>
                     </div>
-                    <h3 className="text-lg font-semibold mb-2">Coming Soon</h3>
-                    <p className="text-sm max-w-md mx-auto">
-                      Custom themes, color schemes, typography options, and advanced styling controls are in development.
-                    </p>
+                    <p className="text-xs text-muted-foreground">{activeTheme?.description || 'Default cyber theme'}</p>
+                  </div>
+
+                  {/* Seasonal Themes Toggle */}
+                  <div className="flex items-center justify-between p-4 bg-glass/20 rounded-lg border border-white/10">
+                    <div className="space-y-1">
+                      <label className="text-sm font-medium text-foreground">
+                        Seasonal Themes
+                      </label>
+                      <p className="text-xs text-muted-foreground">
+                        Automatically update your theme for holidays and seasons
+                      </p>
+                      {currentSeason && seasonalThemes[currentSeason] && (
+                        <p className="text-xs text-cyan-400">
+                          Current season: {seasonalThemes[currentSeason]?.displayName}
+                        </p>
+                      )}
+                    </div>
+                    <Switch
+                      checked={seasonalEnabled ?? true}
+                      onCheckedChange={handleSeasonalThemesToggle}
+                      disabled={themeLoading}
+                    />
+                  </div>
+
+                  {/* Color Scheme Selection */}
+                  <div className="space-y-3">
+                    <label className="text-sm font-medium text-foreground">
+                      Color Scheme
+                    </label>
+                    <div className="grid grid-cols-2 gap-3">
+                      {Object.values(availableSchemes).map((scheme) => {
+                        const isActive = currentScheme === scheme.name
+                        const isCurrentlyActive = activeTheme?.name === scheme.name
+
+                        return (
+                          <button
+                            key={scheme.name}
+                            onClick={() => handleThemeSchemeUpdate(scheme.name)}
+                            onMouseEnter={() => previewColorScheme(scheme.name)}
+                            onMouseLeave={() => previewColorScheme(null)}
+                            disabled={themeLoading}
+                            className={`p-3 rounded-lg border transition-all duration-200 text-left group hover:scale-[1.02] ${isCurrentlyActive
+                              ? 'border-white/30 bg-glass/30 shadow-lg'
+                              : 'border-white/10 bg-glass/10 hover:border-white/20 hover:bg-glass/20'
+                              }`}
+                          >
+                            <div className="flex items-center justify-between mb-2">
+                              <p className="text-sm font-medium text-foreground">
+                                {scheme.displayName}
+                              </p>
+                              <div className="flex gap-1">
+                                <div
+                                  className="w-3 h-3 rounded-full border border-white/20"
+                                  style={{ backgroundColor: scheme.colors.primary }}
+                                />
+                                <div
+                                  className="w-3 h-3 rounded-full border border-white/20"
+                                  style={{ backgroundColor: scheme.colors.secondary }}
+                                />
+                                <div
+                                  className="w-3 h-3 rounded-full border border-white/20"
+                                  style={{ backgroundColor: scheme.colors.accent }}
+                                />
+                              </div>
+                            </div>
+                            <p className="text-xs text-muted-foreground group-hover:text-foreground/80 transition-colors">
+                              {scheme.description}
+                            </p>
+                            {isActive && (
+                              <div className="mt-2 inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-cyan-500/10 text-cyan-400 border border-cyan-500/20">
+                                Active
+                              </div>
+                            )}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Icon Style Setting */}
+                  <div className="flex items-center justify-between p-4 bg-glass/20 rounded-lg border border-white/10">
+                    <div className="space-y-1">
+                      <label className="text-sm font-medium text-foreground">
+                        Social Icon Style
+                      </label>
+                      <p className="text-xs text-muted-foreground">
+                        Choose between colored brand icons or monochrome style
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm text-muted-foreground">
+                        Monochrome
+                      </span>
+                      <Switch
+                        checked={twitchUser.colored_icons ?? true}
+                        onCheckedChange={handleIconColorUpdate}
+                      />
+                      <span className="text-sm text-muted-foreground">
+                        Colored
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Icon Preview */}
+                  <div className="p-4 bg-glass/10 rounded-lg border border-white/5">
+                    <p className="text-sm font-medium text-foreground mb-3">Social Icon Preview</p>
+                    <div className="flex items-center gap-3">
+                      {['youtube', 'twitch', 'instagram', 'twitter'].map((platform) => {
+                        const Icon = getPlatformIcon(platform)
+                        return (
+                          <div key={platform} className="flex items-center gap-2 p-2 bg-glass/20 rounded-lg">
+                            <Icon
+                              className="w-5 h-5"
+                              style={twitchUser.colored_icons !== false ? { color: getPlatformColor(platform) } : undefined}
+                            />
+                            <span className="text-xs capitalize">{platform}</span>
+                          </div>
+                        )
+                      })}
+                    </div>
                   </div>
                 </CardContent>
               </Card>

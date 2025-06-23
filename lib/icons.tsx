@@ -420,7 +420,7 @@ export const ScrollText = ({ className, style, onClick }: IconProps) =>
     <Icon icon="lucide:scroll-text" className={className} style={style} onClick={onClick} />
 
 export const Users = ({ className, style, onClick }: IconProps) =>
-    <Icon icon="phosphor:users-fill" className={className} style={style} onClick={onClick} />
+    <Icon icon="solar:users-group-rounded-bold" className={className} style={style} onClick={onClick} />
 
 // Feature icon mapping function with modern Iconify collections
 export function getFeatureIcon(iconName: string): React.ComponentType<IconProps> {

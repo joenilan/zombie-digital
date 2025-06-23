@@ -23,6 +23,7 @@ interface RealtimeLinksProps {
   userId: string
   initialLinks: SocialLink[]
   isOwner?: boolean
+  coloredIcons?: boolean
 }
 
 function TwitchLink({ link, username }: { link: SocialLink; username: string }) {
@@ -72,8 +73,12 @@ function TwitchLink({ link, username }: { link: SocialLink; username: string }) 
                  hover:shadow-cyber transition-all duration-300
                  text-center group relative overflow-hidden rounded-xl`}
       >
-        <div className="absolute inset-0 bg-gradient-to-r from-cyber-pink/10 to-cyber-cyan/10 
-                      opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        <div
+          className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+          style={{
+            background: `linear-gradient(45deg, rgba(var(--theme-primary), 0.1), rgba(var(--theme-accent), 0.1))`
+          }}
+        />
         <div className="relative flex items-center justify-center gap-3">
           <Twitch className="w-6 h-6" />
           <span className="font-medium text-lg">
@@ -160,7 +165,7 @@ export interface RealtimePayload {
   table: string
 }
 
-export function RealtimeLinks({ userId, initialLinks, isOwner }: RealtimeLinksProps) {
+export function RealtimeLinks({ userId, initialLinks, isOwner, coloredIcons }: RealtimeLinksProps) {
   const {
     links,
     isUpdating,
@@ -325,7 +330,12 @@ export function RealtimeLinks({ userId, initialLinks, isOwner }: RealtimeLinksPr
             exit={{ opacity: 0, y: -10 }}
             className="absolute -top-12 left-1/2 transform -translate-x-1/2 z-10"
           >
-            <div className="bg-cyber-gradient text-white px-3 py-1 rounded-full text-xs font-medium shadow-lg">
+            <div
+              className="text-white px-3 py-1 rounded-full text-xs font-medium shadow-lg"
+              style={{
+                background: `linear-gradient(45deg, rgb(var(--theme-primary)), rgb(var(--theme-accent)))`
+              }}
+            >
               {lastUpdateType === 'INSERT' && '✨ Link added'}
               {lastUpdateType === 'UPDATE' && '🔄 Links updated'}
               {lastUpdateType === 'DELETE' && '🗑️ Link removed'}
@@ -407,10 +417,17 @@ export function RealtimeLinks({ userId, initialLinks, isOwner }: RealtimeLinksPr
                            hover:shadow-cyber transition-all duration-300
                            text-center group relative overflow-hidden rounded-xl`}
                 >
-                  <div className="absolute inset-0 bg-gradient-to-r from-cyber-pink/10 to-cyber-cyan/10 
-                                opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  <div
+                    className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                    style={{
+                      background: `linear-gradient(45deg, rgba(var(--theme-primary), 0.1), rgba(var(--theme-accent), 0.1))`
+                    }}
+                  />
                   <div className="relative flex items-center justify-center gap-3">
-                    <Icon className="w-6 h-6" style={{ color: getPlatformColor(link.platform) }} />
+                    <Icon
+                      className="w-6 h-6"
+                      style={coloredIcons !== false ? { color: getPlatformColor(link.platform) } : undefined}
+                    />
                     <span className="font-medium text-lg">
                       {link.title || link.platform}
                     </span>

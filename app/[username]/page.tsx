@@ -35,6 +35,9 @@ interface Profile {
   background_media_url: string | null
   background_media_type: string | null
   twitch_id: string
+  colored_icons?: boolean
+  theme_scheme?: string
+  seasonal_themes?: boolean
 }
 
 interface SocialLink {
@@ -58,6 +61,37 @@ export default function ProfilePage({ params, searchParams }: PageProps) {
   const { username } = params
   const isTransparent = searchParams.transparent === 'true'
 
+  // Function to refresh profile data
+  const refreshProfileData = async () => {
+    try {
+      const { data: profileData, error: profileError } = await supabase
+        .from('public_profiles')
+        .select(`
+          user_id,
+          username,
+          display_name,
+          profile_image_url,
+          description,
+          created_at,
+          background_media_url,
+          background_media_type,
+          twitch_id,
+          colored_icons,
+          theme_scheme,
+          seasonal_themes
+        `)
+        .eq('username', username)
+        .single()
+
+      if (!profileError && profileData) {
+        setProfile(profileData)
+        console.log('[Profile] Data refreshed:', profileData)
+      }
+    } catch (err) {
+      console.error('Error refreshing profile data:', err)
+    }
+  }
+
   useEffect(() => {
     async function fetchProfileData() {
       try {
@@ -76,7 +110,10 @@ export default function ProfilePage({ params, searchParams }: PageProps) {
             created_at,
             background_media_url,
             background_media_type,
-            twitch_id
+            twitch_id,
+            colored_icons,
+            theme_scheme,
+            seasonal_themes
           `)
           .eq('username', username)
           .single()
@@ -123,6 +160,60 @@ export default function ProfilePage({ params, searchParams }: PageProps) {
       fetchProfileData()
     }
   }, [username, supabase])
+
+  // Subscribe to real-time updates for this profile's theme changes
+  useEffect(() => {
+    if (!profile?.user_id) return
+
+    const channel = supabase
+      .channel(`profile_theme_updates_${profile.user_id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'twitch_users',
+          filter: `id=eq.${profile.user_id}`
+        },
+        async (payload) => {
+          console.log('[Profile] Theme update detected:', payload)
+
+          // Update profile with new theme data
+          const newRecord = payload.new as any
+          if (newRecord) {
+            setProfile(prevProfile => {
+              if (!prevProfile) return prevProfile
+              return {
+                ...prevProfile,
+                theme_scheme: newRecord.theme_scheme,
+                seasonal_themes: newRecord.seasonal_themes,
+                colored_icons: newRecord.colored_icons
+              }
+            })
+          }
+        }
+      )
+      .subscribe()
+
+    return () => {
+      channel.unsubscribe()
+    }
+  }, [profile?.user_id, supabase])
+
+  // Refresh data when page becomes visible again (e.g., returning from dashboard)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && profile) {
+        console.log('[Profile] Page visible again, refreshing data')
+        refreshProfileData()
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
+  }, [profile, refreshProfileData])
 
   if (loading) {
     return (
