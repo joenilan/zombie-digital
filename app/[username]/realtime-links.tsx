@@ -295,7 +295,7 @@ export function RealtimeLinks({ userId, initialLinks, isOwner }: RealtimeLinksPr
           {isOwner ? (
             <div className="space-y-4">
               <p className="mb-2">You haven't added any social links yet.</p>
-              <Button asChild variant="cyber-green">
+              <Button asChild variant="cyber-cyan">
                 <a href="/dashboard/social-links" className="gap-2">
                   <LinkIcon className="w-4 h-4" />
                   Get started by adding your first link

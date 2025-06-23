@@ -139,7 +139,7 @@ export default function FeaturesPage() {
                         </div>
                         <Dialog open={showNewFeatureDialog} onOpenChange={setShowNewFeatureDialog}>
                             <DialogTrigger asChild>
-                                <Button variant="cyber-green" icon={<Plus className="w-4 h-4" />}>
+                                <Button variant="cyber-cyan" icon={<Plus className="w-4 h-4" />}>
                                     New Feature
                                 </Button>
                             </DialogTrigger>
@@ -323,8 +323,8 @@ export default function FeaturesPage() {
                             <p className="text-muted-foreground mb-6">
                                 Create your first feature flag to start controlling platform functionality.
                             </p>
-                            <Button variant="cyber-green" onClick={() => setShowNewFeatureDialog(true)} icon={<Plus className="w-4 h-4" />}>
-                                Create Feature
+                            <Button variant="cyber-cyan" onClick={() => setShowNewFeatureDialog(true)} icon={<Plus className="w-4 h-4" />}>
+                                New Feature
                             </Button>
                         </div>
                     </motion.div>
