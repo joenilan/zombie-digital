@@ -9,6 +9,7 @@ import { useAuthStore } from "@/stores/useAuthStore";
 import { ChevronDown, LayoutDashboard, Shield, LogOut, User } from "lucide-react";
 import type { TwitchUser } from '@/types/auth'
 
+
 const menuVariants = {
   hidden: {
     opacity: 0,
@@ -185,7 +186,7 @@ export default function UserMenu({ user }: { user: TwitchUser }) {
                   <button
                     onClick={handleSignOut}
                     disabled={isSigningOut}
-                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-400 hover:bg-gradient-to-r 
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm text-foreground hover:bg-gradient-to-r 
                                hover:from-red-500/10 hover:to-pink-500/10 transition-all duration-200 group
                                disabled:opacity-50 disabled:cursor-not-allowed"
                   >

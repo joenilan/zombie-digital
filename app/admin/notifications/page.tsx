@@ -5,9 +5,10 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { toast } from "sonner";
 import { useForm } from "react-hook-form";
-import { Pencil, Trash2, Check, X } from "lucide-react";
+import { Pencil, Trash2, Check, X, Plus } from "lucide-react";
 import { format } from "date-fns";
 import { useAuthStore } from '@/stores/useAuthStore'
+import { SuccessButton, DeleteButton, ViewButton } from '@/components/ui/action-button'
 
 interface NotificationForm {
   message: string;
@@ -195,13 +196,14 @@ export default function NotificationsPage() {
           />
         </div>
 
-        <button
+        <SuccessButton
           type="submit"
-          className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/80 transition-colors"
           disabled={createMutation.isPending}
+          tooltip={createMutation.isPending ? 'Creating notification...' : 'Create notification'}
+          icon={createMutation.isPending ? undefined : <Plus className="w-4 h-4" />}
         >
           {createMutation.isPending ? 'Creating...' : 'Create Notification'}
-        </button>
+        </SuccessButton>
       </form>
 
       <div className="mt-8">
@@ -220,9 +222,9 @@ export default function NotificationsPage() {
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     <span className={`px-2 py-1 rounded text-sm ${notification.type === 'info' ? 'bg-blue-500/20 text-blue-300' :
-                        notification.type === 'warning' ? 'bg-yellow-500/20 text-yellow-300' :
-                          notification.type === 'error' ? 'bg-red-500/20 text-red-300' :
-                            'bg-green-500/20 text-green-300'
+                      notification.type === 'warning' ? 'bg-yellow-500/20 text-yellow-300' :
+                        notification.type === 'error' ? 'bg-red-500/20 text-red-300' :
+                          'bg-green-500/20 text-green-300'
                       }`}>
                       {notification.type}
                     </span>
@@ -238,27 +240,29 @@ export default function NotificationsPage() {
                   )}
                 </div>
                 <div className="flex items-center gap-2">
-                  <button
+                  <ViewButton
                     onClick={() => toggleMutation.mutate({
                       id: notification.id,
                       active: !notification.active
                     })}
-                    className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-                    title={notification.active ? 'Deactivate' : 'Activate'}
+                    size="icon"
+                    tooltip={notification.active ? 'Deactivate' : 'Activate'}
+                    className="p-2"
                   >
                     {notification.active ? <Check size={18} /> : <X size={18} />}
-                  </button>
-                  <button
+                  </ViewButton>
+                  <DeleteButton
                     onClick={() => {
                       if (confirm('Are you sure you want to delete this notification?')) {
                         deleteMutation.mutate(notification.id);
                       }
                     }}
-                    className="p-2 hover:bg-white/10 rounded-lg transition-colors text-red-400"
-                    title="Delete"
+                    size="icon"
+                    tooltip="Delete"
+                    className="p-2"
                   >
                     <Trash2 size={18} />
-                  </button>
+                  </DeleteButton>
                 </div>
               </div>
             ))}

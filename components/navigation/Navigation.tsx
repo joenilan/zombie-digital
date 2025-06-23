@@ -12,8 +12,6 @@ import { useAuth } from "@/hooks/useAuth";
 export function Navigation() {
   const pathname = usePathname();
   const { user, isLoading, isInitialized } = useAuth();
-
-  console.log('[DEBUG] Navigation - user:', user, 'isLoading:', isLoading, 'isInitialized:', isInitialized)
   const isCanvasPage = pathname.startsWith('/canvas/');
   const isOverlay = pathname.startsWith('/overlay');
   const isCanvasView = pathname.startsWith('/canvas/') && !pathname.endsWith('/settings');

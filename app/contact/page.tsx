@@ -224,7 +224,7 @@ export default function ContactPage() {
                                         </p>
                                         <Button
                                             onClick={() => setIsSubmitted(false)}
-                                            variant="outline"
+                                            variant="cyber-cyan"
                                         >
                                             Send Another Message
                                         </Button>

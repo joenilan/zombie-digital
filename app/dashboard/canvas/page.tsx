@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { Button } from '@/components/ui/button'
+import { DeleteButton, CopyButton, ViewButton, QRButton, EditButton, SuccessButton } from '@/components/ui/action-button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Plus, Eye, EyeOff, Trash2, Settings, ExternalLink, Calendar, Users, Layers, Copy, BarChart3, X } from 'lucide-react'
@@ -14,6 +15,7 @@ import { LoadingSpinner } from '@/components/LoadingSpinner'
 import { toast } from 'sonner'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { UserCircle } from 'lucide-react'
+import { TooltipProvider } from '@/components/ui/tooltip'
 
 export default function CanvasPage() {
   const { user } = useAuthStore()
@@ -195,7 +197,7 @@ export default function CanvasPage() {
           </p>
 
           <Button asChild className="ethereal-button px-8 py-4 text-lg">
-            <Link href="/dashboard/canvas/new" className="gap-2">
+            <Link href="/dashboard/canvas/new" className="flex items-center gap-2">
               <Plus className="w-5 h-5" />
               Create New Canvas
             </Link>
@@ -223,7 +225,7 @@ export default function CanvasPage() {
                   Create your first canvas to start building interactive streaming overlays.
                 </p>
                 <Button asChild className="ethereal-button">
-                  <Link href="/dashboard/canvas/new" className="gap-2">
+                  <Link href="/dashboard/canvas/new" className="flex items-center gap-2">
                     <Plus className="w-4 h-4" />
                     Create Canvas
                   </Link>
@@ -295,18 +297,20 @@ export default function CanvasPage() {
                     <div className="space-y-2 mb-4">
                       <div className="flex items-center justify-between">
                         <span className="text-sm font-medium text-foreground">Overlay URL</span>
-                        <Button
-                          variant="ghost"
-                          size="default"
-                          onClick={() => toggleUrlVisibility(canvas.id)}
-                          className="h-8 w-8 p-0 hover:bg-glass/30"
-                        >
-                          {visibleUrls.has(canvas.id) ? (
-                            <EyeOff className="w-4 h-4" />
-                          ) : (
-                            <Eye className="w-4 h-4" />
-                          )}
-                        </Button>
+                        <TooltipProvider>
+                          <ViewButton
+                            size="icon"
+                            onClick={() => toggleUrlVisibility(canvas.id)}
+                            tooltip={visibleUrls.has(canvas.id) ? "Hide URL" : "Show URL"}
+                            className="h-8 w-8"
+                          >
+                            {visibleUrls.has(canvas.id) ? (
+                              <EyeOff className="w-4 h-4" />
+                            ) : (
+                              <Eye className="w-4 h-4" />
+                            )}
+                          </ViewButton>
+                        </TooltipProvider>
                       </div>
 
                       {visibleUrls.has(canvas.id) && (
@@ -322,51 +326,56 @@ export default function CanvasPage() {
                               readOnly
                               className="text-xs font-mono bg-glass/20 border-white/10 text-foreground/80"
                             />
-                            <Button
-                              variant="secondary"
-                              size="default"
-                              icon={<Copy className="w-4 h-4" />}
-                              onClick={() => copyOverlayUrl(canvas.id)}
-                              className="px-3"
-                            >
-                            </Button>
+                            <TooltipProvider>
+                              <CopyButton
+                                size="icon"
+                                onClick={() => copyOverlayUrl(canvas.id)}
+                                tooltip="Copy overlay URL"
+                                className="px-3"
+                              >
+                                <Copy className="w-4 h-4" />
+                              </CopyButton>
+                            </TooltipProvider>
                           </div>
-                          <Button
-                            variant="secondary"
-                            size="default"
-                            icon={<ExternalLink className="w-4 h-4" />}
-                            onClick={() => openOverlay(canvas.id)}
-                            className="w-full"
-                          >
-                            Open Overlay in New Window
-                          </Button>
+                          <TooltipProvider>
+                            <ViewButton
+                              size="default"
+                              onClick={() => openOverlay(canvas.id)}
+                              tooltip="Open overlay in new window"
+                              className="w-full"
+                              icon={<ExternalLink className="w-4 h-4" />}
+                            >
+                              Open Overlay in New Window
+                            </ViewButton>
+                          </TooltipProvider>
                         </motion.div>
                       )}
                     </div>
 
                     {/* Action Buttons */}
                     <div className="flex gap-2">
-                      <Button asChild variant="secondary" size="default" className="flex-1">
-                        <Link href={`/dashboard/canvas/${canvas.id}`} className="gap-2">
+                      <Button asChild variant="cyber-pink" size="default" className="flex-1">
+                        <Link href={`/dashboard/canvas/${canvas.id}`} className="flex items-center gap-2">
                           <ExternalLink className="w-4 h-4" />
                           Interact
                         </Link>
                       </Button>
 
-                      <Button asChild variant="secondary" size="default" className="px-3">
+                      <Button asChild variant="cyber-orange" size="default" className="px-3">
                         <Link href={`/dashboard/canvas/${canvas.id}/settings`}>
                           <Settings className="w-4 h-4" />
                         </Link>
                       </Button>
 
-                      <Button
-                        variant="outline"
-                        size="default"
-                        icon={<X className="w-4 h-4" />}
-                        onClick={() => deleteCanvas(canvas.id)}
-                        className="text-red-400 hover:text-red-300 hover:bg-red-500/10 border-red-500/30 px-3"
-                      >
-                      </Button>
+                      <TooltipProvider>
+                        <DeleteButton
+                          size="icon"
+                          onClick={() => deleteCanvas(canvas.id)}
+                          tooltip="Delete canvas"
+                        >
+                          <X className="w-4 h-4" />
+                        </DeleteButton>
+                      </TooltipProvider>
                     </div>
                   </CardContent>
                 </Card>

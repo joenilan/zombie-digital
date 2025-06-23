@@ -24,6 +24,12 @@ const buttonVariants = cva(
         link: "text-primary underline-offset-4 hover:underline transition-smooth",
         ethereal: "bg-cyber-gradient text-white shadow-cyber hover:shadow-cyber-hover interactive-scale",
         glass: "bg-glass/20 backdrop-blur-sm border border-white/5 hover:bg-glass/30 hover:border-white/10 interactive-lift",
+        "cyber-cyan": "bg-cyber-cyan/20 hover:bg-cyber-cyan/30 text-cyber-cyan border border-cyber-cyan/30 hover:border-cyber-cyan/50 transition-all duration-300",
+        "cyber-pink": "bg-cyber-pink/20 hover:bg-cyber-pink/30 text-cyber-pink border border-cyber-pink/30 hover:border-cyber-pink/50 transition-all duration-300",
+        "cyber-purple": "bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 border border-purple-500/30 hover:border-purple-500/50 transition-all duration-300",
+        "cyber-green": "bg-green-500/20 hover:bg-green-500/30 text-green-400 border border-green-500/30 hover:border-green-500/50 transition-all duration-300",
+        "cyber-orange": "bg-orange-500/20 hover:bg-orange-500/30 text-orange-400 border border-orange-500/30 hover:border-orange-500/50 transition-all duration-300",
+        "cyber-red": "bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/30 hover:border-red-500/50 transition-all duration-300",
       },
       size: {
         default: "h-9 px-4 py-2",

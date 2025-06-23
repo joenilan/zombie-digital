@@ -1,7 +1,8 @@
 "use client"
 
 import { Share2 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { ViewButton } from '@/components/ui/action-button'
+
 import { useState } from 'react'
 
 interface ShareButtonProps {
@@ -38,14 +39,13 @@ export function ShareButton({ username, displayName }: ShareButtonProps) {
     }
 
     return (
-        <Button
-            variant="ghost"
+        <ViewButton
             size="icon"
             className="rounded-full h-8 w-8"
-            title={shared ? "Copied!" : "Share Profile"}
+            tooltip={shared ? "Copied!" : "Share Profile"}
             onClick={handleShare}
         >
             <Share2 size={16} />
-        </Button>
+        </ViewButton>
     )
 } 

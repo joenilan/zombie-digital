@@ -10,6 +10,8 @@ import { User } from '@supabase/supabase-js'
 import Link from 'next/link'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
+import { CopyButton, ViewButton, QRButton } from '@/components/ui/action-button'
+import { TooltipProvider } from '@/components/ui/tooltip'
 import {
   Copy,
   ExternalLink,
@@ -94,15 +96,9 @@ export default function SocialLinksPage() {
   } = useSocialLinksStore()
   const supabase = createClientComponentClient()
   // FIXED: Use twitchUser (which has site_role) instead of authUser
-  console.log('[DEBUG] Social Links Page - twitchUser:', twitchUser)
-  console.log('[DEBUG] Social Links Page - authUser:', authUser)
-  console.log('[DEBUG] Social Links Page - isLoading:', isLoading)
-  console.log('[DEBUG] Social Links Page - authLoading:', authLoading)
-  console.log('[DEBUG] Social Links Page - isInitialized:', isInitialized)
 
   // Wait for auth to initialize and user data to load before checking feature access
   const shouldCheckFeatureAccess = isInitialized && !authLoading && twitchUser
-  console.log('[DEBUG] shouldCheckFeatureAccess:', shouldCheckFeatureAccess)
 
   const { hasFeatureAccess, isLoading: featuresLoading } = useFeatureAccess(shouldCheckFeatureAccess ? twitchUser : null)
 
@@ -193,7 +189,7 @@ export default function SocialLinksPage() {
       }
     }
 
-    console.log('Setting up dashboard realtime subscriptions for user:', twitchUser.id);
+
 
     // Set up realtime subscription for dashboard
     const channelId = `dashboard_social_links_${twitchUser.id}_${Date.now()}`;
@@ -379,10 +375,6 @@ export default function SocialLinksPage() {
   // Feature access check - MOVED AFTER loading check so twitchUser is available
   // Only check feature access if we have a user and features are loaded
   if (shouldCheckFeatureAccess && !featuresLoading && !hasFeatureAccess('SOCIALS')) {
-    console.log('[DEBUG] Feature access denied. TwitchUser:', twitchUser)
-    console.log('[DEBUG] Features loading:', featuresLoading)
-    console.log('[DEBUG] Has SOCIALS access:', hasFeatureAccess('SOCIALS'))
-    console.log('[DEBUG] shouldCheckFeatureAccess:', shouldCheckFeatureAccess)
 
     return (
       <div className="bg-gradient-to-br from-background via-background/95 to-background/90 flex items-center justify-center py-16">
@@ -448,37 +440,39 @@ export default function SocialLinksPage() {
             </p>
           </div>
 
-          {/* Quick Actions */}
-          <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              onClick={() => {
-                console.log('[DEBUG] Current user:', twitchUser)
-                console.log('[DEBUG] Current user role:', twitchUser?.site_role)
-                useAuthStore.getState().refreshUser()
-              }}
-              className="bg-red-500/20 border-red-500/30 hover:bg-red-500/30"
-            >
-              <RefreshCcw className="w-4 h-4 mr-2" />
-              Debug Refresh
-            </Button>
-            <Button
-              variant="outline"
-              onClick={handleCopyUrl}
-              className="bg-glass/20 border-white/10 hover:bg-glass/30"
-            >
-              <Copy className="w-4 h-4 mr-2" />
-              Copy Link
-            </Button>
-            <Button
-              variant="outline"
-              onClick={handleOpenProfile}
-              className="bg-glass/20 border-white/10 hover:bg-glass/30"
-            >
-              <ExternalLink className="w-4 h-4 mr-2" />
-              View Profile
-            </Button>
-            <QRDialog username={twitchUser.username} />
+          {/* Profile Actions */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <div className="text-right">
+              <p className="text-sm text-foreground/60 mb-1">Your Profile</p>
+              <button
+                onClick={handleOpenProfile}
+                className="text-sm font-mono text-foreground/80 hover:text-cyber-cyan transition-colors block"
+                title="Click to open your profile"
+              >
+                zombie.digital/{twitchUser.username}
+              </button>
+            </div>
+            <div className="flex items-center gap-2">
+              <TooltipProvider>
+                <CopyButton
+                  onClick={handleCopyUrl}
+                  size="icon"
+                  tooltip="Copy profile link"
+                >
+                  <Copy className="w-4 h-4" />
+                </CopyButton>
+
+                <ViewButton
+                  onClick={handleOpenProfile}
+                  size="icon"
+                  tooltip="Open profile in new tab"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                </ViewButton>
+
+                <QRDialog username={twitchUser.username} variant="icon" />
+              </TooltipProvider>
+            </div>
           </div>
         </div>
       </motion.div>
@@ -488,7 +482,7 @@ export default function SocialLinksPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.1 }}
-        className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8"
+        className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8"
       >
         <Card variant="glass" className="p-4">
           <div className="flex items-center gap-3">
@@ -533,20 +527,6 @@ export default function SocialLinksPage() {
                 ) : (
                   quickStats?.uniqueVisitors?.toLocaleString() || "0"
                 )}
-              </p>
-            </div>
-          </div>
-        </Card>
-
-        <Card variant="glass" className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-green-500/10 text-green-400">
-              <BarChart4 className="w-5 h-5" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Profile URL</p>
-              <p className="text-sm font-medium text-foreground/80 truncate">
-                /{twitchUser.username}
               </p>
             </div>
           </div>

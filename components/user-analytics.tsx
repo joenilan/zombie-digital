@@ -228,11 +228,11 @@ export function UserAnalytics({ userId, username, websiteId, initialDays = 30, i
                     {DATE_RANGE_OPTIONS.map((option) => (
                         <Button
                             key={option.value}
-                            variant={selectedDays === option.value ? "default" : "outline"}
+                            variant={selectedDays === option.value ? "cyber-pink" : "outline"}
                             size="sm"
                             onClick={() => handleDateRangeChange(option.value)}
                             className={`transition-all duration-200 ${selectedDays === option.value
-                                ? 'bg-cyber-pink hover:bg-cyber-pink/80 text-white'
+                                ? ''
                                 : 'hover:bg-glass/40 hover:border-cyber-pink/50'
                                 }`}
                         >

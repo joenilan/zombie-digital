@@ -43,6 +43,8 @@ import {
   ExternalLink,
 } from "@/lib/icons";
 import { Button } from "@/components/ui/button";
+import { ViewButton, CopyButton, QRButton, EditButton, DeleteButton, SuccessButton } from '@/components/ui/action-button'
+
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -103,14 +105,14 @@ function SensitiveInfo({ text, userId }: { text: string; userId: string }) {
       <span className={isVisible ? "" : "blur-sm select-none"}>
         {isVisible ? text : "••••••••"}
       </span>
-      <Button
-        variant="ghost"
-        size="sm"
+      <ViewButton
+        size="icon"
         onClick={() => setIsVisible(!isVisible)}
-        className="h-6 w-6 p-0"
+        tooltip={isVisible ? "Hide" : "Show"}
+        className="h-6 w-6"
       >
         {isVisible ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
-      </Button>
+      </ViewButton>
     </div>
   );
 }
@@ -286,22 +288,19 @@ function UserDetailsDialog({ user, userStats }: { user: TwitchUser; userStats?: 
             </CardHeader>
             <CardContent>
               <div className="flex gap-2">
-                <Button
-                  variant="outline"
+                <ViewButton
                   size="sm"
                   onClick={() => window.open(`/${user.username}`, '_blank')}
-                  className="flex items-center gap-2"
+                  tooltip="Open user's profile"
                 >
                   <ArrowUpRight className="w-4 h-4" />
-                  View Profile
-                </Button>
+                </ViewButton>
                 <Button
-                  variant="outline"
+                  variant="cyber-cyan"
                   size="sm"
                   onClick={() => window.open(`/dashboard/social-links`, '_blank')}
-                  className="flex items-center gap-2"
+                  icon={<ArrowUpRight className="w-4 h-4" />}
                 >
-                  <ArrowUpRight className="w-4 h-4" />
                   Social Links
                 </Button>
               </div>
@@ -342,7 +341,7 @@ export default function UsersPage() {
   const { data: users, isLoading, refetch } = useQuery({
     queryKey: ['admin-users', sortField, sortDirection],
     queryFn: async () => {
-      console.log('🔄 Fetching users from database...', new Date().toISOString());
+
       const { data, error } = await supabase
         .from('twitch_users')
         .select('*')
@@ -353,8 +352,7 @@ export default function UsersPage() {
         throw error;
       }
 
-      console.log('✅ Users fetched:', data?.map(u => ({ username: u.username, site_role: u.site_role })));
-      console.log('🔍 Full user data:', data);
+
       return data as TwitchUser[];
     },
     staleTime: 0, // Always fetch fresh data
@@ -497,14 +495,14 @@ export default function UsersPage() {
         </div>
         <Button
           onClick={() => {
-            console.log('🔄 Manually refreshing user data...');
+
             queryClient.clear();
             refetch();
           }}
           variant="outline"
+          icon={<RefreshCcw className="w-4 h-4" />}
           className="bg-glass/20 border-white/10 hover:bg-glass/30"
         >
-          <RefreshCcw className="w-4 h-4 mr-2" />
           Refresh Data
         </Button>
       </div>

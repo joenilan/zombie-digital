@@ -51,7 +51,6 @@ function NavItem({ href, icon, label, isActive, badge }: NavItemProps) {
 }
 
 export function MobileNav({ user, pathname }: MobileNavProps) {
-  console.log('[DEBUG] MobileNav - user:', user)
   const { hasCanvasAccess, isLoading } = useUserRole(user);
   const { hasFeatureAccess, isLoading: featuresLoading } = useFeatureAccess(user);
   const isDashboardSection = pathname.startsWith('/dashboard');

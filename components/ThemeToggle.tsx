@@ -1,7 +1,7 @@
 "use client";
 
 import { useTheme } from "next-themes";
-import { Button } from "@nextui-org/react";
+import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 
@@ -16,10 +16,12 @@ export default function ThemeToggle() {
 
   return (
     <Button
-      radius="full"
-      variant="light"
-      onPress={() => setTheme(isDark ? "light" : "dark")}
-      className="w-9 h-9 p-0 bg-background/20 backdrop-blur-sm"
+      variant="ghost"
+      size="icon"
+      onClick={() => setTheme(isDark ? "light" : "dark")}
+      className="relative h-9 w-9 rounded-md border border-white/10 
+                 bg-glass/50 backdrop-blur-xl hover:bg-glass/70 
+                 transition-all duration-300 group"
     >
       <motion.div
         initial={false}
@@ -27,9 +29,9 @@ export default function ThemeToggle() {
         transition={{ duration: 0.3, type: "spring" }}
       >
         {isDark ? (
-          <SunIcon className="text-yellow-500" />
+          <SunIcon className="text-yellow-500 group-hover:text-yellow-400" />
         ) : (
-          <MoonIcon className="text-purple-500" />
+          <MoonIcon className="text-purple-500 group-hover:text-purple-400" />
         )}
       </motion.div>
     </Button>

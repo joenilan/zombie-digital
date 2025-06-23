@@ -139,7 +139,7 @@ export default function FeaturesPage() {
                         </div>
                         <Dialog open={showNewFeatureDialog} onOpenChange={setShowNewFeatureDialog}>
                             <DialogTrigger asChild>
-                                <Button icon={<Plus className="w-4 h-4" />}>
+                                <Button variant="cyber-green" icon={<Plus className="w-4 h-4" />}>
                                     New Feature
                                 </Button>
                             </DialogTrigger>
@@ -179,10 +179,10 @@ export default function FeaturesPage() {
                                     </div>
                                 </div>
                                 <DialogFooter>
-                                    <Button variant="outline" onClick={() => setShowNewFeatureDialog(false)}>
+                                    <Button variant="cyber-red" onClick={() => setShowNewFeatureDialog(false)}>
                                         Cancel
                                     </Button>
-                                    <Button onClick={handleCreateFeature}>
+                                    <Button variant="cyber-green" onClick={handleCreateFeature}>
                                         Create Feature
                                     </Button>
                                 </DialogFooter>
@@ -262,7 +262,7 @@ export default function FeaturesPage() {
                                         {editingFeature?.id === feature.id ? (
                                             <>
                                                 <Button
-                                                    variant="outline"
+                                                    variant="cyber-green"
                                                     size="sm"
                                                     className="flex-1"
                                                     onClick={() => handleUpdateFeature(feature.id, {
@@ -275,7 +275,7 @@ export default function FeaturesPage() {
                                                     Save
                                                 </Button>
                                                 <Button
-                                                    variant="outline"
+                                                    variant="cyber-red"
                                                     size="sm"
                                                     onClick={() => setEditingFeature(null)}
                                                     icon={<X className="w-3 h-3" />}
@@ -284,7 +284,7 @@ export default function FeaturesPage() {
                                             </>
                                         ) : (
                                             <Button
-                                                variant="outline"
+                                                variant="cyber-orange"
                                                 size="sm"
                                                 className="flex-1"
                                                 onClick={() => setEditingFeature(feature)}
@@ -323,7 +323,7 @@ export default function FeaturesPage() {
                             <p className="text-muted-foreground mb-6">
                                 Create your first feature flag to start controlling platform functionality.
                             </p>
-                            <Button onClick={() => setShowNewFeatureDialog(true)} icon={<Plus className="w-4 h-4" />}>
+                            <Button variant="cyber-green" onClick={() => setShowNewFeatureDialog(true)} icon={<Plus className="w-4 h-4" />}>
                                 Create Feature
                             </Button>
                         </div>

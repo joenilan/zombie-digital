@@ -27,6 +27,8 @@ import {
   cardAnimations,
   spinAnimation
 } from "@/lib/animations";
+import { CopyButton, ViewButton, QRButton, EditButton, DeleteButton, SuccessButton } from '@/components/ui/action-button'
+
 
 interface TwitchStats {
   followers: number;
@@ -254,17 +256,9 @@ export default function DashboardPage() {
                     <p className="text-sm text-yellow-400 mt-1">
                       {error || 'Please try refreshing the page.'}
                     </p>
-                    <Button
-                      onClick={handleRefresh}
-                      variant="outline"
-                      className="mt-3 gap-2 border-yellow-500/30 text-yellow-400 hover:bg-yellow-500/10"
-                      disabled={refreshing}
-                    >
-                      <motion.div variants={refreshing ? spinAnimation : undefined} animate={refreshing ? "animate" : undefined}>
-                        <RefreshCw className="w-4 h-4" />
-                      </motion.div>
-                      {refreshing ? 'Refreshing...' : 'Try Again'}
-                    </Button>
+                    <ViewButton onClick={handleRefresh} tooltip="Try Again">
+                      <RefreshCw className="w-4 h-4" />
+                    </ViewButton>
                   </div>
                 </div>
               </CardContent>
@@ -295,18 +289,16 @@ export default function DashboardPage() {
               <h1 className="text-4xl font-bold text-foreground mb-2">Dashboard</h1>
               <p className="text-gray-300">Welcome back! Here's your channel overview.</p>
             </div>
-            <Button
+            <ViewButton
               onClick={handleRefresh}
               disabled={refreshing}
-              variant="outline"
-              icon={
-                <motion.div variants={refreshing ? spinAnimation : undefined} animate={refreshing ? "animate" : undefined}>
-                  <RefreshCw className="w-4 h-4" />
-                </motion.div>
-              }
+              size="icon"
+              tooltip={refreshing ? 'Refreshing...' : 'Refresh Stats'}
             >
-              {refreshing ? 'Refreshing...' : 'Refresh Stats'}
-            </Button>
+              <motion.div variants={refreshing ? spinAnimation : undefined} animate={refreshing ? "animate" : undefined}>
+                <RefreshCw className="w-4 h-4" />
+              </motion.div>
+            </ViewButton>
           </motion.div>
 
           {loading ? (
@@ -319,9 +311,9 @@ export default function DashboardPage() {
                 <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
                 <h3 className="text-xl font-semibold text-red-400 mb-2">Error Loading Stats</h3>
                 <p className="text-red-300 mb-4">{error}</p>
-                <Button onClick={handleRefresh} variant="outline" icon={<RefreshCw className="w-4 h-4" />}>
-                  Try Again
-                </Button>
+                <ViewButton onClick={handleRefresh} tooltip="Try Again">
+                  <RefreshCw className="w-4 h-4" />
+                </ViewButton>
               </div>
             </motion.div>
           ) : stats ? (

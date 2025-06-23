@@ -175,12 +175,12 @@ export function AdminAnalytics({ websiteId, initialDays = 30 }: AdminAnalyticsPr
                     {DATE_RANGE_OPTIONS.map((option) => (
                         <Button
                             key={option.value}
-                            variant={selectedDays === option.value ? "default" : "outline"}
+                            variant={selectedDays === option.value ? "cyber-cyan" : "outline"}
                             size="sm"
                             onClick={() => handleDateRangeChange(option.value)}
                             className={`transition-all duration-200 ${selectedDays === option.value
-                                    ? 'bg-cyber-cyan hover:bg-cyber-cyan/80 text-white'
-                                    : 'hover:bg-glass/40 hover:border-cyber-cyan/50'
+                                ? ''
+                                : 'hover:bg-glass/40 hover:border-cyber-cyan/50'
                                 }`}
                         >
                             {option.label}

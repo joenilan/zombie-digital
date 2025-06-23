@@ -17,14 +17,12 @@ export function useUserRole(user: TwitchUser | null): UseUserRoleReturn {
 
   useEffect(() => {
     if (!user) {
-      console.log('[UserRole] No user provided')
       setUserRole(null)
       setIsLoading(false)
       return
     }
 
     // Since we already have the user data with site_role, no need to fetch
-    console.log(`[UserRole] Setting user role: ${user.site_role} for user: ${user.username}`)
     setUserRole(user.site_role as UserRole)
     setIsLoading(false)
   }, [user])

@@ -7,27 +7,27 @@ import { useQuery } from "@tanstack/react-query";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 
 const notificationVariants = {
-  initial: { 
-    height: 0, 
+  initial: {
+    height: 0,
     opacity: 0,
     y: -10,
     transition: { duration: 0.2 }
   },
-  animate: { 
-    height: "auto", 
+  animate: {
+    height: "auto",
     opacity: 1,
     y: 0,
-    transition: { 
+    transition: {
       duration: 0.4,
       ease: "easeOut"
     }
   },
-  exit: { 
-    height: 0, 
+  exit: {
+    height: 0,
     opacity: 0,
-    transition: { 
+    transition: {
       duration: 0.3,
-      ease: "easeIn" 
+      ease: "easeIn"
     }
   }
 };
@@ -81,17 +81,16 @@ export function SiteNotification({ user }: { user: any | null }) {
               ${notification.type === "success" && "bg-green-500/10 border-b border-green-500/20"}
             `}
           >
-            <div className="max-w-7xl mx-auto flex items-center justify-between">
-              <p className={`text-sm ${
-                notification.type === "info" && "text-blue-200"
-              } ${notification.type === "warning" && "text-yellow-200"}
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
+              <p className={`text-sm ${notification.type === "info" && "text-blue-200"
+                } ${notification.type === "warning" && "text-yellow-200"}
               ${notification.type === "error" && "text-red-200"}
               ${notification.type === "success" && "text-green-200"}`}>
                 {notification.message}
               </p>
               <button
                 onClick={() => setDismissedIds(prev => new Set([...prev, notification.id]))}
-                className="p-1 hover:bg-white/5 rounded-full transition-colors"
+                className="p-1 hover:bg-white/5 rounded-full transition-colors flex-shrink-0 ml-3"
               >
                 <XIcon className="w-4 h-4 opacity-60" />
               </button>

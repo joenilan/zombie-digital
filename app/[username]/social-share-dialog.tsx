@@ -4,6 +4,8 @@ import { useState } from 'react'
 import { Share2, Twitter, Facebook, Linkedin, Link as LinkIcon, CheckCircle } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import { CopyButton, ViewButton, QRButton, EditButton, DeleteButton, SuccessButton } from '@/components/ui/action-button'
+
 
 interface SocialShareDialogProps {
     username: string
@@ -34,9 +36,9 @@ export function SocialShareDialog({ username, displayName }: SocialShareDialogPr
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button variant="ghost" size="icon" className="rounded-full h-8 w-8" title="Share Profile">
+                <ViewButton size="icon" tooltip="Share Profile" className="rounded-full h-8 w-8">
                     <Share2 size={16} />
-                </Button>
+                </ViewButton>
             </DialogTrigger>
             <DialogContent className="sm:max-w-md">
                 <DialogHeader>
@@ -51,8 +53,8 @@ export function SocialShareDialog({ username, displayName }: SocialShareDialogPr
                             rel="noopener noreferrer"
                             className="flex flex-col items-center gap-2"
                         >
-                            <Button variant="outline" size="icon" className="h-12 w-12 rounded-full">
-                                <Twitter className="text-[#1DA1F2]" />
+                            <Button variant="cyber-cyan" size="icon" className="h-12 w-12 rounded-full">
+                                <Twitter className="text-white" />
                             </Button>
                             <span className="text-xs">Twitter</span>
                         </a>
@@ -64,8 +66,8 @@ export function SocialShareDialog({ username, displayName }: SocialShareDialogPr
                             rel="noopener noreferrer"
                             className="flex flex-col items-center gap-2"
                         >
-                            <Button variant="outline" size="icon" className="h-12 w-12 rounded-full">
-                                <Facebook className="text-[#4267B2]" />
+                            <Button variant="cyber-pink" size="icon" className="h-12 w-12 rounded-full">
+                                <Facebook className="text-white" />
                             </Button>
                             <span className="text-xs">Facebook</span>
                         </a>
@@ -77,8 +79,8 @@ export function SocialShareDialog({ username, displayName }: SocialShareDialogPr
                             rel="noopener noreferrer"
                             className="flex flex-col items-center gap-2"
                         >
-                            <Button variant="outline" size="icon" className="h-12 w-12 rounded-full">
-                                <Linkedin className="text-[#0077B5]" />
+                            <Button variant="cyber-purple" size="icon" className="h-12 w-12 rounded-full">
+                                <Linkedin className="text-white" />
                             </Button>
                             <span className="text-xs">LinkedIn</span>
                         </a>
@@ -92,23 +94,14 @@ export function SocialShareDialog({ username, displayName }: SocialShareDialogPr
                             readOnly
                             className="w-full pr-20 flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                         />
-                        <Button
+                        <CopyButton
                             onClick={copyToClipboard}
-                            variant="ghost"
-                            className="absolute right-0 h-9 gap-1"
+                            size="sm"
+                            tooltip={copied ? 'Copied!' : 'Copy link'}
+                            className="absolute right-0 h-9"
                         >
-                            {copied ? (
-                                <>
-                                    <CheckCircle size={16} className="text-green-500" />
-                                    <span>Copied!</span>
-                                </>
-                            ) : (
-                                <>
-                                    <LinkIcon size={16} />
-                                    <span>Copy</span>
-                                </>
-                            )}
-                        </Button>
+                            {copied ? <CheckCircle size={16} className="text-green-500" /> : <LinkIcon size={16} />}
+                        </CopyButton>
                     </div>
                 </div>
             </DialogContent>

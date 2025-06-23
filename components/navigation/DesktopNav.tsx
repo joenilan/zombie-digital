@@ -81,7 +81,6 @@ function SubNavLink({ href, current, children, layoutId = "subnav-highlight" }: 
 }
 
 export function DesktopNav({ user, pathname }: DesktopNavProps) {
-  console.log('[DEBUG] DesktopNav - user:', user)
   const { hasCanvasAccess, isLoading } = useUserRole(user);
   const { hasFeatureAccess, isLoading: featuresLoading } = useFeatureAccess(user);
   const isDashboardSection = pathname.startsWith('/dashboard');

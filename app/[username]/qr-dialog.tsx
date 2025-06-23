@@ -5,12 +5,14 @@ import QRCode from 'react-qr-code'
 import { QrCode, Download } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 
 interface QRDialogProps {
     username: string
+    variant?: 'default' | 'compact' | 'header' | 'icon'
 }
 
-export function QRDialog({ username }: QRDialogProps) {
+export function QRDialog({ username, variant = 'default' }: QRDialogProps) {
     const [open, setOpen] = useState(false)
     const profileUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/`
         + username
@@ -57,14 +59,46 @@ export function QRDialog({ username }: QRDialogProps) {
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-10 w-10 rounded-lg hover:text-white hover:bg-purple-400/20 transition-all duration-300"
-                    title="Show QR Code"
-                >
-                    <QrCode className="w-4 h-4 text-purple-400" />
-                </Button>
+                {variant === 'compact' ? (
+                    <Button
+                        size="sm"
+                        variant="ghost"
+                        icon={<QrCode className="w-4 h-4" />}
+                        className="h-8 px-2 hover:bg-purple-500/20 hover:text-purple-400"
+                        title="Show QR Code"
+                    >
+                        QR
+                    </Button>
+                ) : variant === 'header' ? (
+                    <Button
+                        size="sm"
+                        icon={<QrCode className="w-4 h-4" />}
+                        className="bg-purple-500/20 hover:bg-purple-500/30 text-purple-400 border-purple-500/30 hover:border-purple-500/50 transition-all duration-300 font-medium"
+                        title="Show QR Code"
+                    >
+                        Get QR
+                    </Button>
+                ) : variant === 'icon' ? (
+                    <Button
+                        size="icon"
+                        variant="cyber-purple"
+                        title="Get QR code"
+                    >
+                        <QrCode className="w-4 h-4" />
+                    </Button>
+                ) : (
+                    <Button
+                        variant="outline"
+                        size="lg"
+                        icon={<QrCode className="w-5 h-5" />}
+                        className="bg-glass/20 border-white/10 hover:bg-glass/30 hover:border-purple-500/50 hover:shadow-cyber transition-all duration-300 h-14 text-base font-medium group"
+                        title="Show QR Code"
+                    >
+                        <span className="group-hover:scale-105 transition-transform duration-200">
+                            Get QR Code
+                        </span>
+                    </Button>
+                )}
             </DialogTrigger>
             <DialogContent className="max-w-sm border-0 shadow-xl bg-background">
                 <DialogHeader>
@@ -84,9 +118,9 @@ export function QRDialog({ username }: QRDialogProps) {
                     </p>
                     <Button
                         onClick={downloadQRCode}
-                        className="mt-4 gap-2 bg-primary hover:bg-primary/90 text-white border-0"
+                        icon={<Download className="w-4 h-4" />}
+                        className="mt-4 bg-primary hover:bg-primary/90 text-white border-0"
                     >
-                        <Download className="w-4 h-4" />
                         Download QR Code
                     </Button>
                 </div>

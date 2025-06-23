@@ -5,6 +5,8 @@ import { UserLevel } from "@/types/database";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
+import { ViewButton } from "@/components/ui/action-button";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 const PREVIEW_ROLES: UserLevel[] = ["user", "moderator", "admin", "owner"];
 
@@ -25,13 +27,15 @@ export function RolePreview({ currentRole, previewRole, onPreviewChange }: RoleP
   return (
     <div className="fixed bottom-4 right-4 z-50">
       <div className="relative">
-        <Button
-          onClick={() => setIsOpen(!isOpen)}
-          variant="ethereal"
-          icon={<ArrowRight className="w-4 h-4" />}
-        >
-          {previewRole ? `Viewing as ${previewRole}` : 'Role Preview'}
-        </Button>
+        <TooltipProvider>
+          <ViewButton
+            onClick={() => setIsOpen(!isOpen)}
+            tooltip={previewRole ? `Currently viewing as ${previewRole}` : 'Preview different user roles'}
+            icon={<ArrowRight className="w-4 h-4" />}
+          >
+            {previewRole ? `Viewing as ${previewRole}` : 'Role Preview'}
+          </ViewButton>
+        </TooltipProvider>
 
         <AnimatePresence>
           {isOpen && (
@@ -43,33 +47,40 @@ export function RolePreview({ currentRole, previewRole, onPreviewChange }: RoleP
                         border border-white/10 rounded-lg shadow-lg"
             >
               {previewRole && (
-                <button
-                  onClick={() => {
-                    onPreviewChange(null);
-                    setIsOpen(false);
-                  }}
-                  className="w-full text-left px-4 py-2 text-sm hover:bg-white/5 transition-colors text-cyan-400"
-                >
-                  Exit Preview Mode
-                </button>
+                <TooltipProvider>
+                  <ViewButton
+                    onClick={() => {
+                      onPreviewChange(null);
+                      setIsOpen(false);
+                    }}
+                    size="sm"
+                    tooltip="Return to your normal role view"
+                    className="w-full text-left px-4 py-2 text-sm justify-start rounded-none text-cyan-400"
+                  >
+                    Exit Preview Mode
+                  </ViewButton>
+                </TooltipProvider>
               )}
 
               {availableRoles.map((role) => (
-                <button
-                  key={role}
-                  onClick={() => {
-                    onPreviewChange(role);
-                    setIsOpen(false);
-                  }}
-                  disabled={role === previewRole}
-                  className={`w-full text-left px-4 py-2 text-sm transition-colors
-                    ${role === previewRole
-                      ? 'bg-white/10 text-foreground/50'
-                      : 'hover:bg-white/5 text-foreground/90'
-                    }`}
-                >
-                  Preview as {role}
-                </button>
+                <TooltipProvider key={role}>
+                  <ViewButton
+                    onClick={() => {
+                      onPreviewChange(role);
+                      setIsOpen(false);
+                    }}
+                    disabled={role === previewRole}
+                    size="sm"
+                    tooltip={`Preview the website as a ${role} user`}
+                    className={`w-full text-left px-4 py-2 text-sm justify-start rounded-none
+                      ${role === previewRole
+                        ? 'bg-white/10 text-foreground/50'
+                        : 'text-foreground/90'
+                      }`}
+                  >
+                    Preview as {role}
+                  </ViewButton>
+                </TooltipProvider>
               ))}
             </motion.div>
           )}

@@ -12,6 +12,8 @@ import * as Label from '@radix-ui/react-label'
 import * as Switch from '@radix-ui/react-switch'
 import * as Toast from '@radix-ui/react-toast'
 import { useState } from 'react'
+import { SuccessButton } from '@/components/ui/action-button'
+import { Check } from 'lucide-react'
 
 const formSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -184,14 +186,15 @@ export function CanvasSettingsForm({ initialData, canvasId }: CanvasSettingsForm
           </Switch.Root>
         </div>
 
-        <Button type="submit">Save Changes</Button>
+        <SuccessButton type="submit" tooltip="Save canvas settings" icon={<Check className="w-4 h-4" />}>
+          Save Changes
+        </SuccessButton>
       </form>
 
       <Toast.Provider swipeDirection="right">
         <Toast.Root
-          className={`${
-            toastType === 'success' ? 'bg-green-100 border-green-400 text-green-700' : 'bg-red-100 border-red-400 text-red-700'
-          } fixed bottom-4 right-4 px-4 py-3 rounded border`}
+          className={`${toastType === 'success' ? 'bg-green-100 border-green-400 text-green-700' : 'bg-red-100 border-red-400 text-red-700'
+            } fixed bottom-4 right-4 px-4 py-3 rounded border`}
           open={open}
           onOpenChange={setOpen}
         >

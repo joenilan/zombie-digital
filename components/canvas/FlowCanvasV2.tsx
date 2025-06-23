@@ -16,6 +16,8 @@ import ReactFlow, {
 import 'reactflow/dist/style.css'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { createClient } from '@supabase/supabase-js'
+import { SuccessButton, DeleteButton, ViewButton } from '@/components/ui/action-button'
+import { TooltipProvider } from '@/components/ui/tooltip'
 
 interface FlowCanvasV2Props {
   canvasId: string
@@ -234,15 +236,19 @@ const CanvasContextMenu = ({ x, y, onUpload, onClose }: CanvasContextMenuProps) 
       backgroundColor: 'rgb(24 24 27)'
     }}
   >
-    <button
-      className="w-full px-4 py-2 text-sm text-left transition-colors hover:bg-zinc-800"
-      onClick={() => {
-        onUpload()
-        onClose()
-      }}
-    >
-      Upload Image
-    </button>
+    <TooltipProvider>
+      <SuccessButton
+        onClick={() => {
+          onUpload()
+          onClose()
+        }}
+        size="sm"
+        tooltip="Upload an image to the canvas"
+        className="w-full px-4 py-2 text-sm justify-start rounded-none"
+      >
+        Upload Image
+      </SuccessButton>
+    </TooltipProvider>
   </div>
 )
 
@@ -257,15 +263,19 @@ const NodeContextMenu = ({ x, y, onDelete, onClose }: NodeContextMenuProps) => (
       backgroundColor: 'rgb(24 24 27)'
     }}
   >
-    <button
-      className="w-full px-4 py-2 text-sm text-left text-red-500 transition-colors hover:bg-zinc-800"
-      onClick={() => {
-        onDelete()
-        onClose()
-      }}
-    >
-      Delete Image
-    </button>
+    <TooltipProvider>
+      <DeleteButton
+        onClick={() => {
+          onDelete()
+          onClose()
+        }}
+        size="sm"
+        tooltip="Delete this image"
+        className="w-full px-4 py-2 text-sm justify-start rounded-none"
+      >
+        Delete Image
+      </DeleteButton>
+    </TooltipProvider>
   </div>
 )
 
@@ -293,19 +303,20 @@ const ConfirmDialog = ({ onConfirm, onCancel, count }: ConfirmDialogProps) => (
           Are you sure you want to delete {count > 1 ? 'these images' : 'this image'}? This action cannot be undone.
         </p>
         <div className="flex justify-end gap-3">
-          <button
-            className="px-4 py-2 rounded transition-colors hover:bg-zinc-800"
-            onClick={onCancel}
-          >
-            Cancel
-          </button>
-          <button
-            className="px-4 py-2 text-white rounded transition-colors hover:bg-red-600"
-            style={{ backgroundColor: 'rgb(239 68 68)' }}
-            onClick={onConfirm}
-          >
-            Delete
-          </button>
+          <TooltipProvider>
+            <ViewButton
+              onClick={onCancel}
+              tooltip="Cancel deletion"
+            >
+              Cancel
+            </ViewButton>
+            <DeleteButton
+              onClick={onConfirm}
+              tooltip="Confirm deletion"
+            >
+              Delete
+            </DeleteButton>
+          </TooltipProvider>
         </div>
       </div>
     </div>

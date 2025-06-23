@@ -28,7 +28,6 @@ interface UseFeatureAccessReturn {
 }
 
 export function useFeatureAccess(user: TwitchUser | null): UseFeatureAccessReturn {
-  console.log('[FeatureAccess] Hook called with user:', user)
   const [features, setFeatures] = useState<Feature[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
@@ -37,7 +36,6 @@ export function useFeatureAccess(user: TwitchUser | null): UseFeatureAccessRetur
 
   const fetchFeatures = async () => {
     try {
-      console.log('[FeatureAccess] Starting fetchFeatures with userRole:', userRole)
       setIsLoading(true)
       setError(null)
 
@@ -46,25 +44,20 @@ export function useFeatureAccess(user: TwitchUser | null): UseFeatureAccessRetur
         .select('*')
         .order('sort_order', { ascending: true })
 
-      console.log('[FeatureAccess] Fetched features data:', data)
-      console.log('[FeatureAccess] Fetch error:', fetchError)
-
       if (fetchError) throw fetchError
 
       // Calculate user access for each feature
       const featuresWithAccess = data?.map(feature => {
         const hasAccess = hasRoleAccess(userRole, feature.required_role) && feature.enabled
-        console.log(`[FeatureAccess] Processing feature ${feature.feature_id}: hasAccess=${hasAccess}, enabled=${feature.enabled}, required_role=${feature.required_role}`)
         return {
           ...feature,
           user_has_access: hasAccess
         }
       }) || []
 
-      console.log('[FeatureAccess] Final features with access:', featuresWithAccess)
       setFeatures(featuresWithAccess)
     } catch (err) {
-      console.error('[FeatureAccess] Error fetching features:', err)
+      console.error('Error fetching features:', err)
       setError(err as Error)
     } finally {
       setIsLoading(false)
@@ -72,18 +65,13 @@ export function useFeatureAccess(user: TwitchUser | null): UseFeatureAccessRetur
   }
 
   useEffect(() => {
-    console.log('[FeatureAccess] useEffect triggered with userRole:', userRole)
     if (userRole !== null) {
-      console.log('[FeatureAccess] Calling fetchFeatures')
       fetchFeatures()
-    } else {
-      console.log('[FeatureAccess] Skipping fetchFeatures because userRole is null')
     }
   }, [userRole, supabase])
 
   const hasRoleAccess = (userRole: string | null, requiredRole: string): boolean => {
     if (!userRole) {
-      console.log('[FeatureAccess] No user role provided')
       return false
     }
     
@@ -97,8 +85,6 @@ export function useFeatureAccess(user: TwitchUser | null): UseFeatureAccessRetur
     const userLevel = roleHierarchy[userRole as keyof typeof roleHierarchy] || 0
     const requiredLevel = roleHierarchy[requiredRole as keyof typeof roleHierarchy] || 0
     const hasAccess = userLevel >= requiredLevel
-
-    console.log(`[FeatureAccess] Role check: ${userRole}(${userLevel}) >= ${requiredRole}(${requiredLevel}) = ${hasAccess}`)
     
     return hasAccess
   }
@@ -106,7 +92,6 @@ export function useFeatureAccess(user: TwitchUser | null): UseFeatureAccessRetur
   const hasFeatureAccess = (featureId: string): boolean => {
     const feature = features.find(f => f.feature_id === featureId)
     const hasAccess = feature?.user_has_access || false
-    console.log(`[FeatureAccess] Feature ${featureId}: ${hasAccess} (feature found: ${!!feature}, enabled: ${feature?.enabled})`)
     return hasAccess
   }
 

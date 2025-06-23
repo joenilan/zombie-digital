@@ -16,6 +16,8 @@ import {
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion'
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from '@/components/ui/button'
+import { ViewButton } from '@/components/ui/action-button'
+import { TooltipProvider } from '@/components/ui/tooltip'
 
 interface RealtimeLinksProps {
   userId: string
@@ -106,20 +108,24 @@ function TwitchLink({ link, username }: { link: SocialLink; username: string }) 
 
       {isLive && (
         <>
-          <button
-            onClick={() => setIsExpanded(!isExpanded)}
-            className="w-full p-2 bg-glass/50 hover:bg-glass transition-colors
-                     flex items-center justify-center gap-2 text-sm text-muted-foreground
-                     rounded-b-xl"
-          >
-            <motion.div
-              animate={{ rotate: isExpanded ? 180 : 0 }}
-              transition={{ duration: 0.2 }}
+          <TooltipProvider>
+            <ViewButton
+              onClick={() => setIsExpanded(!isExpanded)}
+              size="sm"
+              tooltip={isExpanded ? 'Hide Stream' : 'Show Stream'}
+              className="w-full p-2 bg-glass/50 hover:bg-glass transition-colors
+                       flex items-center justify-center gap-2 text-sm text-muted-foreground
+                       rounded-b-xl"
             >
-              <ChevronDown className="w-4 h-4" />
-            </motion.div>
-            {isExpanded ? 'Hide Stream' : 'Show Stream'}
-          </button>
+              <motion.div
+                animate={{ rotate: isExpanded ? 180 : 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <ChevronDown className="w-4 h-4" />
+              </motion.div>
+              {isExpanded ? 'Hide Stream' : 'Show Stream'}
+            </ViewButton>
+          </TooltipProvider>
 
           <AnimatePresence>
             {isExpanded && (
@@ -289,8 +295,8 @@ export function RealtimeLinks({ userId, initialLinks, isOwner }: RealtimeLinksPr
           {isOwner ? (
             <div className="space-y-4">
               <p className="mb-2">You haven't added any social links yet.</p>
-              <Button asChild variant="secondary">
-                <a href="/settings/links" className="gap-2">
+              <Button asChild variant="cyber-green">
+                <a href="/dashboard/social-links" className="gap-2">
                   <LinkIcon className="w-4 h-4" />
                   Get started by adding your first link
                 </a>

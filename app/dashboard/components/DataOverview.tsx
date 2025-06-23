@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { TwitchUser, UserLevel } from "@/types/database";
 import { hasPermission } from "@/utils/permissions";
 import { EyeIcon, EyeOffIcon, ChevronDownIcon, ChevronUpIcon } from "@/components/icons";
+import { ViewButton } from "@/components/ui/action-button";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 const itemVariants = {
   hidden: { opacity: 0, y: 20 },
@@ -30,18 +32,20 @@ function SensitiveText({ text }: { text: string }) {
                    transition-all duration-200 focus:outline-none focus:ring-1 focus:ring-purple-500/50
                    ${isRevealed ? "blur-none" : "blur-[4px]"}`}
       />
-      <button
-        type="button"
-        onClick={() => setIsRevealed(!isRevealed)}
-        className="flex-shrink-0 p-1.5 hover:bg-white/5 rounded-full transition-colors z-10"
-        title={isRevealed ? "Hide sensitive data" : "Show sensitive data"}
-      >
-        {isRevealed ? (
-          <EyeOffIcon size={14} className="opacity-60" />
-        ) : (
-          <EyeIcon size={14} className="opacity-60" />
-        )}
-      </button>
+      <TooltipProvider>
+        <ViewButton
+          size="icon"
+          onClick={() => setIsRevealed(!isRevealed)}
+          tooltip={isRevealed ? "Hide sensitive data" : "Show sensitive data"}
+          className="flex-shrink-0 p-1.5"
+        >
+          {isRevealed ? (
+            <EyeOffIcon size={14} className="opacity-60" />
+          ) : (
+            <EyeIcon size={14} className="opacity-60" />
+          )}
+        </ViewButton>
+      </TooltipProvider>
     </div>
   );
 }
@@ -59,17 +63,21 @@ function CollapsibleSection({
 
   return (
     <div className="ethereal-card">
-      <button
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full flex items-center justify-between p-4 hover:bg-white/5 transition-colors rounded-t-lg"
-      >
-        <h3 className="text-lg font-semibold">{title}</h3>
-        {isExpanded ? (
-          <ChevronUpIcon size={20} className="opacity-60" />
-        ) : (
-          <ChevronDownIcon size={20} className="opacity-60" />
-        )}
-      </button>
+      <TooltipProvider>
+        <ViewButton
+          onClick={() => setIsExpanded(!isExpanded)}
+          size="lg"
+          tooltip={isExpanded ? "Collapse section" : "Expand section"}
+          className="w-full flex items-center justify-between p-4 rounded-t-lg"
+        >
+          <h3 className="text-lg font-semibold">{title}</h3>
+          {isExpanded ? (
+            <ChevronUpIcon size={20} className="opacity-60" />
+          ) : (
+            <ChevronDownIcon size={20} className="opacity-60" />
+          )}
+        </ViewButton>
+      </TooltipProvider>
       <AnimatePresence>
         {isExpanded && (
           <motion.div
@@ -163,17 +171,21 @@ export function DataOverview({ session, user, effectiveRole }: DataOverviewProps
 
   return (
     <motion.div variants={itemVariants} className="mb-8">
-      <button
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full flex items-center justify-between p-4 hover:bg-white/5 transition-colors rounded-lg mb-2"
-      >
-        <h2 className="text-xl font-bold">Account Overview</h2>
-        {isExpanded ? (
-          <ChevronUpIcon size={20} className="opacity-60" />
-        ) : (
-          <ChevronDownIcon size={20} className="opacity-60" />
-        )}
-      </button>
+      <TooltipProvider>
+        <ViewButton
+          onClick={() => setIsExpanded(!isExpanded)}
+          size="lg"
+          tooltip={isExpanded ? "Collapse overview" : "Expand overview"}
+          className="w-full flex items-center justify-between p-4 rounded-lg mb-2"
+        >
+          <h2 className="text-xl font-bold">Account Overview</h2>
+          {isExpanded ? (
+            <ChevronUpIcon size={20} className="opacity-60" />
+          ) : (
+            <ChevronDownIcon size={20} className="opacity-60" />
+          )}
+        </ViewButton>
+      </TooltipProvider>
 
       <AnimatePresence>
         {isExpanded && (

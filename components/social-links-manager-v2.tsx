@@ -272,10 +272,10 @@ const EditLinkDialog = ({
           </div>
 
           <div className="flex justify-end gap-2 pt-4">
-            <Button type="button" variant="outline" icon={<X className="w-4 h-4" />} onClick={() => onOpenChange(false)} className="border-0 bg-muted/20">
+            <Button type="button" variant="cyber-red" icon={<X className="w-4 h-4" />} onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={!url} variant="secondary" icon={<Check className="w-4 h-4" />} className="bg-primary hover:bg-primary/90 text-white">
+            <Button type="submit" disabled={!url} variant="cyber-green" icon={<Check className="w-4 h-4" />}>
               Save Changes
             </Button>
           </div>
@@ -498,10 +498,10 @@ const AddLink = ({ userId, onAdd, open, onOpenChange }: {
           </div>
 
           <div className="flex justify-end gap-2 pt-2">
-            <Button type="button" variant="outline" icon={<X className="w-4 h-4" />} onClick={() => onOpenChange(false)} className="border-0 bg-muted/20">
+            <Button type="button" variant="cyber-red" icon={<X className="w-4 h-4" />} onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={!platform || !username} variant="ethereal" icon={<Plus className="w-4 h-4" />}>
+            <Button type="submit" disabled={!platform || !username} variant="cyber-green" icon={<Plus className="w-4 h-4" />}>
               Add Link
             </Button>
           </div>
@@ -725,7 +725,7 @@ export function SocialLinksManagerV2({ initialLinks = [], twitchUserId, onLinksC
 
                   <Button
                     onClick={() => openAddDialog()}
-                    variant="secondary"
+                    variant="cyber-cyan"
                     icon={<Plus className="w-3.5 h-3.5" />}
                     className="h-9"
                     size="sm"
@@ -810,22 +810,20 @@ export function SocialLinksManagerV2({ initialLinks = [], twitchUserId, onLinksC
                 <div className="flex justify-end gap-2 pt-2">
                   <Button
                     type="button"
-                    variant="outline"
+                    variant="cyber-red"
                     icon={<X className="w-4 h-4" />}
                     onClick={() => {
                       closeAddDialog();
                       setNewLinkPlatform('');
                     }}
-                    className="border-0 bg-muted/20"
                   >
                     Cancel
                   </Button>
                   <Button
                     type="submit"
                     disabled={!newLinkPlatform}
-                    variant="secondary"
+                    variant="cyber-cyan"
                     icon={<Plus className="w-4 h-4" />}
-                    className="bg-primary hover:bg-primary/90 text-white"
                   >
                     Add Link
                   </Button>

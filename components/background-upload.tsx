@@ -310,9 +310,8 @@ export function BackgroundUpload({ userId, onSuccess, showPreview }: BackgroundU
                     <Button
                         onClick={() => fileInputRef.current?.click()}
                         disabled={isUploading}
-                        variant="default"
+                        variant="cyber-pink"
                         size="lg"
-                        className="bg-gradient-to-r from-cyber-pink to-purple-500 hover:from-cyber-pink/90 hover:to-purple-500/90 text-white border-0 shadow-cyber transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed px-8 py-3 rounded-lg font-medium"
                         icon={isUploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Upload className="w-5 h-5" />}
                         loading={isUploading}
                     >

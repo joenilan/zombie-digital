@@ -7,6 +7,7 @@ import { Footer } from '@/components/Footer'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { ScrollIndicator } from '@/components/ui/back-to-top'
 import { KeyboardShortcuts } from '@/components/ui/keyboard-shortcuts'
+import { TooltipProvider } from '@/components/ui/tooltip'
 
 export function LayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
@@ -47,25 +48,31 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
 
   // Don't show navigation/footer on overlay, canvas pages, or username pages
   if (isOverlay || isCanvas || isUsernamePage) {
-    return children;
+    return (
+      <TooltipProvider>
+        {children}
+      </TooltipProvider>
+    );
   }
 
   // All pages get normal scrolling layout with fixed footer
   return (
-    <div className="min-h-screen flex flex-col">
-      <Navigation />
-      <main id="main-content" className="relative z-10 flex-1">
-        {children}
-      </main>
-      <Footer />
+    <TooltipProvider>
+      <div className="min-h-screen flex flex-col">
+        <Navigation />
+        <main id="main-content" className="relative z-10 flex-1">
+          {children}
+        </main>
+        <Footer />
 
-      {/* Add scroll indicator and back to top for all pages except overlay/canvas */}
-      <ScrollIndicator
-        threshold={400}
-        showProgress={true}
-        variant="cyber"
-      />
-      <KeyboardShortcuts />
-    </div>
+        {/* Add scroll indicator and back to top for all pages except overlay/canvas */}
+        <ScrollIndicator
+          threshold={400}
+          showProgress={true}
+          variant="cyber"
+        />
+        <KeyboardShortcuts />
+      </div>
+    </TooltipProvider>
   )
 } 
