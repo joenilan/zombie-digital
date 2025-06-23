@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { Button } from '@/components/ui/button'
-import { DeleteButton, CopyButton, ViewButton, QRButton, EditButton, SuccessButton } from '@/components/ui/action-button'
+import { DeleteButton, CopyButton, ViewButton, QRButton, EditButton } from '@/components/ui/action-button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Plus, Eye, EyeOff, Trash2, Settings, ExternalLink, Calendar, Users, Layers, Copy, BarChart3, X } from 'lucide-react'

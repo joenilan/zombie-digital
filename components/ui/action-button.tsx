@@ -102,9 +102,9 @@ export function EditButton(props: Omit<ActionButtonProps, 'color'>) {
 }
 
 export function DeleteButton(props: Omit<ActionButtonProps, 'color'>) {
-    return <ActionButton color="cyber-red" {...props} />
+    return <ActionButton color="cyber-pink" {...props} />
 }
 
 export function SuccessButton(props: Omit<ActionButtonProps, 'color'>) {
-    return <ActionButton color="cyber-green" {...props} />
+    return <ActionButton color="cyber-cyan" {...props} />
 } 

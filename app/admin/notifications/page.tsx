@@ -8,7 +8,7 @@ import { useForm } from "react-hook-form";
 import { Pencil, Trash2, Check, X, Plus } from "lucide-react";
 import { format } from "date-fns";
 import { useAuthStore } from '@/stores/useAuthStore'
-import { SuccessButton, DeleteButton, ViewButton } from '@/components/ui/action-button'
+import { CopyButton, DeleteButton, ViewButton } from '@/components/ui/action-button'
 
 interface NotificationForm {
   message: string;
@@ -196,14 +196,14 @@ export default function NotificationsPage() {
           />
         </div>
 
-        <SuccessButton
+        <CopyButton
           type="submit"
           disabled={createMutation.isPending}
           tooltip={createMutation.isPending ? 'Creating notification...' : 'Create notification'}
           icon={createMutation.isPending ? undefined : <Plus className="w-4 h-4" />}
         >
           {createMutation.isPending ? 'Creating...' : 'Create Notification'}
-        </SuccessButton>
+        </CopyButton>
       </form>
 
       <div className="mt-8">

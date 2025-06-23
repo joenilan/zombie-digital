@@ -179,10 +179,10 @@ export default function FeaturesPage() {
                                     </div>
                                 </div>
                                 <DialogFooter>
-                                    <Button variant="cyber-red" onClick={() => setShowNewFeatureDialog(false)}>
+                                    <Button variant="cyber-pink" onClick={() => setShowNewFeatureDialog(false)}>
                                         Cancel
                                     </Button>
-                                    <Button variant="cyber-green" onClick={handleCreateFeature}>
+                                    <Button variant="cyber-cyan" onClick={handleCreateFeature}>
                                         Create Feature
                                     </Button>
                                 </DialogFooter>
@@ -262,7 +262,7 @@ export default function FeaturesPage() {
                                         {editingFeature?.id === feature.id ? (
                                             <>
                                                 <Button
-                                                    variant="cyber-green"
+                                                    variant="cyber-cyan"
                                                     size="sm"
                                                     className="flex-1"
                                                     onClick={() => handleUpdateFeature(feature.id, {
@@ -275,7 +275,7 @@ export default function FeaturesPage() {
                                                     Save
                                                 </Button>
                                                 <Button
-                                                    variant="cyber-red"
+                                                    variant="cyber-pink"
                                                     size="sm"
                                                     onClick={() => setEditingFeature(null)}
                                                     icon={<X className="w-3 h-3" />}

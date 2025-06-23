@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { umami } from '@/lib/umami'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { SuccessButton } from '@/components/ui/action-button'
+import { CopyButton } from '@/components/ui/action-button'
 import { Activity } from 'lucide-react'
 
 export default function TestAnalyticsPage() {
@@ -70,7 +70,7 @@ export default function TestAnalyticsPage() {
                             </p>
                         </div>
 
-                        <SuccessButton
+                        <CopyButton
                             onClick={trackCustomEvent}
                             disabled={loading}
                             tooltip={loading ? 'Tracking event...' : 'Track a test event'}
@@ -78,7 +78,7 @@ export default function TestAnalyticsPage() {
                             icon={<Activity className="w-4 h-4" />}
                         >
                             {loading ? 'Tracking Event...' : 'Track Test Event'}
-                        </SuccessButton>
+                        </CopyButton>
 
                         {events.length > 0 && (
                             <div>

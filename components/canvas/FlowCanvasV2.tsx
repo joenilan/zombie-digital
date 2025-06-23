@@ -16,7 +16,7 @@ import ReactFlow, {
 import 'reactflow/dist/style.css'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { createClient } from '@supabase/supabase-js'
-import { SuccessButton, DeleteButton, ViewButton } from '@/components/ui/action-button'
+import { CopyButton, DeleteButton, ViewButton } from '@/components/ui/action-button'
 import { TooltipProvider } from '@/components/ui/tooltip'
 
 interface FlowCanvasV2Props {
@@ -237,7 +237,7 @@ const CanvasContextMenu = ({ x, y, onUpload, onClose }: CanvasContextMenuProps) 
     }}
   >
     <TooltipProvider>
-      <SuccessButton
+      <CopyButton
         onClick={() => {
           onUpload()
           onClose()
@@ -247,7 +247,7 @@ const CanvasContextMenu = ({ x, y, onUpload, onClose }: CanvasContextMenuProps) 
         className="w-full px-4 py-2 text-sm justify-start rounded-none"
       >
         Upload Image
-      </SuccessButton>
+      </CopyButton>
     </TooltipProvider>
   </div>
 )
