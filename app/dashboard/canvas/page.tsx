@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { DeleteButton, CopyButton, ViewButton, QRButton, EditButton } from '@/components/ui/action-button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Eye, EyeOff, Trash2, Settings, ExternalLink, Calendar, Users, Layers, Copy, BarChart3, X } from 'lucide-react'
+import { Plus, Eye, EyeOff, Trash2, Settings, ExternalLink, Calendar, Users, Layers, Copy, BarChart3, X } from '@/lib/icons'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { useAuthStore } from '@/stores/useAuthStore'
@@ -14,7 +14,7 @@ import { useCanvasStore } from '@/stores/useCanvasStore'
 import { LoadingSpinner } from '@/components/LoadingSpinner'
 import { toast } from 'sonner'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { UserCircle } from 'lucide-react'
+import { UserCircle } from '@/lib/icons'
 import { TooltipProvider } from '@/components/ui/tooltip'
 
 export default function CanvasPage() {

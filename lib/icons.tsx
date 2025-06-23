@@ -20,48 +20,48 @@ export function IconifyIcon({ icon, className, style, onClick }: IconProps & { i
     )
 }
 
-// UI Icons (from Lucide collection)
+// Social Media & Brand Icons (from Simple Icons - authentic brand designs)
 export const Twitter = ({ className, style, onClick }: IconProps) =>
-    <Icon icon="lucide:twitter" className={className} style={style} onClick={onClick} />
+    <Icon icon="simple-icons:x" className={className} style={style} onClick={onClick} />
 
 export const Youtube = ({ className, style, onClick }: IconProps) =>
-    <Icon icon="lucide:youtube" className={className} style={style} onClick={onClick} />
+    <Icon icon="simple-icons:youtube" className={className} style={style} onClick={onClick} />
 
 export const Twitch = ({ className, style, onClick }: IconProps) =>
-    <Icon icon="lucide:twitch" className={className} style={style} onClick={onClick} />
+    <Icon icon="simple-icons:twitch" className={className} style={style} onClick={onClick} />
 
 export const Instagram = ({ className, style, onClick }: IconProps) =>
-    <Icon icon="lucide:instagram" className={className} style={style} onClick={onClick} />
+    <Icon icon="simple-icons:instagram" className={className} style={style} onClick={onClick} />
 
 export const Facebook = ({ className, style, onClick }: IconProps) =>
-    <Icon icon="lucide:facebook" className={className} style={style} onClick={onClick} />
+    <Icon icon="simple-icons:facebook" className={className} style={style} onClick={onClick} />
 
 export const Github = ({ className, style, onClick }: IconProps) =>
-    <Icon icon="lucide:github" className={className} style={style} onClick={onClick} />
+    <Icon icon="simple-icons:github" className={className} style={style} onClick={onClick} />
 
 export const Linkedin = ({ className, style, onClick }: IconProps) =>
-    <Icon icon="lucide:linkedin" className={className} style={style} onClick={onClick} />
+    <Icon icon="simple-icons:linkedin" className={className} style={style} onClick={onClick} />
 
 export const Globe = ({ className, style, onClick }: IconProps) =>
-    <Icon icon="lucide:globe" className={className} style={style} onClick={onClick} />
+    <Icon icon="carbon:earth" className={className} style={style} onClick={onClick} />
 
 export const Link = ({ className, style, onClick }: IconProps) =>
-    <Icon icon="lucide:link" className={className} style={style} onClick={onClick} />
+    <Icon icon="carbon:link" className={className} style={style} onClick={onClick} />
 
 export const Copy = ({ className, style, onClick }: IconProps) =>
-    <Icon icon="lucide:copy" className={className} style={style} onClick={onClick} />
+    <Icon icon="solar:copy-bold" className={className} style={style} onClick={onClick} />
 
 export const ExternalLink = ({ className, style, onClick }: IconProps) =>
-    <Icon icon="lucide:external-link" className={className} style={style} onClick={onClick} />
+    <Icon icon="carbon:launch" className={className} style={style} onClick={onClick} />
 
 export const Eye = ({ className, style, onClick }: IconProps) =>
-    <Icon icon="lucide:eye" className={className} style={style} onClick={onClick} />
+    <Icon icon="solar:eye-bold" className={className} style={style} onClick={onClick} />
 
 export const EyeOff = ({ className, style, onClick }: IconProps) =>
-    <Icon icon="lucide:eye-off" className={className} style={style} onClick={onClick} />
+    <Icon icon="solar:eye-closed-bold" className={className} style={style} onClick={onClick} />
 
 export const Search = ({ className, style, onClick }: IconProps) =>
-    <Icon icon="lucide:search" className={className} style={style} onClick={onClick} />
+    <Icon icon="solar:magnifer-bold" className={className} style={style} onClick={onClick} />
 
 export const SortAsc = ({ className, style, onClick }: IconProps) =>
     <Icon icon="lucide:sort-asc" className={className} style={style} onClick={onClick} />
@@ -70,19 +70,19 @@ export const SortDesc = ({ className, style, onClick }: IconProps) =>
     <Icon icon="lucide:sort-desc" className={className} style={style} onClick={onClick} />
 
 export const Upload = ({ className, style, onClick }: IconProps) =>
-    <Icon icon="lucide:upload" className={className} style={style} onClick={onClick} />
+    <Icon icon="solar:upload-bold" className={className} style={style} onClick={onClick} />
 
 export const Loader2 = ({ className, style, onClick }: IconProps) =>
-    <Icon icon="lucide:loader-2" className={className} style={style} onClick={onClick} />
+    <Icon icon="solar:loading-circle-bold" className={className} style={style} onClick={onClick} />
 
 export const X = ({ className, style, onClick }: IconProps) =>
-    <Icon icon="lucide:x" className={className} style={style} onClick={onClick} />
+    <Icon icon="solar:close-circle-bold" className={className} style={style} onClick={onClick} />
 
 export const ImageIcon = ({ className, style, onClick }: IconProps) =>
-    <Icon icon="lucide:image" className={className} style={style} onClick={onClick} />
+    <Icon icon="solar:gallery-bold" className={className} style={style} onClick={onClick} />
 
 export const QrCode = ({ className, style, onClick }: IconProps) =>
-    <Icon icon="lucide:qr-code" className={className} style={style} onClick={onClick} />
+    <Icon icon="solar:qr-code-bold" className={className} style={style} onClick={onClick} />
 
 export const BarChart4 = ({ className, style, onClick }: IconProps) =>
     <Icon icon="lucide:bar-chart-4" className={className} style={style} onClick={onClick} />
@@ -91,19 +91,19 @@ export const Share2 = ({ className, style, onClick }: IconProps) =>
     <Icon icon="lucide:share-2" className={className} style={style} onClick={onClick} />
 
 export const Settings = ({ className, style, onClick }: IconProps) =>
-    <Icon icon="lucide:settings" className={className} style={style} onClick={onClick} />
+    <Icon icon="solar:settings-bold" className={className} style={style} onClick={onClick} />
 
 export const Layers = ({ className, style, onClick }: IconProps) =>
-    <Icon icon="lucide:layers" className={className} style={style} onClick={onClick} />
+    <Icon icon="solar:layers-bold" className={className} style={style} onClick={onClick} />
 
 export const ChevronRight = ({ className, style, onClick }: IconProps) =>
-    <Icon icon="lucide:chevron-right" className={className} style={style} onClick={onClick} />
+    <Icon icon="heroicons:chevron-right-20-solid" className={className} style={style} onClick={onClick} />
 
 export const ChevronLeft = ({ className, style, onClick }: IconProps) =>
-    <Icon icon="lucide:chevron-left" className={className} style={style} onClick={onClick} />
+    <Icon icon="heroicons:chevron-left-20-solid" className={className} style={style} onClick={onClick} />
 
 export const ChevronDown = ({ className, style, onClick }: IconProps) =>
-    <Icon icon="lucide:chevron-down" className={className} style={style} onClick={onClick} />
+    <Icon icon="heroicons:chevron-down-20-solid" className={className} style={style} onClick={onClick} />
 
 export const UserCircle = ({ className, style, onClick }: IconProps) =>
     <Icon icon="lucide:user-circle" className={className} style={style} onClick={onClick} />
@@ -398,4 +398,217 @@ export const getPlatformUrl = (platform: string, username: string): string => {
     }
 
     return `https://${pattern}${username}`;
-} 
+}
+
+// Feature Icons
+export const BarChart = ({ className, style, onClick }: IconProps) =>
+    <Icon icon="solar:chart-2-bold" className={className} style={style} onClick={onClick} />
+
+export const Bell = ({ className, style, onClick }: IconProps) =>
+    <Icon icon="phosphor:bell-fill" className={className} style={style} onClick={onClick} />
+
+export const Cards = ({ className, style, onClick }: IconProps) =>
+    <Icon icon="solar:widget-5-bold" className={className} style={style} onClick={onClick} />
+
+export const Paintbrush = ({ className, style, onClick }: IconProps) =>
+    <Icon icon="solar:pen-new-round-bold" className={className} style={style} onClick={onClick} />
+
+export const Palette = ({ className, style, onClick }: IconProps) =>
+    <Icon icon="solar:palette-2-bold" className={className} style={style} onClick={onClick} />
+
+export const ScrollText = ({ className, style, onClick }: IconProps) =>
+    <Icon icon="lucide:scroll-text" className={className} style={style} onClick={onClick} />
+
+export const Users = ({ className, style, onClick }: IconProps) =>
+    <Icon icon="phosphor:users-fill" className={className} style={style} onClick={onClick} />
+
+// Feature icon mapping function with modern Iconify collections
+export function getFeatureIcon(iconName: string): React.ComponentType<IconProps> {
+    const iconMap: Record<string, React.ComponentType<IconProps>> = {
+        // Core UI features
+        'link': Link,
+        'paintbrush': Paintbrush,
+        'bar-chart': BarChart,
+        'scroll-text': ScrollText,
+        'palette': Palette,
+        'cards': Cards,
+        'bell': Bell,
+        'users': Users,
+
+        // Analytics & Charts (Solar icons)
+        'analytics': BarChart,
+        'chart': BarChart,
+        'trending': TrendingUp,
+        'activity': Activity,
+        'dashboard': LayoutDashboard,
+
+        // Canvas & Creativity (Solar icons)
+        'canvas': Cards,
+        'brush': Paintbrush,
+        'layers': Layers,
+
+        // Social & Communication (Phosphor icons)
+        'socials': Share2,
+        'social': Share2,
+        'chat': () => <Icon icon="phosphor:chat-circle-fill" className="w-4 h-4" />,
+        'message': () => <Icon icon="phosphor:envelope-fill" className="w-4 h-4" />,
+        'share': Share2,
+        'notifications': Bell,
+
+        // Gaming & Streaming (Tabler icons)
+        'gamepad': () => <Icon icon="tabler:device-gamepad-2" className="w-4 h-4" />,
+        'stream': () => <Icon icon="tabler:video-filled" className="w-4 h-4" />,
+        'live': () => <Icon icon="solar:record-circle-bold" className="w-4 h-4" />,
+        'camera': () => <Icon icon="tabler:camera-filled" className="w-4 h-4" />,
+        'microphone': () => <Icon icon="tabler:microphone-filled" className="w-4 h-4" />,
+
+        // Profile & User (Phosphor icons)
+        'profile': UserCircle,
+        'user': User,
+        'user-management': Users,
+        'avatar': UserCircle,
+        'bio': ScrollText,
+        'about': () => <Icon icon="carbon:information" className="w-4 h-4" />,
+
+        // Security & Privacy (Solar icons)
+        'security': Shield,
+        'privacy': () => <Icon icon="solar:lock-bold" className="w-4 h-4" />,
+        'admin': Crown,
+        'moderation': Shield,
+        'permissions': Key,
+        'key': Key,
+
+        // Content & Media (Solar icons)
+        'content': ImageIcon,
+        'media': ImageIcon,
+        'gallery': ImageIcon,
+        'upload': Upload,
+        'download': Download,
+
+        // Technical & Development (Carbon icons)
+        'api': () => <Icon icon="carbon:api" className="w-4 h-4" />,
+        'webhook': () => <Icon icon="carbon:webhook" className="w-4 h-4" />,
+        'database': Database,
+        'server': () => <Icon icon="carbon:server" className="w-4 h-4" />,
+        'cloud': () => <Icon icon="carbon:cloud" className="w-4 h-4" />,
+
+        // E-commerce & Monetization (Solar icons)
+        'monetization': DollarSign,
+        'subscription': () => <Icon icon="solar:card-bold" className="w-4 h-4" />,
+        'donation': () => <Icon icon="solar:heart-bold" className="w-4 h-4" />,
+        'shop': Store,
+        'payment': () => <Icon icon="solar:wallet-money-bold" className="w-4 h-4" />,
+
+        // Configuration & Settings (Solar icons)
+        'settings': Settings,
+        'config': Settings,
+        'customize': () => <Icon icon="solar:widget-add-bold" className="w-4 h-4" />,
+        'theme': Palette,
+        'appearance': Eye,
+    }
+
+    return iconMap[iconName] || Link // fallback to link icon
+}
+
+// Additional UI Icons commonly used throughout the app
+export const Plus = ({ className, style, onClick }: IconProps) =>
+    <Icon icon="solar:add-circle-bold" className={className} style={style} onClick={onClick} />
+
+export const Edit3 = ({ className, style, onClick }: IconProps) =>
+    <Icon icon="solar:pen-bold" className={className} style={style} onClick={onClick} />
+
+export const Trash2 = ({ className, style, onClick }: IconProps) =>
+    <Icon icon="solar:trash-bin-trash-bold" className={className} style={style} onClick={onClick} />
+
+export const Check = ({ className, style, onClick }: IconProps) =>
+    <Icon icon="solar:check-circle-bold" className={className} style={style} onClick={onClick} />
+
+export const Pencil = ({ className, style, onClick }: IconProps) =>
+    <Icon icon="solar:pen-new-round-bold" className={className} style={style} onClick={onClick} />
+
+export const GripVertical = ({ className, style, onClick }: IconProps) =>
+    <Icon icon="lucide:grip-vertical" className={className} style={style} onClick={onClick} />
+
+export const InfoIcon = ({ className, style, onClick }: IconProps) =>
+    <Icon icon="lucide:info" className={className} style={style} onClick={onClick} />
+
+export const ArrowUpDown = ({ className, style, onClick }: IconProps) =>
+    <Icon icon="lucide:arrow-up-down" className={className} style={style} onClick={onClick} />
+
+export const Link2 = ({ className, style, onClick }: IconProps) =>
+    <Icon icon="lucide:link-2" className={className} style={style} onClick={onClick} />
+
+export const ArrowUp = ({ className, style, onClick }: IconProps) =>
+    <Icon icon="lucide:arrow-up" className={className} style={style} onClick={onClick} />
+
+export const Home = ({ className, style, onClick }: IconProps) =>
+    <Icon icon="lucide:home" className={className} style={style} onClick={onClick} />
+
+export const TrendingUp = ({ className, style, onClick }: IconProps) =>
+    <Icon icon="lucide:trending-up" className={className} style={style} onClick={onClick} />
+
+export const Command = ({ className, style, onClick }: IconProps) =>
+    <Icon icon="lucide:command" className={className} style={style} onClick={onClick} />
+
+export const Keyboard = ({ className, style, onClick }: IconProps) =>
+    <Icon icon="lucide:keyboard" className={className} style={style} onClick={onClick} />
+
+export const User = ({ className, style, onClick }: IconProps) =>
+    <Icon icon="phosphor:user-fill" className={className} style={style} onClick={onClick} />
+
+export const HelpCircle = ({ className, style, onClick }: IconProps) =>
+    <Icon icon="solar:question-circle-bold" className={className} style={style} onClick={onClick} />
+
+export const LayoutDashboard = ({ className, style, onClick }: IconProps) =>
+    <Icon icon="solar:widget-4-bold" className={className} style={style} onClick={onClick} />
+
+export const Activity = ({ className, style, onClick }: IconProps) =>
+    <Icon icon="solar:pulse-2-bold" className={className} style={style} onClick={onClick} />
+
+export const Shield = ({ className, style, onClick }: IconProps) =>
+    <Icon icon="solar:shield-check-bold" className={className} style={style} onClick={onClick} />
+
+export const Database = ({ className, style, onClick }: IconProps) =>
+    <Icon icon="carbon:data-base" className={className} style={style} onClick={onClick} />
+
+export const BarChart3 = ({ className, style, onClick }: IconProps) =>
+    <Icon icon="solar:chart-square-bold" className={className} style={style} onClick={onClick} />
+
+export const Download = ({ className, style, onClick }: IconProps) =>
+    <Icon icon="solar:download-bold" className={className} style={style} onClick={onClick} />
+
+export const AlertCircle = ({ className, style, onClick }: IconProps) =>
+    <Icon icon="solar:danger-circle-bold" className={className} style={style} onClick={onClick} />
+
+export const Send = ({ className, style, onClick }: IconProps) =>
+    <Icon icon="phosphor:paper-plane-tilt-fill" className={className} style={style} onClick={onClick} />
+
+export const CheckCircle = ({ className, style, onClick }: IconProps) =>
+    <Icon icon="solar:check-circle-bold" className={className} style={style} onClick={onClick} />
+
+export const Mail = ({ className, style, onClick }: IconProps) =>
+    <Icon icon="phosphor:envelope-fill" className={className} style={style} onClick={onClick} />
+
+export const MessageSquare = ({ className, style, onClick }: IconProps) =>
+    <Icon icon="phosphor:chat-square-fill" className={className} style={style} onClick={onClick} />
+
+export const Edit = ({ className, style, onClick }: IconProps) =>
+    <Icon icon="solar:pen-bold" className={className} style={style} onClick={onClick} />
+
+export const Save = ({ className, style, onClick }: IconProps) =>
+    <Icon icon="solar:diskette-bold" className={className} style={style} onClick={onClick} />
+
+export const Crown = ({ className, style, onClick }: IconProps) =>
+    <Icon icon="solar:crown-bold" className={className} style={style} onClick={onClick} />
+
+export const Star = ({ className, style, onClick }: IconProps) =>
+    <Icon icon="solar:star-bold" className={className} style={style} onClick={onClick} />
+
+export const Grid3X3 = ({ className, style, onClick }: IconProps) =>
+    <Icon icon="solar:widget-3-bold" className={className} style={style} onClick={onClick} />
+
+export const Key = ({ className, style, onClick }: IconProps) =>
+    <Icon icon="solar:key-bold" className={className} style={style} onClick={onClick} />
+
+export const Ban = ({ className, style, onClick }: IconProps) =>
+    <Icon icon="solar:forbidden-circle-bold" className={className} style={style} onClick={onClick} /> 

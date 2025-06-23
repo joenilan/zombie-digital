@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from 'react'
-import { Share2, Facebook, Twitter, Copy, Check } from 'lucide-react'
+import { Share2, Facebook, Twitter, Copy, Check } from '@/lib/icons'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
@@ -38,7 +38,7 @@ export function SocialShareDialog({ username, displayName }: SocialShareDialogPr
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
                 <ViewButton size="icon" tooltip="Share Profile" className="rounded-full h-8 w-8">
-                    <Share2 size={16} />
+                    <Share2 className="w-4 h-4" />
                 </ViewButton>
             </DialogTrigger>
             <DialogContent className="sm:max-w-md">
@@ -101,7 +101,7 @@ export function SocialShareDialog({ username, displayName }: SocialShareDialogPr
                             tooltip={copied ? 'Copied!' : 'Copy link'}
                             className="absolute right-0 h-9"
                         >
-                            {copied ? <Check size={16} className="text-green-500" /> : <Copy size={16} />}
+                            {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
                         </CopyButton>
                     </div>
                 </div>

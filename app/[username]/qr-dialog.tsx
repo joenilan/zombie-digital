@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import QRCode from 'react-qr-code'
-import { QrCode, Download } from 'lucide-react'
+import { QrCode, Download } from '@/lib/icons'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 

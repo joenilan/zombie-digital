@@ -4,7 +4,7 @@ import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import { useEffect, useState } from 'react';
 import dynamicImport from 'next/dynamic';
-import { BarChart4, Users, Bell, Activity, Shield, Database, TrendingUp } from 'lucide-react';
+import { BarChart4, Users, Bell, Activity, Shield, Database, TrendingUp } from '@/lib/icons';
 import { motion } from 'framer-motion';
 import { StatsCard, CyberCard } from "@/components/animations/AnimatedCard";
 import {

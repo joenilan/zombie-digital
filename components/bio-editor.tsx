@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { toast } from 'sonner'
-import { Edit3 } from 'lucide-react'
+import { Edit3 } from '@/lib/icons'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 
 interface BioEditorProps {

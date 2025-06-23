@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { umami } from '@/lib/umami'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Eye, Users, TrendingUp } from 'lucide-react'
+import { Eye, Users, TrendingUp } from '@/lib/icons'
 
 interface AnalyticsData {
     totalPageViews: number

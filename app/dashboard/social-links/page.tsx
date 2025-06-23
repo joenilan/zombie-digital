@@ -29,7 +29,8 @@ import {
   ArrowUpRight,
   RefreshCcw,
   getPlatformIcon,
-  getPlatformColor
+  getPlatformColor,
+  Users
 } from '@/lib/icons'
 import { toast } from 'sonner'
 import { motion } from 'framer-motion'
@@ -38,7 +39,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, StatCard } f
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { format, subDays, startOfDay, formatDistanceToNow } from 'date-fns'
 import React from 'react'
-import { Users } from 'lucide-react'
 import { AnimatedBreadcrumb } from '@/components/ui/breadcrumb'
 
 import { RealtimeChannel } from '@supabase/supabase-js'

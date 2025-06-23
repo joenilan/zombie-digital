@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useUserRole } from '@/hooks/use-user-role';
 import { useFeatureAccess } from '@/hooks/use-feature-access';
-import { Home, LayoutDashboard, Link as LinkIcon, Paintbrush, Settings } from 'lucide-react';
+import { Home, LayoutDashboard, Link as LinkIcon, Paintbrush, Settings } from '@/lib/icons'
 import type { TwitchUser } from '@/types/auth'
 
 interface MobileNavProps {

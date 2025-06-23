@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { umami } from '@/lib/umami'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Eye, Users, TrendingUp, Calendar } from 'lucide-react'
+import { Eye, Users, TrendingUp, Calendar } from '@/lib/icons'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts'
 
 interface AnalyticsData {

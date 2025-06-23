@@ -1,20 +1,34 @@
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
 
+export type UserRole = 'user' | 'moderator' | 'admin' | 'owner'
+
 export interface Feature {
   id: string
+  feature_id: string
   name: string
   description: string
   enabled: boolean
+  required_role: UserRole
+  category: string
+  icon: string
+  path: string
+  sort_order: number
   created_at: string
   updated_at: string
-  [key: string]: any
+  updated_by: string | null
 }
 
 export interface NewFeature {
+  feature_id: string
   name: string
   description: string
   enabled: boolean
+  required_role: UserRole
+  category: string
+  icon: string
+  path: string
+  sort_order: number
 }
 
 export type Role = 'user' | 'moderator' | 'admin' | 'owner'
@@ -32,27 +46,33 @@ export interface User {
 }
 
 interface AdminState {
-  // Features state
+  // User management
+  users: User[]
+  usersLoading: boolean
+  searchTerm: string
+  sortField: SortField
+  sortDirection: SortDirection
+  selectedRole: Role | 'all'
+  
+  // Feature management
   features: Feature[]
   featuresLoading: boolean
   editingFeature: Feature | null
   newFeature: NewFeature
   showNewFeatureDialog: boolean
-
-  // Users state
-  users: User[]
-  usersLoading: boolean
-  search: string
-  sortField: SortField
-  sortDirection: SortDirection
-  roleFilter: Role | 'all'
-  currentPage: number
-  pageSize: PageSize
-
-  // Notifications state
-  userId: string | null
-
-  // Actions - Features
+  
+  // Permissions management
+  permissions: FeaturePermission[]
+  permissionsLoading: boolean
+  
+  // Actions
+  setUsers: (users: User[]) => void
+  setUsersLoading: (loading: boolean) => void
+  setSearchTerm: (term: string) => void
+  setSortField: (field: SortField) => void
+  setSortDirection: (direction: SortDirection) => void
+  setSelectedRole: (role: Role | 'all') => void
+  
   setFeatures: (features: Feature[]) => void
   setFeaturesLoading: (loading: boolean) => void
   setEditingFeature: (feature: Feature | null) => void
@@ -60,28 +80,34 @@ interface AdminState {
   updateNewFeature: (updates: Partial<NewFeature>) => void
   setShowNewFeatureDialog: (show: boolean) => void
   resetNewFeature: () => void
+  
+  setPermissions: (permissions: FeaturePermission[]) => void
+  setPermissionsLoading: (loading: boolean) => void
+  updatePermission: (featureId: string, role: UserRole, level: PermissionLevel) => void
+}
 
-  // Actions - Users
-  setUsers: (users: User[]) => void
-  setUsersLoading: (loading: boolean) => void
-  setSearch: (search: string) => void
-  setSortField: (field: SortField) => void
-  setSortDirection: (direction: SortDirection) => void
-  setRoleFilter: (role: Role | 'all') => void
-  setCurrentPage: (page: number) => void
-  setPageSize: (size: PageSize) => void
+export type PermissionLevel = 'none' | 'read' | 'write' | 'admin'
 
-  // Actions - Notifications
-  setUserId: (userId: string | null) => void
-
-  // Actions - General
-  reset: () => void
+export interface FeaturePermission {
+    id: string
+    feature_id: string
+    role_name: UserRole
+    permission_level: PermissionLevel
+    created_at: string
+    updated_at: string
+    updated_by: string | null
 }
 
 const initialNewFeature: NewFeature = {
+  feature_id: '',
   name: '',
   description: '',
-  enabled: true
+  enabled: true,
+  required_role: 'user',
+  category: 'core',
+  icon: '',
+  path: '',
+  sort_order: 0
 }
 
 export const useAdminStore = create<AdminState>()(
@@ -96,14 +122,13 @@ export const useAdminStore = create<AdminState>()(
 
       users: [],
       usersLoading: true,
-      search: '',
+      searchTerm: '',
       sortField: 'created_at',
       sortDirection: 'desc',
-      roleFilter: 'all',
-      currentPage: 1,
-      pageSize: 10,
+      selectedRole: 'all',
 
-      userId: null,
+      permissions: [],
+      permissionsLoading: true,
 
       // Actions - Features
       setFeatures: (features) => set({ features }, false, 'admin:setFeatures'),
@@ -119,15 +144,19 @@ export const useAdminStore = create<AdminState>()(
       // Actions - Users
       setUsers: (users) => set({ users }, false, 'admin:setUsers'),
       setUsersLoading: (usersLoading) => set({ usersLoading }, false, 'admin:setUsersLoading'),
-      setSearch: (search) => set({ search }, false, 'admin:setSearch'),
+      setSearchTerm: (searchTerm) => set({ searchTerm }, false, 'admin:setSearchTerm'),
       setSortField: (sortField) => set({ sortField }, false, 'admin:setSortField'),
       setSortDirection: (sortDirection) => set({ sortDirection }, false, 'admin:setSortDirection'),
-      setRoleFilter: (roleFilter) => set({ roleFilter }, false, 'admin:setRoleFilter'),
-      setCurrentPage: (currentPage) => set({ currentPage }, false, 'admin:setCurrentPage'),
-      setPageSize: (pageSize) => set({ pageSize }, false, 'admin:setPageSize'),
+      setSelectedRole: (selectedRole) => set({ selectedRole }, false, 'admin:setSelectedRole'),
 
-      // Actions - Notifications
-      setUserId: (userId) => set({ userId }, false, 'admin:setUserId'),
+      // Actions - Permissions
+      setPermissions: (permissions) => set({ permissions }, false, 'admin:setPermissions'),
+      setPermissionsLoading: (permissionsLoading) => set({ permissionsLoading }, false, 'admin:setPermissionsLoading'),
+      updatePermission: (featureId, role, level) => set((state) => ({
+        permissions: state.permissions.map((permission) =>
+          permission.feature_id === featureId ? { ...permission, role_name: role, permission_level: level } : permission
+        )
+      }), false, 'admin:updatePermission'),
 
       // Actions - General
       reset: () => set({
@@ -138,13 +167,12 @@ export const useAdminStore = create<AdminState>()(
         showNewFeatureDialog: false,
         users: [],
         usersLoading: true,
-        search: '',
+        searchTerm: '',
         sortField: 'created_at',
         sortDirection: 'desc',
-        roleFilter: 'all',
-        currentPage: 1,
-        pageSize: 10,
-        userId: null
+        selectedRole: 'all',
+        permissions: [],
+        permissionsLoading: true
       }, false, 'admin:reset'),
     }),
     {

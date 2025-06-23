@@ -5,7 +5,7 @@ import { umami } from '@/lib/umami'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { CopyButton } from '@/components/ui/action-button'
-import { Activity } from 'lucide-react'
+import { Activity } from '@/lib/icons'
 
 export default function TestAnalyticsPage() {
     const [sessionId, setSessionId] = useState<string | null>(null)

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { Send, CheckCircle, AlertCircle, Mail, User, MessageSquare } from 'lucide-react'
+import { Send, CheckCircle, AlertCircle, Mail, User, MessageSquare } from '@/lib/icons'
 import PageTransitionLayout from "@/components/PageTransitionLayout"
 import { AnimatedBreadcrumb } from "@/components/ui/breadcrumb"
 import { Button } from "@/components/ui/button"

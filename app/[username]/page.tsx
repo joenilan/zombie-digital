@@ -14,7 +14,7 @@ import {
   staggerContainer,
   staggerItem
 } from "@/lib/animations";
-import { AlertCircle } from 'lucide-react'
+import { AlertCircle } from '@/lib/icons'
 
 interface PageProps {
   params: {

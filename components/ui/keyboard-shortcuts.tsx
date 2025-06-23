@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Command, Keyboard, Search, Home, User, Settings, HelpCircle, X } from 'lucide-react'
+import { Command, Keyboard, Search, Home, User, Settings, HelpCircle, X } from '@/lib/icons'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/stores/useAuthStore'
 

@@ -4,7 +4,7 @@ import React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { ChevronRight, Home } from 'lucide-react'
+import { ChevronRight, Home } from '@/lib/icons'
 import { cn } from '@/lib/utils'
 
 export interface BreadcrumbItem {

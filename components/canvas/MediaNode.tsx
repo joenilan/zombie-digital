@@ -3,7 +3,7 @@
 import React from 'react'
 import { NodeProps, Handle, Position } from 'reactflow'
 import Image from 'next/image'
-import { Trash2 } from 'lucide-react'
+import { Trash2 } from '@/lib/icons'
 import { Button } from '@/components/ui/button'
 import { DeleteButton } from '@/components/ui/action-button'
 import { TooltipProvider } from '@/components/ui/tooltip'

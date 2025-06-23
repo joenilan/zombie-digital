@@ -13,7 +13,7 @@ import * as Switch from '@radix-ui/react-switch'
 import * as Toast from '@radix-ui/react-toast'
 import { useState } from 'react'
 import { CopyButton } from '@/components/ui/action-button'
-import { Check } from 'lucide-react'
+import { Check } from '@/lib/icons'
 
 const formSchema = z.object({
   name: z.string().min(1, 'Name is required'),

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowUp } from 'lucide-react'
+import { ArrowUp } from '@/lib/icons'
 import { cn } from '@/lib/utils'
 
 interface BackToTopProps {
