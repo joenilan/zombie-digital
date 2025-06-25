@@ -75,6 +75,25 @@ This project uses **Bun** for package management. Always use:
 - React Query for server state
 - Zustand for client state
 
+### Browser Debugging with BrowserTools MCP
+This project integrates with BrowserTools MCP for AI-powered browser debugging:
+
+```bash
+# Start the BrowserTools middleware server
+bun run browsertools
+
+# Or manually:
+bunx -y @agentdeskai/browser-tools-server@1.2.1
+```
+
+**Available debugging commands in Cursor:**
+- "Take a screenshot and check console logs"
+- "Run a performance audit on this page"
+- "Check for accessibility issues"
+- "Enter debugger mode"
+
+See [docs/browsertools-mcp-setup.md](./docs/browsertools-mcp-setup.md) for complete setup instructions.
+
 ### Project Structure
 ```
 ├── app/                    # Next.js app router

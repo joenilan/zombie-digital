@@ -15,6 +15,25 @@
                 "-y",
                 "@modelcontextprotocol/server-memory"
             ]
+        },
+        "browsertools": {
+            "command": "bunx",
+            "args": [
+                "-y",
+                "@agentdeskai/browser-tools-mcp@1.2.1"
+            ]
+        },
+        "openvision": {
+            "command": "bunx",
+            "args": [
+                "-y",
+                "uvx",
+                "mcp-openvision"
+            ],
+            "env": {
+                "OPENROUTER_API_KEY": "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",
+                "OPENROUTER_DEFAULT_MODEL": "qwen/qwen2.5-vl-32b-instruct:free"
+            }
         }
     }
 }

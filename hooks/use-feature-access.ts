@@ -85,7 +85,7 @@ export function useFeatureAccess(user: TwitchUser | null): UseFeatureAccessRetur
     const userLevel = roleHierarchy[userRole as keyof typeof roleHierarchy] || 0
     const requiredLevel = roleHierarchy[requiredRole as keyof typeof roleHierarchy] || 0
     const hasAccess = userLevel >= requiredLevel
-    
+
     return hasAccess
   }
 

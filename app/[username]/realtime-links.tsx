@@ -13,9 +13,10 @@ import {
   getPlatformColor,
   Link as LinkIcon
 } from '@/lib/icons'
+import { getIconStyle } from '@/lib/icon-utils'
+import { useThemeStore, type IconStyle } from '@/stores/useThemeStore'
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion'
 import { Card, CardContent } from "@/components/ui/card"
-import { Button } from '@/components/ui/button'
 import { ViewButton } from '@/components/ui/action-button'
 import { TooltipProvider } from '@/components/ui/tooltip'
 
@@ -23,7 +24,7 @@ interface RealtimeLinksProps {
   userId: string
   initialLinks: SocialLink[]
   isOwner?: boolean
-  coloredIcons?: boolean
+  iconStyle?: string
 }
 
 function TwitchLink({ link, username }: { link: SocialLink; username: string }) {
@@ -69,19 +70,28 @@ function TwitchLink({ link, username }: { link: SocialLink; username: string }) 
         href={link.url}
         target="_blank"
         rel="noopener noreferrer"
-        className={`block w-full p-4 bg-glass shadow-glass 
-                 hover:shadow-cyber transition-all duration-300
-                 text-center group relative overflow-hidden rounded-xl`}
+        className="block w-full p-4 backdrop-blur-xl transition-all duration-300 text-center group relative overflow-hidden rounded-xl"
+        style={{
+          backgroundColor: `var(--theme-surface-glass)`,
+          borderColor: `var(--theme-border-primary)`,
+          borderWidth: '1px',
+          borderStyle: 'solid',
+          boxShadow: `
+            0 6px 20px rgba(var(--theme-primary), 0.25), 
+            0 3px 10px rgba(var(--theme-accent), 0.15),
+            inset 0 1px 0 rgba(var(--theme-accent), 0.1)
+          `
+        }}
       >
         <div
           className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
           style={{
-            background: `linear-gradient(45deg, rgba(var(--theme-primary), 0.1), rgba(var(--theme-accent), 0.1))`
+            background: `linear-gradient(45deg, rgba(var(--theme-primary), 0.15), rgba(var(--theme-accent), 0.15))`
           }}
         />
         <div className="relative flex items-center justify-center gap-3">
-          <Twitch className="w-6 h-6" />
-          <span className="font-medium text-lg">
+          <Twitch className="w-6 h-6" style={{ color: '#9146ff' }} />
+          <span className="font-medium text-lg" style={{ color: `rgb(var(--theme-foreground))` }}>
             {link.title || link.platform}
           </span>
           {streamError ? (
@@ -118,9 +128,14 @@ function TwitchLink({ link, username }: { link: SocialLink; username: string }) 
               onClick={() => setIsExpanded(!isExpanded)}
               size="sm"
               tooltip={isExpanded ? 'Hide Stream' : 'Show Stream'}
-              className="w-full p-2 bg-glass/50 hover:bg-glass transition-colors
-                       flex items-center justify-center gap-2 text-sm text-muted-foreground
-                       rounded-b-xl"
+              className="w-full p-2 transition-colors flex items-center justify-center gap-2 text-sm rounded-b-xl"
+              style={{
+                backgroundColor: `var(--theme-surface-secondary)`,
+                borderTopColor: `var(--theme-border-subtle)`,
+                borderTopWidth: '1px',
+                borderTopStyle: 'solid',
+                color: `rgba(var(--theme-foreground), 0.7)`
+              }}
             >
               <motion.div
                 animate={{ rotate: isExpanded ? 180 : 0 }}
@@ -165,7 +180,7 @@ export interface RealtimePayload {
   table: string
 }
 
-export function RealtimeLinks({ userId, initialLinks, isOwner, coloredIcons }: RealtimeLinksProps) {
+export function RealtimeLinks({ userId, initialLinks, isOwner, iconStyle }: RealtimeLinksProps) {
   const {
     links,
     isUpdating,
@@ -300,12 +315,19 @@ export function RealtimeLinks({ userId, initialLinks, isOwner, coloredIcons }: R
           {isOwner ? (
             <div className="space-y-4">
               <p className="mb-2">You haven't added any social links yet.</p>
-              <Button asChild variant="cyber-cyan">
-                <a href="/dashboard/social-links" className="gap-2">
-                  <LinkIcon className="w-4 h-4" />
-                  Get started by adding your first link
-                </a>
-              </Button>
+              <a
+                href="/dashboard/social-links"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-200 backdrop-blur-xl border"
+                style={{
+                  backgroundColor: `var(--theme-surface-primary)`,
+                  borderColor: `var(--theme-border-primary)`,
+                  color: `rgb(var(--theme-primary))`,
+                  boxShadow: `0 0 20px rgba(var(--theme-primary), 0.3)`
+                }}
+              >
+                <LinkIcon className="w-4 h-4" />
+                Get started by adding your first link
+              </a>
             </div>
           ) : (
             <Card variant="glass-subtle">
@@ -413,22 +435,31 @@ export function RealtimeLinks({ userId, initialLinks, isOwner, coloredIcons }: R
                   href={link.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={`block w-full p-4 bg-glass shadow-glass 
-                           hover:shadow-cyber transition-all duration-300
-                           text-center group relative overflow-hidden rounded-xl`}
+                  className="block w-full p-4 backdrop-blur-xl transition-all duration-300 text-center group relative overflow-hidden rounded-xl"
+                  style={{
+                    backgroundColor: `var(--theme-surface-glass)`,
+                    borderColor: `var(--theme-border-primary)`,
+                    borderWidth: '1px',
+                    borderStyle: 'solid',
+                    boxShadow: `
+                      0 6px 20px rgba(var(--theme-primary), 0.25), 
+                      0 3px 10px rgba(var(--theme-accent), 0.15),
+                      inset 0 1px 0 rgba(var(--theme-accent), 0.1)
+                    `
+                  }}
                 >
                   <div
                     className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                     style={{
-                      background: `linear-gradient(45deg, rgba(var(--theme-primary), 0.1), rgba(var(--theme-accent), 0.1))`
+                      background: `linear-gradient(45deg, rgba(var(--theme-primary), 0.15), rgba(var(--theme-accent), 0.15))`
                     }}
                   />
                   <div className="relative flex items-center justify-center gap-3">
                     <Icon
                       className="w-6 h-6"
-                      style={coloredIcons !== false ? { color: getPlatformColor(link.platform) } : undefined}
+                      style={getIconStyle(link.platform, (iconStyle as IconStyle) || 'colored', useThemeStore.getState().activeTheme)}
                     />
-                    <span className="font-medium text-lg">
+                    <span className="font-medium text-lg" style={{ color: `rgb(var(--theme-foreground))` }}>
                       {link.title || link.platform}
                     </span>
                   </div>

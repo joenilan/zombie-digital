@@ -21,9 +21,10 @@ interface Profile {
     background_media_url: string | null
     background_media_type: string | null
     twitch_id: string
-    colored_icons?: boolean
+    icon_style?: string
     theme_scheme?: string
     seasonal_themes?: boolean
+    updated_at?: string
 }
 
 interface SocialLink {
@@ -54,21 +55,34 @@ export function ProfileContent({ profile, initialLinks, isTransparent, isOwner }
     console.log('[ProfileContent] Rendering with theme:', {
         userTheme: profile.theme_scheme,
         seasonalThemes: profile.seasonal_themes,
+        profileTimestamp: profile.updated_at || 'no timestamp',
         profile: profile
     })
 
     return (
-        <ThemeWrapper userTheme={profile.theme_scheme} seasonalThemes={profile.seasonal_themes}>
+        <ThemeWrapper
+            userTheme={profile.theme_scheme}
+            seasonalThemes={profile.seasonal_themes}
+            iconStyle={profile.icon_style as any}
+        >
             {/* Track page view */}
             <UmamiTracker userId={profile.user_id} isOwner={isOwner} />
 
             {/* Main Content Card */}
             <div className="max-w-2xl mx-auto relative">
                 <div
-                    className={`${isTransparent ? '' : 'bg-background/20'} backdrop-blur-xl rounded-xl shadow-glass overflow-hidden border`}
+                    className="backdrop-blur-xl rounded-xl overflow-hidden"
                     style={isTransparent ? {} : {
-                        borderColor: `rgba(var(--theme-primary), 0.2)`,
-                        boxShadow: `0 0 20px rgba(var(--theme-primary), 0.1)`
+                        backgroundColor: `var(--theme-surface-glass)`,
+                        borderColor: `var(--theme-border-primary)`,
+                        borderWidth: '1px',
+                        borderStyle: 'solid',
+                        boxShadow: `
+                            0 0 40px rgba(var(--theme-primary), 0.4),
+                            0 0 80px rgba(var(--theme-accent), 0.2),
+                            0 8px 32px rgba(var(--theme-primary), 0.3),
+                            inset 0 1px 0 rgba(var(--theme-accent), 0.2)
+                        `
                     }}
                 >
                     {/* Card Background */}
@@ -81,7 +95,12 @@ export function ProfileContent({ profile, initialLinks, isTransparent, isOwner }
                     />
 
                     {/* Glass Overlay */}
-                    <div className={`absolute inset-0 ${isTransparent ? 'bg-transparent' : 'bg-black/20 backdrop-blur-sm'}`} />
+                    <div
+                        className={`absolute inset-0 ${isTransparent ? 'bg-transparent' : 'backdrop-blur-sm'}`}
+                        style={isTransparent ? {} : {
+                            backgroundColor: `rgba(var(--theme-background), 0.1)`
+                        }}
+                    />
 
                     {/* Content */}
                     <div className="relative space-y-8 p-6">
@@ -99,9 +118,12 @@ export function ProfileContent({ profile, initialLinks, isTransparent, isOwner }
                                     alt={profile.display_name}
                                     width={130}
                                     height={130}
-                                    className={`rounded-full relative ${isTransparent ? '' : 'border-4'}`}
+                                    className="rounded-full relative"
                                     style={isTransparent ? {} : {
-                                        borderColor: `rgba(var(--theme-primary), 0.3)`
+                                        borderColor: `var(--theme-border-primary)`,
+                                        borderWidth: '4px',
+                                        borderStyle: 'solid',
+                                        boxShadow: `0 0 20px rgba(var(--theme-primary), 0.4), 0 0 40px rgba(var(--theme-accent), 0.2)`
                                     }}
                                     priority
                                 />
@@ -158,10 +180,13 @@ export function ProfileContent({ profile, initialLinks, isTransparent, isOwner }
                         {/* Background Manager (only shown to profile owner) */}
                         {isOwner && !isTransparent && (
                             <div
-                                className="border rounded-lg p-4 bg-glass/20 backdrop-blur-sm"
+                                className="rounded-lg p-4 backdrop-blur-sm"
                                 style={{
-                                    borderColor: `rgba(var(--theme-secondary), 0.2)`,
-                                    background: `rgba(var(--theme-surface), 0.1)`
+                                    borderColor: `var(--theme-border-secondary)`,
+                                    borderWidth: '1px',
+                                    borderStyle: 'solid',
+                                    backgroundColor: `var(--theme-surface-secondary)`,
+                                    boxShadow: `0 4px 16px rgba(var(--theme-secondary), 0.2), 0 2px 8px rgba(var(--theme-accent), 0.1)`
                                 }}
                             >
                                 <div className="flex items-center gap-2 mb-3">
@@ -185,7 +210,7 @@ export function ProfileContent({ profile, initialLinks, isTransparent, isOwner }
                                 userId={profile.user_id}
                                 initialLinks={initialLinks}
                                 isOwner={isOwner && !isTransparent}
-                                coloredIcons={profile.colored_icons}
+                                iconStyle={profile.icon_style as any}
                             />
                         </div>
                     </div>

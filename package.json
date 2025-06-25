@@ -3,14 +3,19 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "concurrently \"next dev\" \"./scripts/start-browsertools.sh\" --names \"next,browser\" --prefix-colors \"cyan,magenta\"",
+    "dev:next-only": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "postinstall": "prisma generate",
     "test": "bun test",
     "test:watch": "bun test --watch",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "browsertools": "./scripts/start-browsertools.sh",
+    "check-browsertools": "./scripts/check-browsertools.sh",
+    "setup-openvision": "./scripts/setup-openvision.sh",
+    "test-openvision": "./scripts/test-openvision.sh"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.7.4",
@@ -79,6 +84,7 @@
     "@types/react": "18.2.48",
     "@types/react-dom": "18.2.18",
     "bun-types": "^1.1.39",
+    "concurrently": "^9.2.0",
     "eslint": "^9",
     "eslint-config-next": "15.1.0",
     "husky": "^8.0.0",

@@ -8,6 +8,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { GripVertical, Trash2, ExternalLink, Plus, Pencil, InfoIcon, ArrowUpDown, Search, X, Check, Link2 } from '@/lib/icons'
 import { Button } from '@/components/ui/button'
+import { CopyButton, EditButton, DeleteButton } from '@/components/ui/action-button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -79,17 +80,12 @@ const DraggableLink = ({ link, index, moveLink, onDelete, onDrop, onEdit, isDrag
   }
 
   return (
-    <motion.div
+    <div
       ref={ref}
       style={{ opacity: isDragging ? 0.3 : 1 }}
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      transition={{ duration: 0.2 }}
       className={`group relative flex items-center gap-4 py-2.5 px-3
                 ${isOver ? 'bg-primary/5' : ''}
                 ${isCurrentlyDragging ? 'scale-[1.02] shadow-lg' : 'hover:bg-muted/30'}
-                ${isDragging ? 'animate-pulse' : ''}
                 rounded-xl transition-all duration-200 cursor-grab active:cursor-grabbing
                 bg-background`}
     >
@@ -160,7 +156,7 @@ const DraggableLink = ({ link, index, moveLink, onDelete, onDrop, onEdit, isDrag
           <Trash2 className="w-4 h-4 text-muted-foreground group-hover:text-red-500" />
         </button>
       </div>
-    </motion.div>
+    </div>
   )
 }
 
@@ -723,15 +719,17 @@ export function SocialLinksManagerV2({ initialLinks = [], twitchUserId, onLinksC
                     <span>Drag to reorder</span>
                   </div>
 
-                  <Button
+                  <CopyButton
                     onClick={() => openAddDialog()}
-                    variant="cyber-cyan"
-                    icon={<Plus className="w-3.5 h-3.5" />}
-                    className="h-9"
+                    tooltip="Add new social link"
                     size="sm"
+                    className="whitespace-nowrap !flex !items-center !flex-row min-w-fit"
                   >
-                    Add Link
-                  </Button>
+                    <div className="flex items-center gap-2">
+                      <Plus className="w-4 h-4" />
+                      <span>Add Link</span>
+                    </div>
+                  </CopyButton>
                 </div>
               </div>
 
@@ -779,11 +777,7 @@ export function SocialLinksManagerV2({ initialLinks = [], twitchUserId, onLinksC
             </div>
 
             {newLinkPlatform && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="space-y-4"
-              >
+              <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="username" className="text-muted-foreground">Username</Label>
                   <Input
@@ -808,27 +802,29 @@ export function SocialLinksManagerV2({ initialLinks = [], twitchUserId, onLinksC
                 </div>
 
                 <div className="flex justify-end gap-2 pt-2">
-                  <Button
+                  <DeleteButton
                     type="button"
-                    variant="cyber-pink"
-                    icon={<X className="w-4 h-4" />}
+                    tooltip="Cancel adding link"
+                    className="whitespace-nowrap flex items-center"
                     onClick={() => {
                       closeAddDialog();
                       setNewLinkPlatform('');
                     }}
                   >
-                    Cancel
-                  </Button>
-                  <Button
+                    <X className="w-4 h-4 mr-2 flex-shrink-0" />
+                    <span className="flex-shrink-0">Cancel</span>
+                  </DeleteButton>
+                  <CopyButton
                     type="submit"
                     disabled={!newLinkPlatform}
-                    variant="cyber-cyan"
-                    icon={<Plus className="w-4 h-4" />}
+                    tooltip="Create new social link"
+                    className="whitespace-nowrap flex items-center"
                   >
-                    Add Link
-                  </Button>
+                    <Plus className="w-4 h-4 mr-2 flex-shrink-0" />
+                    <span className="flex-shrink-0">Add Link</span>
+                  </CopyButton>
                 </div>
-              </motion.div>
+              </div>
             )}
           </form>
         </DialogContent>

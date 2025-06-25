@@ -378,7 +378,7 @@ export async function GET(request: Request) {
       // For other errors, return a generic error message
       return new NextResponse("Unable to fetch Twitch data. Please try again later.", { status: 500 });
     }
-
+    
     return NextResponse.json(stats);
   } catch (error) {
     console.error("Error in Twitch stats API:", error);

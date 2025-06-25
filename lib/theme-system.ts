@@ -31,23 +31,31 @@ export const colorSchemes: Record<string, ColorScheme> = {
   'cyber-default': {
     name: 'cyber-default',
     displayName: 'Cyber Default',
-    description: 'The classic cyber aesthetic with pink, purple, and cyan',
+    description: 'The classic cyber aesthetic with pink primary, purple secondary, and cyan accents',
     colors: {
-      primary: '#ec4899', // cyber-pink
+      primary: '#ec4899', // cyber-pink (restored as primary)
       secondary: '#9146ff', // cyber-purple
-      accent: '#67e8f9', // cyber-cyan
-      background: 'rgba(255, 20, 147, 0.1)',
-      surface: 'rgba(255, 255, 255, 0.05)',
-      border: 'rgba(255, 20, 147, 0.2)',
-      gradient: 'linear-gradient(135deg, #ec4899 0%, #9146ff 50%, #67e8f9 100%)'
+      accent: '#8df5ff', // light cyan (for borders and accents)
+      background: 'rgba(236, 72, 153, 0.1)', // subtle pink background
+      surface: 'rgba(255, 255, 255, 0.05)', // neutral glass surface
+      border: 'rgba(141, 245, 255, 0.3)', // cyan borders as requested
+      gradient: 'linear-gradient(135deg, #ec4899 0%, #9146ff 50%, #8df5ff 100%)'
     },
     cssVariables: {
-      '--theme-primary': '236 72 153',
-      '--theme-secondary': '145 70 255', 
-      '--theme-accent': '103 232 249',
-      '--theme-background': 'rgba(255, 20, 147, 0.1)',
+      '--theme-primary': '236 72 153', // cyber-pink RGB (restored)
+      '--theme-secondary': '145 70 255', // cyber-purple RGB
+      '--theme-accent': '141 245 255', // light cyan RGB (for accents)
+      '--theme-foreground': '255 255 255',
+      '--theme-background': 'rgba(236, 72, 153, 0.1)', // subtle pink background
       '--theme-surface': 'rgba(255, 255, 255, 0.05)',
-      '--theme-border': 'rgba(255, 20, 147, 0.2)'
+      '--theme-border': 'rgba(141, 245, 255, 0.3)', // cyan borders
+      '--theme-border-primary': 'rgba(141, 245, 255, 0.6)', // stronger cyan borders
+      '--theme-border-secondary': 'rgba(141, 245, 255, 0.4)', // medium cyan borders
+      '--theme-border-accent': 'rgba(236, 72, 153, 0.4)', // pink accent borders
+      '--theme-border-subtle': 'rgba(141, 245, 255, 0.2)', // subtle cyan borders
+      '--theme-surface-primary': 'rgba(236, 72, 153, 0.1)', // pink surface
+      '--theme-surface-secondary': 'rgba(145, 70, 255, 0.1)', // purple surface
+      '--theme-surface-glass': 'rgba(255, 255, 255, 0.05)' // neutral glass
     }
   },
   
@@ -68,6 +76,7 @@ export const colorSchemes: Record<string, ColorScheme> = {
       '--theme-primary': '255 0 128',
       '--theme-secondary': '128 0 255',
       '--theme-accent': '0 255 128',
+      '--theme-foreground': '255 255 255',
       '--theme-background': 'rgba(255, 0, 128, 0.1)',
       '--theme-surface': 'rgba(255, 255, 255, 0.05)',
       '--theme-border': 'rgba(255, 0, 128, 0.2)'
@@ -91,6 +100,7 @@ export const colorSchemes: Record<string, ColorScheme> = {
       '--theme-primary': '14 165 233',
       '--theme-secondary': '13 148 136',
       '--theme-accent': '6 182 212',
+      '--theme-foreground': '255 255 255',
       '--theme-background': 'rgba(14, 165, 233, 0.1)',
       '--theme-surface': 'rgba(255, 255, 255, 0.05)',
       '--theme-border': 'rgba(14, 165, 233, 0.2)'
@@ -114,6 +124,7 @@ export const colorSchemes: Record<string, ColorScheme> = {
       '--theme-primary': '249 115 22',
       '--theme-secondary': '236 72 153',
       '--theme-accent': '234 179 8',
+      '--theme-foreground': '255 255 255',
       '--theme-background': 'rgba(249, 115, 22, 0.1)',
       '--theme-surface': 'rgba(255, 255, 255, 0.05)',
       '--theme-border': 'rgba(249, 115, 22, 0.2)'
@@ -137,6 +148,7 @@ export const colorSchemes: Record<string, ColorScheme> = {
       '--theme-primary': '34 197 94',
       '--theme-secondary': '139 92 246',
       '--theme-accent': '16 185 129',
+      '--theme-foreground': '255 255 255',
       '--theme-background': 'rgba(34, 197, 94, 0.1)',
       '--theme-surface': 'rgba(255, 255, 255, 0.05)',
       '--theme-border': 'rgba(34, 197, 94, 0.2)'
@@ -160,6 +172,7 @@ export const colorSchemes: Record<string, ColorScheme> = {
       '--theme-primary': '124 58 237',
       '--theme-secondary': '251 191 36',
       '--theme-accent': '168 85 247',
+      '--theme-foreground': '255 255 255',
       '--theme-background': 'rgba(124, 58, 237, 0.1)',
       '--theme-surface': 'rgba(255, 255, 255, 0.05)',
       '--theme-border': 'rgba(124, 58, 237, 0.2)'
@@ -183,9 +196,41 @@ export const colorSchemes: Record<string, ColorScheme> = {
       '--theme-primary': '244 114 182',
       '--theme-secondary': '251 113 133',
       '--theme-accent': '251 191 36',
+      '--theme-foreground': '255 255 255',
       '--theme-background': 'rgba(244, 114, 182, 0.1)',
       '--theme-surface': 'rgba(255, 255, 255, 0.05)',
       '--theme-border': 'rgba(244, 114, 182, 0.2)'
+    }
+  },
+
+  'custom': {
+    name: 'custom',
+    displayName: 'Custom Colors',
+    description: 'Create your own custom color scheme',
+    colors: {
+      primary: '#ec4899', // default to cyber-pink
+      secondary: '#9146ff', // default to cyber-purple
+      accent: '#8df5ff', // default to light cyan
+      background: 'rgba(236, 72, 153, 0.1)',
+      surface: 'rgba(255, 255, 255, 0.05)',
+      border: 'rgba(141, 245, 255, 0.3)',
+      gradient: 'linear-gradient(135deg, #ec4899 0%, #9146ff 50%, #8df5ff 100%)'
+    },
+    cssVariables: {
+      '--theme-primary': '236 72 153',
+      '--theme-secondary': '145 70 255',
+      '--theme-accent': '141 245 255',
+      '--theme-foreground': '255 255 255',
+      '--theme-background': 'rgba(236, 72, 153, 0.1)',
+      '--theme-surface': 'rgba(255, 255, 255, 0.05)',
+      '--theme-border': 'rgba(141, 245, 255, 0.3)',
+      '--theme-border-primary': 'rgba(141, 245, 255, 0.6)',
+      '--theme-border-secondary': 'rgba(141, 245, 255, 0.4)',
+      '--theme-border-accent': 'rgba(236, 72, 153, 0.4)',
+      '--theme-border-subtle': 'rgba(141, 245, 255, 0.2)',
+      '--theme-surface-primary': 'rgba(236, 72, 153, 0.1)',
+      '--theme-surface-secondary': 'rgba(145, 70, 255, 0.1)',
+      '--theme-surface-glass': 'rgba(255, 255, 255, 0.05)'
     }
   }
 }
@@ -327,32 +372,170 @@ export function getCurrentSeason(): string {
   return 'cyber-default'
 }
 
-export function getActiveTheme(userScheme?: string, seasonalEnabled?: boolean): ColorScheme {
-  // If seasonal themes are enabled, check for current seasonal theme
+// Helper function to convert hex to RGB values for Tailwind
+export function hexToRgb(hex: string): string {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
+  return result 
+    ? `${parseInt(result[1], 16)} ${parseInt(result[2], 16)} ${parseInt(result[3], 16)}`
+    : '0 0 0'
+}
+
+// Generate a custom color scheme from user colors
+export function generateCustomTheme(customColors: {
+  primary: string
+  secondary: string
+  accent: string
+}): ColorScheme {
+  const { primary, secondary, accent } = customColors
+  
+  return {
+    name: 'custom',
+    displayName: 'Custom Colors',
+    description: 'Your personalized color scheme',
+    colors: {
+      primary,
+      secondary,
+      accent,
+      background: `rgba(${hexToRgb(primary)}, 0.1)`,
+      surface: 'rgba(255, 255, 255, 0.05)',
+      border: `rgba(${hexToRgb(accent)}, 0.3)`,
+      gradient: `linear-gradient(135deg, ${primary} 0%, ${secondary} 50%, ${accent} 100%)`
+    },
+    cssVariables: {
+      '--theme-primary': hexToRgb(primary),
+      '--theme-secondary': hexToRgb(secondary),
+      '--theme-accent': hexToRgb(accent),
+      '--theme-foreground': '255 255 255',
+      '--theme-background': `rgba(${hexToRgb(primary)}, 0.1)`,
+      '--theme-surface': 'rgba(255, 255, 255, 0.05)',
+      '--theme-border': `rgba(${hexToRgb(accent)}, 0.3)`,
+      '--theme-border-primary': `rgba(${hexToRgb(accent)}, 0.6)`,
+      '--theme-border-secondary': `rgba(${hexToRgb(accent)}, 0.4)`,
+      '--theme-border-accent': `rgba(${hexToRgb(primary)}, 0.4)`,
+      '--theme-border-subtle': `rgba(${hexToRgb(accent)}, 0.2)`,
+      '--theme-surface-primary': `rgba(${hexToRgb(primary)}, 0.1)`,
+      '--theme-surface-secondary': `rgba(${hexToRgb(secondary)}, 0.1)`,
+      '--theme-surface-glass': 'rgba(255, 255, 255, 0.05)'
+    }
+  }
+}
+
+// Parse custom colors from theme_scheme if it contains custom color data
+export function parseCustomColors(themeScheme?: string): {
+  primary: string
+  secondary: string
+  accent: string
+} | null {
+  if (!themeScheme) return null
+  
+  // Handle new compact format: p123456s789abcadef123
+  if (themeScheme.startsWith('p') && themeScheme.includes('s') && themeScheme.includes('a')) {
+    try {
+      const primaryMatch = themeScheme.match(/^p([0-9a-fA-F]{6})/)
+      const secondaryMatch = themeScheme.match(/s([0-9a-fA-F]{6})/)
+      const accentMatch = themeScheme.match(/a([0-9a-fA-F]{6})/)
+      
+      if (primaryMatch && secondaryMatch && accentMatch) {
+        return {
+          primary: `#${primaryMatch[1]}`,
+          secondary: `#${secondaryMatch[1]}`,
+          accent: `#${accentMatch[1]}`
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to parse compact custom colors from theme_scheme:', error)
+    }
+  }
+  
+  // Handle legacy JSON format for backward compatibility
+  if (themeScheme.startsWith('{')) {
+    try {
+      const parsed = JSON.parse(themeScheme)
+      if (parsed.primary && parsed.secondary && parsed.accent) {
+        return {
+          primary: parsed.primary,
+          secondary: parsed.secondary,
+          accent: parsed.accent
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to parse JSON custom colors from theme_scheme:', error)
+    }
+  }
+  
+  return null
+}
+
+// Updated getActiveTheme function to handle custom colors
+export function getActiveTheme(userScheme?: string, seasonalEnabled?: boolean, customColors?: { primary: string; secondary: string; accent: string }): ColorScheme {
+  // If custom colors are provided, generate a custom theme
+  if (customColors) {
+    return generateCustomTheme(customColors)
+  }
+  
+  // Try to parse custom colors from userScheme if it's JSON
+  const parsedCustomColors = parseCustomColors(userScheme)
+  if (parsedCustomColors) {
+    return generateCustomTheme(parsedCustomColors)
+  }
+  
+  // Always start with user's custom scheme or default
+  const baseTheme = colorSchemes[userScheme || 'cyber-default'] || colorSchemes['cyber-default']
+  
+  // If seasonal themes are enabled, only add decorative effects, not override colors
   if (seasonalEnabled) {
     const currentSeason = getCurrentSeason()
     const seasonalTheme = seasonalThemes[currentSeason]
     
     if (seasonalTheme) {
+      // Return base theme with seasonal decorations but keep base colors
       return {
-        name: seasonalTheme.name,
-        displayName: seasonalTheme.displayName,
-        description: `Seasonal theme for ${seasonalTheme.displayName}`,
-        colors: seasonalTheme.colors,
-        cssVariables: {
-          '--theme-primary': seasonalTheme.colors.primary.replace('#', '').match(/.{2}/g)?.map(hex => parseInt(hex, 16)).join(' ') || '236 72 153',
-          '--theme-secondary': seasonalTheme.colors.secondary.replace('#', '').match(/.{2}/g)?.map(hex => parseInt(hex, 16)).join(' ') || '145 70 255',
-          '--theme-accent': seasonalTheme.colors.accent.replace('#', '').match(/.{2}/g)?.map(hex => parseInt(hex, 16)).join(' ') || '103 232 249',
-          '--theme-background': seasonalTheme.colors.background,
-          '--theme-surface': seasonalTheme.colors.surface,
-          '--theme-border': seasonalTheme.colors.border
-        }
+        ...baseTheme,
+        displayName: `${baseTheme.displayName} (${seasonalTheme.displayName})`,
+        description: `${baseTheme.description} with ${seasonalTheme.displayName.toLowerCase()} decorations`
       }
     }
   }
   
-  // Fall back to user's custom scheme or default
-  return colorSchemes[userScheme || 'cyber-default'] || colorSchemes['cyber-default']
+  // Return the base theme without any seasonal modifications
+  return baseTheme
+}
+
+// Apply theme to a specific container instead of global DOM
+export function applyThemeToContainer(container: HTMLElement, theme: ColorScheme) {
+  if (typeof window === 'undefined') return // Skip on server
+  
+  console.log(`[Theme System] Applying theme to container: ${theme.name}`, theme.colors)
+  
+  // Apply ALL CSS custom properties from the theme (including enhanced ones for cyber-default)
+  Object.entries(theme.cssVariables).forEach(([property, value]) => {
+    container.style.setProperty(property, value)
+  })
+  
+  // For themes that don't have enhanced variables, add fallback enhanced theme variables
+  if (!theme.cssVariables['--theme-border-primary']) {
+    // Add enhanced theme-aware CSS variables with better contrast
+    container.style.setProperty('--theme-bg-primary', theme.colors.primary)
+    container.style.setProperty('--theme-bg-secondary', theme.colors.secondary)
+    container.style.setProperty('--theme-bg-accent', theme.colors.accent)
+    container.style.setProperty('--theme-page-background', theme.colors.background)
+    
+    // Enhanced border variables with MUCH better visibility - using actual color values
+    container.style.setProperty('--theme-border-primary', `${theme.colors.primary}99`) // 60% opacity in hex
+    container.style.setProperty('--theme-border-secondary', `${theme.colors.secondary}80`) // 50% opacity in hex  
+    container.style.setProperty('--theme-border-accent', `${theme.colors.accent}80`) // 50% opacity in hex
+    container.style.setProperty('--theme-border-subtle', `${theme.colors.primary}40`) // 25% opacity in hex
+    
+    // Enhanced surface variables with much stronger visibility
+    container.style.setProperty('--theme-surface-primary', `${theme.colors.primary}26`) // 15% opacity in hex
+    container.style.setProperty('--theme-surface-secondary', `${theme.colors.secondary}1F`) // 12% opacity in hex
+    container.style.setProperty('--theme-surface-glass', `${theme.colors.primary}14`) // 8% opacity in hex
+  }
+  
+  // Update data attribute for theme-specific styling
+  container.setAttribute('data-theme', theme.name)
+  
+  console.log(`[Theme System] Theme applied to container successfully. Data-theme: ${container.getAttribute('data-theme')}`)
 }
 
 export function applyThemeToDOM(theme: ColorScheme) {
@@ -368,32 +551,89 @@ export function applyThemeToDOM(theme: ColorScheme) {
     root.style.setProperty(property, value)
   })
   
-  // Add theme-aware background colors as CSS variables
+  // Add enhanced theme-aware CSS variables with better contrast
   root.style.setProperty('--theme-bg-primary', theme.colors.primary)
   root.style.setProperty('--theme-bg-secondary', theme.colors.secondary)
   root.style.setProperty('--theme-bg-accent', theme.colors.accent)
   root.style.setProperty('--theme-page-background', theme.colors.background)
   
+  // Enhanced border variables with MUCH better visibility - using actual color values
+  root.style.setProperty('--theme-border-primary', `${theme.colors.primary}99`) // 60% opacity in hex
+  root.style.setProperty('--theme-border-secondary', `${theme.colors.secondary}80`) // 50% opacity in hex  
+  root.style.setProperty('--theme-border-accent', `${theme.colors.accent}80`) // 50% opacity in hex
+  root.style.setProperty('--theme-border-subtle', `${theme.colors.primary}40`) // 25% opacity in hex
+  
+  // Enhanced surface variables with much stronger visibility
+  root.style.setProperty('--theme-surface-primary', `${theme.colors.primary}26`) // 15% opacity in hex
+  root.style.setProperty('--theme-surface-secondary', `${theme.colors.secondary}1F`) // 12% opacity in hex
+  root.style.setProperty('--theme-surface-glass', `${theme.colors.primary}14`) // 8% opacity in hex
+  
+  // Debug current URL and path
+  const currentPath = window.location.pathname
+  console.log(`[Theme System] Current URL path: ${currentPath}`)
+  
   // Update body background with theme colors for profile pages
-  const isUsernamePage = window.location.pathname.startsWith('/') &&
-    window.location.pathname.split('/').length === 2 &&
-    window.location.pathname !== '/' &&
-    !window.location.pathname.startsWith('/dashboard') &&
-    !window.location.pathname.startsWith('/admin') &&
-    !window.location.pathname.startsWith('/canvas') &&
-    !window.location.pathname.startsWith('/overlay') &&
-    !window.location.pathname.startsWith('/api') &&
-    !window.location.pathname.includes('.') &&
-    !window.location.pathname.startsWith('/about') &&
-    !window.location.pathname.startsWith('/contact') &&
-    !window.location.pathname.startsWith('/privacy') &&
-    !window.location.pathname.startsWith('/terms')
+  const isUsernamePage = currentPath.startsWith('/') &&
+    currentPath.split('/').length === 2 &&
+    currentPath !== '/' &&
+    !currentPath.startsWith('/dashboard') &&
+    !currentPath.startsWith('/admin') &&
+    !currentPath.startsWith('/canvas') &&
+    !currentPath.startsWith('/overlay') &&
+    !currentPath.startsWith('/api') &&
+    !currentPath.includes('.') &&
+    !currentPath.startsWith('/about') &&
+    !currentPath.startsWith('/contact') &&
+    !currentPath.startsWith('/privacy') &&
+    !currentPath.startsWith('/terms')
+
+  console.log(`[Theme System] Username page detection:`, {
+    path: currentPath,
+    isUsernamePage,
+    pathParts: currentPath.split('/'),
+    pathLength: currentPath.split('/').length
+  })
 
   if (isUsernamePage) {
-    // For username pages, apply the theme background directly
-    body.style.background = `linear-gradient(135deg, ${theme.colors.primary}08, ${theme.colors.secondary}08, ${theme.colors.accent}08)`
+    console.log(`[Theme System] APPLYING background to username page: ${currentPath}`)
+    
+    // For username pages, apply the theme background with balanced colors
+    // For cyber-default: subtle pink primary with cyan accents, not overwhelming cyan
+    const newBackground = `
+      linear-gradient(135deg, 
+        ${theme.colors.primary}40 0%, 
+        ${theme.colors.secondary}35 30%, 
+        ${theme.colors.accent}45 70%,
+        ${theme.colors.primary}30 100%
+      ), 
+      radial-gradient(circle at 20% 80%, ${theme.colors.accent}40, transparent 70%),
+      radial-gradient(circle at 80% 20%, ${theme.colors.primary}35, transparent 70%),
+      radial-gradient(circle at 40% 40%, ${theme.colors.secondary}30, transparent 70%),
+      radial-gradient(circle at 60% 70%, ${theme.colors.accent}25, transparent 60%),
+      radial-gradient(circle at 30% 10%, ${theme.colors.primary}20, transparent 50%),
+      linear-gradient(180deg, #000000 0%, #0f0f0f 100%)
+    `
+    
+    body.style.background = newBackground
     body.style.backgroundAttachment = 'fixed'
-    console.log(`[Theme System] Applied custom background for username page: ${theme.colors.primary}`)
+    body.style.backgroundBlendMode = 'normal'
+    
+    // Add some dynamic background properties
+    root.style.setProperty('--theme-bg-animated', newBackground)
+    
+    console.log(`[Theme System] Applied ENHANCED background for username page:`, {
+      primary: theme.colors.primary,
+      secondary: theme.colors.secondary,
+      accent: theme.colors.accent,
+      backgroundPreview: `linear-gradient(135deg, ${theme.colors.primary}40, ${theme.colors.secondary}35, ${theme.colors.accent}40)`,
+      fullBackground: newBackground,
+      bodyStyleBackground: body.style.background
+    })
+  } else {
+    console.log(`[Theme System] NOT a username page, skipping background application`)
+    // Reset background for non-profile pages
+    body.style.background = ''
+    body.style.backgroundAttachment = ''
   }
   
   // Update data attribute for theme-specific styling
@@ -436,14 +676,6 @@ export function generateThemeCSS(theme: ColorScheme): string {
       border-color: ${theme.colors.border};
     }
   `
-}
-
-// Helper function to convert hex to RGB values for Tailwind
-export function hexToRgb(hex: string): string {
-  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex)
-  return result 
-    ? `${parseInt(result[1], 16)} ${parseInt(result[2], 16)} ${parseInt(result[3], 16)}`
-    : '0 0 0'
 }
 
 // Get theme-specific class names

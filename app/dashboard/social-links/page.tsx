@@ -13,8 +13,11 @@ import { Button } from '@/components/ui/button'
 import { CopyButton, ViewButton, QRButton } from '@/components/ui/action-button'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import { Switch } from '@/components/ui/switch'
-import { useThemeSystem } from '@/hooks/useThemeSystem'
-import { colorSchemes } from '@/lib/theme-system'
+import { IconStyleSelector } from '@/components/ui/icon-style-selector'
+import { CustomColorPicker } from '@/components/ui/custom-color-picker'
+import { useThemeStore, type IconStyle, type CustomColors } from '@/stores/useThemeStore'
+import { useThemeUpdates } from '@/hooks/useThemeUpdates'
+import { colorSchemes, parseCustomColors } from '@/lib/theme-system'
 import {
   Copy,
   ExternalLink,
@@ -109,19 +112,46 @@ export default function SocialLinksPage() {
   const [analyticsData, setAnalyticsData] = useState<any>(null)
   const [analyticsLoading, setAnalyticsLoading] = useState(false)
 
-  // Theme system hooks
+  // Theme management with proper architecture
   const {
-    activeTheme,
     currentScheme,
     seasonalEnabled,
+    iconStyle,
+    previewScheme,
+    activeTheme,
     currentSeason,
-    colorSchemes: availableSchemes,
-    seasonalThemes,
-    updateColorScheme,
-    toggleSeasonalThemes,
+    customColors: storeCustomColors,
     previewColorScheme,
-    isUpdating: themeLoading
-  } = useThemeSystem()
+    previewCustomColors
+  } = useThemeStore()
+
+  const { updateColorScheme, toggleSeasonalThemes, updateIconStyle, isUpdating: themeLoading } = useThemeUpdates()
+
+  // Local custom colors state
+  const [customColors, setCustomColors] = useState<CustomColors | null>(null)
+
+  // Initialize custom colors from user data
+  useEffect(() => {
+    if (authUser?.theme_scheme) {
+      const parsedColors = parseCustomColors(authUser.theme_scheme)
+      if (parsedColors) {
+        setCustomColors(parsedColors)
+      }
+    }
+  }, [authUser?.theme_scheme])
+
+  // Sync theme store with user data
+  useEffect(() => {
+    if (authUser) {
+      const store = useThemeStore.getState()
+      store.applyTheme(
+        authUser.theme_scheme || 'cyber-default',
+        authUser.seasonal_themes ?? false
+      )
+      // Also sync icon style
+      store.setIconStyle(authUser.icon_style || 'colored')
+    }
+  }, [authUser?.theme_scheme, authUser?.seasonal_themes, authUser?.icon_style])
 
   // Quick stats from Umami
   const [quickStats, setQuickStats] = useState<{
@@ -145,10 +175,10 @@ export default function SocialLinksPage() {
         ...twitchUser,
         theme_scheme: authUser.theme_scheme,
         seasonal_themes: authUser.seasonal_themes,
-        colored_icons: authUser.colored_icons
+        icon_style: authUser.icon_style
       })
     }
-  }, [authUser?.theme_scheme, authUser?.seasonal_themes, authUser?.colored_icons])
+  }, [authUser?.theme_scheme, authUser?.seasonal_themes, authUser?.icon_style])
 
   // Initial data loading
   useEffect(() => {
@@ -218,8 +248,6 @@ export default function SocialLinksPage() {
         console.error('Error removing existing channel:', e);
       }
     }
-
-
 
     // Set up realtime subscription for dashboard
     const channelId = `dashboard_social_links_${twitchUser.id}_${Date.now()}`;
@@ -384,39 +412,26 @@ export default function SocialLinksPage() {
     }
   }
 
-  const handleIconColorUpdate = async (useColoredIcons: boolean) => {
-    if (!twitchUser) return
-
-    try {
-      // Update the local state immediately for UI responsiveness
-      setTwitchUser({ ...twitchUser, colored_icons: useColoredIcons })
-
-      // Update the database
-      const { error } = await supabase
-        .from('twitch_users')
-        .update({ colored_icons: useColoredIcons })
-        .eq('id', twitchUser.id)
-
-      if (error) throw error
-
-      toast.success(`Icon style updated to ${useColoredIcons ? 'colored' : 'monochrome'}`, {
-        description: 'Your profile will reflect this change immediately',
-        duration: 3000,
-      })
-    } catch (error) {
-      console.error('Error updating icon color preference:', error)
-      // Revert the local state if the update fails
-      setTwitchUser({ ...twitchUser, colored_icons: !useColoredIcons })
-      toast.error('Failed to update icon style')
-    }
+  const handleIconStyleUpdate = async (style: IconStyle) => {
+    updateIconStyle(style)
   }
 
-  const handleThemeSchemeUpdate = async (schemeKey: string) => {
-    await updateColorScheme(schemeKey)
+  const handleThemeSchemeUpdate = async (schemeKey: string, colors?: CustomColors) => {
+    updateColorScheme(schemeKey, colors)
+  }
+
+  const handleCustomColorsChange = (colors: CustomColors) => {
+    setCustomColors(colors)
+    // Auto-save custom colors when they change
+    handleThemeSchemeUpdate('custom', colors)
+  }
+
+  const handleCustomColorsPreview = (colors: CustomColors) => {
+    previewCustomColors(colors)
   }
 
   const handleSeasonalThemesToggle = async (enabled: boolean) => {
-    await toggleSeasonalThemes(enabled)
+    toggleSeasonalThemes(enabled)
   }
 
   // Show loading while auth is initializing
@@ -971,8 +986,8 @@ export default function SocialLinksPage() {
                     <p className="text-xs text-muted-foreground">{activeTheme?.description || 'Default cyber theme'}</p>
                   </div>
 
-                  {/* Seasonal Themes Toggle */}
-                  <div className="flex items-center justify-between p-4 bg-glass/20 rounded-lg border border-white/10">
+                  {/* Seasonal Themes Toggle - HIDDEN FOR NOW */}
+                  {/* <div className="flex items-center justify-between p-4 bg-glass/20 rounded-lg border border-white/10">
                     <div className="space-y-1">
                       <label className="text-sm font-medium text-foreground">
                         Seasonal Themes
@@ -991,7 +1006,7 @@ export default function SocialLinksPage() {
                       onCheckedChange={handleSeasonalThemesToggle}
                       disabled={themeLoading}
                     />
-                  </div>
+                  </div> */}
 
                   {/* Color Scheme Selection */}
                   <div className="space-y-3">
@@ -999,15 +1014,15 @@ export default function SocialLinksPage() {
                       Color Scheme
                     </label>
                     <div className="grid grid-cols-2 gap-3">
-                      {Object.values(availableSchemes).map((scheme) => {
-                        const isActive = currentScheme === scheme.name
-                        const isCurrentlyActive = activeTheme?.name === scheme.name
+                      {Object.entries(colorSchemes).map(([schemeKey, scheme]) => {
+                        const isActive = currentScheme === schemeKey
+                        const isCurrentlyActive = activeTheme?.name === schemeKey
 
                         return (
                           <button
-                            key={scheme.name}
-                            onClick={() => handleThemeSchemeUpdate(scheme.name)}
-                            onMouseEnter={() => previewColorScheme(scheme.name)}
+                            key={schemeKey}
+                            onClick={() => handleThemeSchemeUpdate(schemeKey)}
+                            onMouseEnter={() => previewColorScheme(schemeKey)}
                             onMouseLeave={() => previewColorScheme(null)}
                             disabled={themeLoading}
                             className={`p-3 rounded-lg border transition-all duration-200 text-left group hover:scale-[1.02] ${isCurrentlyActive
@@ -1048,28 +1063,28 @@ export default function SocialLinksPage() {
                     </div>
                   </div>
 
-                  {/* Icon Style Setting */}
-                  <div className="flex items-center justify-between p-4 bg-glass/20 rounded-lg border border-white/10">
-                    <div className="space-y-1">
-                      <label className="text-sm font-medium text-foreground">
-                        Social Icon Style
-                      </label>
-                      <p className="text-xs text-muted-foreground">
-                        Choose between colored brand icons or monochrome style
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-sm text-muted-foreground">
-                        Monochrome
-                      </span>
-                      <Switch
-                        checked={twitchUser.colored_icons ?? true}
-                        onCheckedChange={handleIconColorUpdate}
+                  {/* Custom Color Picker - Show when custom theme is selected */}
+                  {currentScheme === 'custom' && (
+                    <div className="space-y-3">
+                      <CustomColorPicker
+                        initialColors={customColors || {
+                          primary: '#ec4899',
+                          secondary: '#9146ff',
+                          accent: '#8df5ff'
+                        }}
+                        onColorsChange={handleCustomColorsChange}
+                        onPreview={handleCustomColorsPreview}
                       />
-                      <span className="text-sm text-muted-foreground">
-                        Colored
-                      </span>
                     </div>
+                  )}
+
+                  {/* Icon Style Setting */}
+                  <div className="p-4 bg-glass/20 rounded-lg border border-white/10">
+                    <IconStyleSelector
+                      value={iconStyle}
+                      onChange={handleIconStyleUpdate}
+                      disabled={themeLoading}
+                    />
                   </div>
 
                   {/* Icon Preview */}
@@ -1078,11 +1093,20 @@ export default function SocialLinksPage() {
                     <div className="flex items-center gap-3">
                       {['youtube', 'twitch', 'instagram', 'twitter'].map((platform) => {
                         const Icon = getPlatformIcon(platform)
+
+                        let iconStyles = {}
+                        if (iconStyle === 'colored') {
+                          iconStyles = { color: getPlatformColor(platform) }
+                        } else if (iconStyle === 'theme' && activeTheme) {
+                          iconStyles = { color: activeTheme.colors.primary }
+                        }
+                        // monochrome uses default white/gray from CSS
+
                         return (
                           <div key={platform} className="flex items-center gap-2 p-2 bg-glass/20 rounded-lg">
                             <Icon
                               className="w-5 h-5"
-                              style={twitchUser.colored_icons !== false ? { color: getPlatformColor(platform) } : undefined}
+                              style={iconStyles}
                             />
                             <span className="text-xs capitalize">{platform}</span>
                           </div>
@@ -1119,4 +1143,4 @@ export default function SocialLinksPage() {
       </div>
     </div>
   )
-} 
+}
