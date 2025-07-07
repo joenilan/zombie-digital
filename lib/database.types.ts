@@ -104,7 +104,73 @@ export type Database = {
           username?: string | null
         }
         Relationships: []
-      }
+      },
+      canvas_settings: {
+        Row: {
+          id: string
+          user_id: string
+          resolution: string
+          background_color: string | null
+          show_name_tag: boolean
+          auto_fit: boolean
+          locked: boolean
+          created_at: string
+          updated_at: string
+          name: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          resolution?: string
+          background_color?: string | null
+          show_name_tag?: boolean
+          auto_fit?: boolean
+          locked?: boolean
+          created_at?: string
+          updated_at?: string
+          name?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          resolution?: string
+          background_color?: string | null
+          show_name_tag?: boolean
+          auto_fit?: boolean
+          locked?: boolean
+          created_at?: string
+          updated_at?: string
+          name?: string
+        }
+        Relationships: []
+      },
+      emote_settings: {
+        Row: {
+          id: string
+          user_id: string
+          emote_name: string
+          settings: Json | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          emote_name: string
+          settings?: Json | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          emote_name?: string
+          settings?: Json | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      },
       social_tree: {
         Row: {
           created_at: string | null
@@ -133,22 +199,7 @@ export type Database = {
           url?: string | null
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "social_tree_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "public_profiles"
-            referencedColumns: ["user_id"]
-          },
-          {
-            foreignKeyName: "social_tree_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "twitch_users"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
     }
     Views: {
@@ -198,16 +249,12 @@ export type Database = {
         Relationships: []
       }
     }
-    Functions: {
-      [_ in never]: never
-    }
+    Functions: {}
     Enums: {
       icon_style: "monochrome" | "colored" | "theme"
       user_level: "owner" | "admin" | "moderator" | "user"
     }
-    CompositeTypes: {
-      [_ in never]: never
-    }
+    CompositeTypes: {}
   }
 }
 
