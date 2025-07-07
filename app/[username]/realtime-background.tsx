@@ -46,14 +46,26 @@ export function RealtimeBackground({ userId, initialBackground }: RealtimeBackgr
     }
   }, [supabase, userId])
 
-  if (!background?.url) return null
+  if (!background?.url) {
+    // Default theme-based gradient when no background is set
+    return (
+      <div className="absolute inset-0 pointer-events-none select-none z-0" style={{
+        background: `
+          radial-gradient(circle at 30% 20%, rgba(var(--theme-primary), 0.15) 0%, transparent 50%),
+          radial-gradient(circle at 70% 80%, rgba(var(--theme-accent), 0.1) 0%, transparent 50%),
+          linear-gradient(135deg, rgba(15,23,42,0.8) 0%, rgba(30,41,59,0.9) 100%)
+        `
+      }} />
+    )
+  }
 
   return (
-    <div className="absolute inset-0">
+    <div className="absolute inset-0 pointer-events-none select-none z-0">
+      {/* Background media (z-0, with less blur) */}
       {background.type?.startsWith('video/') ? (
         <video
           src={background.url}
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover opacity-40 scale-110"
           autoPlay
           loop
           muted
@@ -64,7 +76,7 @@ export function RealtimeBackground({ userId, initialBackground }: RealtimeBackgr
           src={background.url}
           alt="Profile Background"
           fill
-          className="object-cover"
+          className="object-cover opacity-40 scale-110"
           priority={false}
           quality={85}
           sizes="100vw"

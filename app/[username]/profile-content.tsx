@@ -10,6 +10,8 @@ import { ShareButton } from './share-button'
 import { UmamiTracker } from '@/components/umami-tracker'
 import { BioEditor } from '@/components/bio-editor'
 import { ThemeWrapper } from '@/components/theme-wrapper'
+import { EditButton } from '@/components/ui/action-button'
+import { Edit } from '@/lib/icons'
 
 interface Profile {
     user_id: string
@@ -69,20 +71,24 @@ export function ProfileContent({ profile, initialLinks, isTransparent, isOwner }
             <UmamiTracker userId={profile.user_id} isOwner={isOwner} />
 
             {/* Main Content Card */}
-            <div className="max-w-2xl mx-auto relative">
+            <div className="max-w-[700px] w-full mx-auto relative">
+                {/* Owner quick edit button */}
+                {isOwner && !isTransparent && (
+                    <Link href="/dashboard/social-links" className="absolute top-4 right-4 z-10">
+                        <EditButton
+                            size="icon"
+                            tooltip="Edit your public page & links"
+                            aria-label="Edit Public Page"
+                        >
+                            <Edit className="w-5 h-5" />
+                        </EditButton>
+                    </Link>
+                )}
                 <div
-                    className="backdrop-blur-xl rounded-xl overflow-hidden"
+                    className="backdrop-blur-xl rounded-xl overflow-hidden border border-white/40 relative"
                     style={isTransparent ? {} : {
-                        backgroundColor: `var(--theme-surface-glass)`,
-                        borderColor: `var(--theme-border-primary)`,
-                        borderWidth: '1px',
-                        borderStyle: 'solid',
-                        boxShadow: `
-                            0 0 40px rgba(var(--theme-primary), 0.4),
-                            0 0 80px rgba(var(--theme-accent), 0.2),
-                            0 8px 32px rgba(var(--theme-primary), 0.3),
-                            inset 0 1px 0 rgba(var(--theme-accent), 0.2)
-                        `
+                        background: `linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 50%, rgba(0,0,0,0.2) 100%)`,
+                        boxShadow: `0 8px 32px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.1), inset 0 1px 0 rgba(255,255,255,0.1)`
                     }}
                 >
                     {/* Card Background */}
@@ -94,16 +100,21 @@ export function ProfileContent({ profile, initialLinks, isTransparent, isOwner }
                         }}
                     />
 
-                    {/* Glass Overlay */}
-                    <div
-                        className={`absolute inset-0 ${isTransparent ? 'bg-transparent' : 'backdrop-blur-sm'}`}
-                        style={isTransparent ? {} : {
-                            backgroundColor: `rgba(var(--theme-background), 0.1)`
-                        }}
-                    />
+                    {/* Overlays above background, below content */}
+                    {!isTransparent && (
+                        <>
+                            {/* Single theme-aware radial/linear gradient overlay (matches live preview) */}
+                            <div
+                                className="absolute inset-0 z-10 pointer-events-none select-none"
+                                style={{
+                                    background: `radial-gradient(circle at center, rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0.5) 70%, rgba(0, 0, 0, 0.8) 100%), linear-gradient(135deg, rgba(168,85,247,0.1) 0%, rgba(34,211,238,0.05) 100%)`
+                                }}
+                            />
+                        </>
+                    )}
 
                     {/* Content */}
-                    <div className="relative space-y-8 p-6">
+                    <div className="relative z-30 space-y-6 p-4 sm:p-6">
                         {/* Profile Header */}
                         <div className="flex flex-col items-center text-center">
                             <div className="relative mb-6">
@@ -177,33 +188,6 @@ export function ProfileContent({ profile, initialLinks, isTransparent, isOwner }
                             )}
                         </div>
 
-                        {/* Background Manager (only shown to profile owner) */}
-                        {isOwner && !isTransparent && (
-                            <div
-                                className="rounded-lg p-4 backdrop-blur-sm"
-                                style={{
-                                    borderColor: `var(--theme-border-secondary)`,
-                                    borderWidth: '1px',
-                                    borderStyle: 'solid',
-                                    backgroundColor: `var(--theme-surface-secondary)`,
-                                    boxShadow: `0 4px 16px rgba(var(--theme-secondary), 0.2), 0 2px 8px rgba(var(--theme-accent), 0.1)`
-                                }}
-                            >
-                                <div className="flex items-center gap-2 mb-3">
-                                    <div
-                                        className="w-1.5 h-1.5 rounded-full"
-                                        style={{ backgroundColor: `rgba(var(--theme-accent), 0.6)` }}
-                                    ></div>
-                                    <span className="text-xs text-muted-foreground/80 font-medium">Owner Only</span>
-                                </div>
-                                <h2 className="text-sm font-medium mb-3 text-foreground/90">Background Settings</h2>
-                                <BackgroundUpload
-                                    userId={profile.user_id}
-                                    showPreview={false}
-                                />
-                            </div>
-                        )}
-
                         {/* Social Links */}
                         <div>
                             <RealtimeLinks
@@ -218,9 +202,9 @@ export function ProfileContent({ profile, initialLinks, isTransparent, isOwner }
 
                 {/* Footer (outside the card) */}
                 {!isTransparent && (
-                    <div className="text-center text-sm text-muted-foreground/60 pt-8">
+                    <div className="text-center text-xs pt-4 opacity-70" style={{ color: `rgb(var(--theme-foreground))` }}>
                         <p>
-                            Powered by{" "}
+                            Powered by{' '}
                             <Link href="/" className="font-bold inline-flex items-center transition-all duration-300 hover:opacity-100 hover:text-foreground">
                                 <span
                                     className="bg-clip-text text-transparent"
@@ -230,12 +214,12 @@ export function ProfileContent({ profile, initialLinks, isTransparent, isOwner }
                                 >
                                     Zombie
                                 </span>
-                                <span className="text-foreground/80">.Digital</span>
+                                <span className="opacity-80" style={{ color: `rgb(var(--theme-foreground))` }}>.Digital</span>
                             </Link>
                         </p>
                     </div>
                 )}
             </div>
-        </ThemeWrapper>
+        </ThemeWrapper >
     )
 } 

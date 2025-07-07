@@ -611,4 +611,13 @@ export const Key = ({ className, style, onClick }: IconProps) =>
     <Icon icon="solar:key-bold" className={className} style={style} onClick={onClick} />
 
 export const Ban = ({ className, style, onClick }: IconProps) =>
-    <Icon icon="solar:forbidden-circle-bold" className={className} style={style} onClick={onClick} /> 
+    <Icon icon="solar:forbidden-circle-bold" className={className} style={style} onClick={onClick} />
+
+export const AlertTriangle = ({ className, style, onClick }: IconProps) =>
+    <Icon icon="solar:danger-triangle-bold" className={className} style={style} onClick={onClick} />
+
+export const FileImage = ({ className, style, onClick }: IconProps) =>
+    <Icon icon="solar:gallery-wide-bold" className={className} style={style} onClick={onClick} />
+
+export const Clock = ({ className, style, onClick }: IconProps) =>
+    <Icon icon="solar:clock-circle-bold" className={className} style={style} onClick={onClick} /> 

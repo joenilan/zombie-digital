@@ -15,7 +15,10 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { motion, AnimatePresence } from 'framer-motion'
 import { getPlatformIcon, getPlatformColor, platformIcons, platformUrlPatterns, getPlatformUrl } from '@/lib/icons'
+import { getIconStyle } from '@/lib/icon-utils'
 import { useSocialLinksManagerStore, type SocialLink } from '@/stores/useSocialLinksManagerStore'
+import { type IconStyle } from '@/stores/useThemeStore'
+import { type ColorScheme } from '@/lib/theme-system'
 
 // Constants
 const ItemTypes = {
@@ -30,9 +33,11 @@ interface DraggableLinkProps {
   onDrop: () => void
   onEdit: (link: SocialLink) => void
   isDragging: boolean
+  iconStyle?: IconStyle
+  activeTheme?: ColorScheme | null
 }
 
-const DraggableLink = ({ link, index, moveLink, onDelete, onDrop, onEdit, isDragging }: DraggableLinkProps) => {
+const DraggableLink = ({ link, index, moveLink, onDelete, onDrop, onEdit, isDragging, iconStyle = 'colored', activeTheme }: DraggableLinkProps) => {
   const ref = React.useRef<HTMLDivElement>(null)
   const Icon = getPlatformIcon(link.platform)
   const iconColor = getPlatformColor(link.platform)
@@ -540,10 +545,12 @@ const EmptyState = ({ onAddClick }: { onAddClick: () => void }) => {
   )
 }
 
-export function SocialLinksManagerV2({ initialLinks = [], twitchUserId, onLinksChange }: {
+export function SocialLinksManagerV2({ initialLinks = [], twitchUserId, onLinksChange, iconStyle = 'colored', activeTheme }: {
   initialLinks: SocialLink[]
   twitchUserId: string
   onLinksChange?: (links: SocialLink[]) => void
+  iconStyle?: IconStyle
+  activeTheme?: ColorScheme | null
 }) {
   const {
     links,
@@ -745,6 +752,8 @@ export function SocialLinksManagerV2({ initialLinks = [], twitchUserId, onLinksC
                       onDrop={handleDrop}
                       onEdit={handleEditLink}
                       isDragging={isDraggingAny}
+                      iconStyle={iconStyle}
+                      activeTheme={activeTheme}
                     />
                   ))}
                 </AnimatePresence>

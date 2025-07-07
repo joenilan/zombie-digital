@@ -27,7 +27,7 @@ interface RealtimeLinksProps {
   iconStyle?: string
 }
 
-function TwitchLink({ link, username }: { link: SocialLink; username: string }) {
+function TwitchLink({ link, username, iconStyle }: { link: SocialLink; username: string; iconStyle: IconStyle }) {
   const {
     isExpanded,
     isLive,
@@ -65,107 +65,104 @@ function TwitchLink({ link, username }: { link: SocialLink; username: string }) 
   }, [username, setIsLive, setStreamInfo, setStreamError])
 
   return (
-    <div className="w-full">
+    <div
+      className="w-full backdrop-blur-[12px] rounded-lg border transition-all duration-300 overflow-hidden"
+      style={{
+        background: `linear-gradient(135deg, 
+          rgba(var(--theme-primary), 0.10) 0%, 
+          rgba(var(--theme-secondary), 0.05) 50%, 
+          rgba(var(--theme-accent), 0.10) 100%
+        )`,
+        borderColor: `var(--theme-border-primary)`,
+        borderWidth: '1px',
+        borderStyle: 'solid',
+        boxShadow: `
+          0 6px 20px rgba(var(--theme-primary), 0.15), 
+          0 3px 10px rgba(var(--theme-accent), 0.10),
+          inset 0 1px 0 rgba(var(--theme-accent), 0.15)
+        `
+      }}
+    >
+      {/* Header row: Twitch link */}
       <a
         href={link.url}
         target="_blank"
         rel="noopener noreferrer"
-        className="block w-full p-4 backdrop-blur-xl transition-all duration-300 text-center group relative overflow-hidden rounded-xl"
-        style={{
-          backgroundColor: `var(--theme-surface-glass)`,
-          borderColor: `var(--theme-border-primary)`,
-          borderWidth: '1px',
-          borderStyle: 'solid',
-          boxShadow: `
-            0 6px 20px rgba(var(--theme-primary), 0.25), 
-            0 3px 10px rgba(var(--theme-accent), 0.15),
-            inset 0 1px 0 rgba(var(--theme-accent), 0.1)
-          `
-        }}
+        className="flex items-center justify-center gap-2 sm:gap-3 min-h-[2.5rem] p-3 sm:p-4 text-center group relative select-none transition-all duration-200 hover:bg-white/5 focus:bg-white/10 rounded-t-lg"
+        style={{ textDecoration: 'none' }}
       >
-        <div
-          className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-          style={{
-            background: `linear-gradient(45deg, rgba(var(--theme-primary), 0.15), rgba(var(--theme-accent), 0.15))`
-          }}
+        <Twitch
+          className="w-4 h-4 sm:w-6 sm:h-6"
+          style={getIconStyle('twitch', iconStyle)}
         />
-        <div className="relative flex items-center justify-center gap-3">
-          <Twitch className="w-6 h-6" style={{ color: '#9146ff' }} />
-          <span className="font-medium text-lg" style={{ color: `rgb(var(--theme-foreground))` }}>
-            {link.title || link.platform}
+        <span className="font-medium text-sm sm:text-base" style={{ color: `rgb(var(--theme-foreground))` }}>
+          {link.title || link.platform}
+        </span>
+        {streamError ? (
+          <span className="text-xs text-red-500">
+            (Status check failed)
           </span>
-          {streamError ? (
-            <span className="text-xs text-red-500">
-              (Status check failed)
-            </span>
-          ) : isLive ? (
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-              <span className="text-sm font-medium text-red-500">LIVE</span>
-              {streamInfo?.viewer_count && (
-                <span className="text-xs text-muted-foreground">
-                  {new Intl.NumberFormat().format(streamInfo.viewer_count)} viewers
-                </span>
-              )}
-            </div>
-          ) : (
-            <span className="text-xs text-muted-foreground">
-              (Offline)
-            </span>
-          )}
-        </div>
-        {isLive && streamInfo && (
-          <div className="mt-2 text-sm text-muted-foreground">
-            {streamInfo.title}
+        ) : isLive ? (
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+            <span className="text-sm font-medium text-red-500">LIVE</span>
+            {streamInfo?.viewer_count && (
+              <span className="text-xs text-muted-foreground">
+                {new Intl.NumberFormat().format(streamInfo.viewer_count)} viewers
+              </span>
+            )}
           </div>
+        ) : (
+          <span className="text-xs text-muted-foreground">
+            (Offline)
+          </span>
         )}
       </a>
-
+      {/* Stream title if live */}
+      {isLive && streamInfo && (
+        <div className="px-4 pb-1 text-sm text-muted-foreground text-center">
+          {streamInfo.title}
+        </div>
+      )}
+      {/* Show Stream button as integrated footer, only when live */}
       {isLive && (
-        <>
-          <TooltipProvider>
-            <ViewButton
-              onClick={() => setIsExpanded(!isExpanded)}
-              size="sm"
-              tooltip={isExpanded ? 'Hide Stream' : 'Show Stream'}
-              className="w-full p-2 transition-colors flex items-center justify-center gap-2 text-sm rounded-b-xl"
-              style={{
-                backgroundColor: `var(--theme-surface-secondary)`,
-                borderTopColor: `var(--theme-border-subtle)`,
-                borderTopWidth: '1px',
-                borderTopStyle: 'solid',
-                color: `rgba(var(--theme-foreground), 0.7)`
-              }}
+        <button
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="w-full flex items-center justify-center gap-2 text-sm py-2 border-t border-t-[var(--theme-border-subtle)] focus:outline-none focus:bg-white/5 hover:bg-white/10 transition-colors rounded-b-lg"
+          style={{ color: `rgba(var(--theme-foreground), 0.7)` }}
+          aria-label={isExpanded ? 'Hide Stream' : 'Show Stream'}
+          tabIndex={0}
+          type="button"
+        >
+          <motion.div
+            animate={{ rotate: isExpanded ? 180 : 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <ChevronDown className="w-4 h-4" />
+          </motion.div>
+          {isExpanded ? 'Hide Stream' : 'Show Stream'}
+        </button>
+      )}
+      {/* Expandable stream player */}
+      {isLive && (
+        <AnimatePresence>
+          {isExpanded && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="relative pt-[56.25%] mt-2 rounded-b-lg overflow-hidden bg-black/50"
             >
-              <motion.div
-                animate={{ rotate: isExpanded ? 180 : 0 }}
-                transition={{ duration: 0.2 }}
-              >
-                <ChevronDown className="w-4 h-4" />
-              </motion.div>
-              {isExpanded ? 'Hide Stream' : 'Show Stream'}
-            </ViewButton>
-          </TooltipProvider>
-
-          <AnimatePresence>
-            {isExpanded && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className="relative pt-[56.25%] mt-2 rounded-xl overflow-hidden bg-black/50"
-              >
-                <iframe
-                  src={`https://player.twitch.tv/?channel=${username}&parent=${window.location.hostname}`}
-                  frameBorder="0"
-                  allowFullScreen
-                  className="absolute top-0 left-0 w-full h-full"
-                />
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </>
+              <iframe
+                src={`https://player.twitch.tv/?channel=${username}&parent=${window.location.hostname}`}
+                frameBorder="0"
+                allowFullScreen
+                className="absolute top-0 left-0 w-full h-full"
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
       )}
     </div>
   )
@@ -392,7 +389,7 @@ export function RealtimeLinks({ userId, initialLinks, isOwner, iconStyle }: Real
                     exit={{ opacity: 0, y: -20 }}
                     transition={{ duration: 0.3 }}
                   >
-                    <TwitchLink link={link} username={username} />
+                    <TwitchLink link={link} username={username} iconStyle={(iconStyle as IconStyle) || 'colored'} />
                   </motion.div>
                 );
               } catch (error) {
@@ -435,31 +432,35 @@ export function RealtimeLinks({ userId, initialLinks, isOwner, iconStyle }: Real
                   href={link.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="block w-full p-4 backdrop-blur-xl transition-all duration-300 text-center group relative overflow-hidden rounded-xl"
+                  className={`block w-full p-3 sm:p-4 backdrop-blur-[12px] transition-all duration-300 text-center group relative overflow-hidden border rounded-lg`}
                   style={{
-                    backgroundColor: `var(--theme-surface-glass)`,
+                    background: `linear-gradient(135deg, 
+                      rgba(var(--theme-primary), 0.10) 0%, 
+                      rgba(var(--theme-secondary), 0.05) 50%, 
+                      rgba(var(--theme-accent), 0.10) 100%
+                    )`,
                     borderColor: `var(--theme-border-primary)`,
                     borderWidth: '1px',
                     borderStyle: 'solid',
                     boxShadow: `
-                      0 6px 20px rgba(var(--theme-primary), 0.25), 
-                      0 3px 10px rgba(var(--theme-accent), 0.15),
-                      inset 0 1px 0 rgba(var(--theme-accent), 0.1)
+                      0 6px 20px rgba(var(--theme-primary), 0.15), 
+                      0 3px 10px rgba(var(--theme-accent), 0.10),
+                      inset 0 1px 0 rgba(var(--theme-accent), 0.15)
                     `
                   }}
                 >
                   <div
-                    className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                    className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg"
                     style={{
                       background: `linear-gradient(45deg, rgba(var(--theme-primary), 0.15), rgba(var(--theme-accent), 0.15))`
                     }}
                   />
-                  <div className="relative flex items-center justify-center gap-3">
+                  <div className="relative flex items-center justify-center gap-2 sm:gap-3">
                     <Icon
-                      className="w-6 h-6"
+                      className="w-4 h-4 sm:w-6 sm:h-6"
                       style={getIconStyle(link.platform, (iconStyle as IconStyle) || 'colored', useThemeStore.getState().activeTheme)}
                     />
-                    <span className="font-medium text-lg" style={{ color: `rgb(var(--theme-foreground))` }}>
+                    <span className="font-medium text-sm sm:text-base" style={{ color: `rgb(var(--theme-foreground))` }}>
                       {link.title || link.platform}
                     </span>
                   </div>

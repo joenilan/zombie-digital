@@ -68,6 +68,7 @@ export function MobileNav({ user, pathname }: MobileNavProps) {
   // Determine which nav items to show
   const navItems = [
     { href: "/", icon: <Home className="w-4 h-4" />, label: "Home", isActive: isHome },
+    { href: "/emote-studio", icon: <Paintbrush className="w-4 h-4" />, label: "Emote Studio", isActive: pathname === '/emote-studio', badge: "Beta" },
     ...(user ? [
       { href: "/dashboard", icon: <LayoutDashboard className="w-4 h-4" />, label: "Dashboard", isActive: isDashboardMain },
       ...(!featuresLoading && hasFeatureAccess('SOCIALS') ? [

@@ -174,10 +174,6 @@ export function BackgroundUpload({ userId, onSuccess, showPreview }: BackgroundU
             // Call success callback
             onSuccess?.(publicUrl, file.type)
 
-            toast.success('Background updated', {
-                description: 'Your profile background has been updated successfully'
-            })
-
         } catch (error) {
             console.error('Unexpected error:', error)
             toast.error('Upload failed', {
@@ -202,47 +198,44 @@ export function BackgroundUpload({ userId, onSuccess, showPreview }: BackgroundU
             await deleteOldBackground(currentBackground.url)
 
             // Update database
-            const { error } = await supabase
+            console.log('[RemoveBackground] Attempting to update user', userId)
+            const { data, error, status } = await supabase
                 .from('twitch_users')
                 .update({
                     background_media_url: null,
                     background_media_type: null
                 })
                 .eq('id', userId)
+                .select()
+
+            console.log('[RemoveBackground] Update response:', { data, error, status })
 
             if (error) {
-                console.error('Error removing background:', error)
-                toast.error('Failed to remove background', {
-                    description: error.message
-                })
+                toast.error('Failed to remove background: ' + error.message)
+                setIsUploading(false)
+                return
+            }
+            if (!data || !data[0] || data[0].background_media_url !== null) {
+                toast.error('Background was not removed. Please try again or contact support.')
+                setIsUploading(false)
                 return
             }
 
-            // Update local state
             setCurrentBackground({ url: null, type: null })
-
-            // Call success callback
+            toast.success('Background removed!')
             onSuccess?.(null, null)
-
-            toast.success('Background removed', {
-                description: 'Your profile background has been removed'
-            })
-
-        } catch (error) {
-            console.error('Error removing background:', error)
-            toast.error('Failed to remove background', {
-                description: 'An unexpected error occurred'
-            })
-        } finally {
+        } catch (err: any) {
+            toast.error('Failed to remove background: ' + err.message)
             setIsUploading(false)
         }
+        setIsUploading(false)
     }
 
     if (isLoadingCurrent) {
         return (
             <div className="space-y-4">
-                <div className="h-48 bg-muted/20 rounded-lg animate-pulse" />
-                <div className="h-10 bg-muted/20 rounded-lg animate-pulse w-32" />
+                <div className="h-12 bg-white/5 rounded-lg animate-pulse" />
+                <div className="h-10 bg-white/5 rounded-lg animate-pulse w-32" />
             </div>
         )
     }
@@ -303,22 +296,41 @@ export function BackgroundUpload({ userId, onSuccess, showPreview }: BackgroundU
                 />
 
                 <div className="text-center space-y-4">
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-white/60">
                         Drag and drop or click to browse
                     </p>
 
-                    <Button
+                    <button
                         onClick={() => fileInputRef.current?.click()}
                         disabled={isUploading}
-                        variant="cyber-pink"
-                        size="lg"
-                        icon={isUploading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Upload className="w-5 h-5" />}
-                        loading={isUploading}
+                        className="w-full py-3 px-6 rounded-lg font-medium transition-all duration-300 backdrop-blur-sm border border-white/20 disabled:opacity-50 hover:border-white/30"
+                        style={{
+                            background: `
+                              linear-gradient(135deg, 
+                                rgba(168, 85, 247, 0.15) 0%, 
+                                rgba(34, 211, 238, 0.1) 100%
+                              )
+                            `,
+                            color: '#e2e8f0',
+                            boxShadow: `
+                              0 4px 16px rgba(168, 85, 247, 0.2),
+                              inset 0 1px 0 rgba(255, 255, 255, 0.1)
+                            `
+                        }}
                     >
-                        {isUploading ? 'Uploading...' : (currentBackground.url ? 'Replace Background' : 'Choose File')}
-                    </Button>
+                        <div className="flex items-center justify-center gap-2">
+                            {isUploading ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                                <Upload className="w-4 h-4" />
+                            )}
+                            <span>
+                                {isUploading ? 'Uploading...' : (currentBackground.url ? 'Replace Background' : 'Choose File')}
+                            </span>
+                        </div>
+                    </button>
 
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-white/50">
                         Supports JPEG, PNG, GIF, and WebP • Maximum file size: 10MB
                     </p>
                 </div>

@@ -532,10 +532,10 @@ export function applyThemeToContainer(container: HTMLElement, theme: ColorScheme
     container.style.setProperty('--theme-surface-glass', `${theme.colors.primary}14`) // 8% opacity in hex
   }
   
-  // Update data attribute for theme-specific styling
-  container.setAttribute('data-theme', theme.name)
+  // NOTE: We don't set data-theme attribute to avoid conflicts with dark mode CSS
+  // Our custom CSS properties handle all the theming we need
   
-  console.log(`[Theme System] Theme applied to container successfully. Data-theme: ${container.getAttribute('data-theme')}`)
+  console.log(`[Theme System] Theme applied to container successfully. Using CSS custom properties only.`)
 }
 
 export function applyThemeToDOM(theme: ColorScheme) {
@@ -636,43 +636,45 @@ export function applyThemeToDOM(theme: ColorScheme) {
     body.style.backgroundAttachment = ''
   }
   
-  // Update data attribute for theme-specific styling
-  root.setAttribute('data-theme', theme.name)
+  // NOTE: We don't set data-theme attribute to avoid conflicts with dark mode CSS
+  // Our custom CSS properties handle all the theming we need
   
-  console.log(`[Theme System] Theme applied successfully. Current data-theme: ${root.getAttribute('data-theme')}`)
+  console.log(`[Theme System] Theme applied successfully. Using CSS custom properties only.`)
 }
 
 export function generateThemeCSS(theme: ColorScheme): string {
+  // NOTE: We use CSS custom properties instead of data-theme selectors
+  // to avoid conflicts with dark mode CSS frameworks
   return `
-    [data-theme="${theme.name}"] {
+    .theme-container {
       ${Object.entries(theme.cssVariables).map(([prop, value]) => `${prop}: ${value};`).join('\n      ')}
     }
     
-    [data-theme="${theme.name}"] .theme-primary {
+    .theme-container .theme-primary {
       color: ${theme.colors.primary};
     }
     
-    [data-theme="${theme.name}"] .theme-secondary {
+    .theme-container .theme-secondary {
       color: ${theme.colors.secondary};
     }
     
-    [data-theme="${theme.name}"] .theme-accent {
+    .theme-container .theme-accent {
       color: ${theme.colors.accent};
     }
     
-    [data-theme="${theme.name}"] .theme-gradient {
+    .theme-container .theme-gradient {
       background: ${theme.colors.gradient};
     }
     
-    [data-theme="${theme.name}"] .theme-bg {
+    .theme-container .theme-bg {
       background: ${theme.colors.background};
     }
     
-    [data-theme="${theme.name}"] .theme-surface {
+    .theme-container .theme-surface {
       background: ${theme.colors.surface};
     }
     
-    [data-theme="${theme.name}"] .theme-border {
+    .theme-container .theme-border {
       border-color: ${theme.colors.border};
     }
   `

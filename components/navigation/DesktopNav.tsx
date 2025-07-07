@@ -86,6 +86,7 @@ export function DesktopNav({ user, pathname }: DesktopNavProps) {
   const isDashboardSection = pathname.startsWith('/dashboard');
   const isDashboardSocialLinks = pathname === '/dashboard/social-links';
   const isDashboardCanvas = pathname === '/dashboard/canvas' || pathname.startsWith('/dashboard/canvas/');
+  const isDashboardEmoteStudio = pathname === '/dashboard/emote-studio';
   const isCanvasSettings = pathname.includes('/canvas/') && pathname.endsWith('/settings');
   const isHome = pathname === '/' || pathname === '/home';
 
@@ -93,6 +94,14 @@ export function DesktopNav({ user, pathname }: DesktopNavProps) {
     <div className="hidden sm:flex items-center gap-1">
       <NavLink href="/" current={isHome} layoutId="main-nav">
         Home
+      </NavLink>
+      <NavLink href="/emote-studio" current={pathname === '/emote-studio'} layoutId="main-nav">
+        <div className="flex items-center gap-2">
+          Emote Studio
+          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-sm">
+            Beta
+          </span>
+        </div>
       </NavLink>
       {user && (
         <div className="flex items-center">
@@ -131,6 +140,18 @@ export function DesktopNav({ user, pathname }: DesktopNavProps) {
                     </div>
                   </SubNavLink>
                 )}
+                <SubNavLink
+                  href="/dashboard/emote-studio"
+                  current={isDashboardEmoteStudio}
+                  layoutId="sub-nav"
+                >
+                  <div className="flex items-center gap-2">
+                    Emote Studio
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gradient-to-r from-pink-500 to-purple-500 text-white shadow-sm">
+                      New
+                    </span>
+                  </div>
+                </SubNavLink>
                 {isCanvasSettings && (
                   <motion.div
                     className="flex items-center gap-1 ml-2 pl-2 border-l border-foreground/10"

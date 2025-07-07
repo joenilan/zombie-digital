@@ -44,7 +44,8 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
     !pathname.startsWith('/about') &&
     !pathname.startsWith('/contact') &&
     !pathname.startsWith('/privacy') &&
-    !pathname.startsWith('/terms');
+    !pathname.startsWith('/terms') &&
+    !pathname.startsWith('/emote-studio');
 
   // Don't show navigation/footer on overlay, canvas pages, or username pages
   if (isOverlay || isCanvas || isUsernamePage) {
