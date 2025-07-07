@@ -140,18 +140,6 @@ export function DesktopNav({ user, pathname }: DesktopNavProps) {
                     </div>
                   </SubNavLink>
                 )}
-                <SubNavLink
-                  href="/dashboard/emote-studio"
-                  current={isDashboardEmoteStudio}
-                  layoutId="sub-nav"
-                >
-                  <div className="flex items-center gap-2">
-                    Emote Studio
-                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gradient-to-r from-pink-500 to-purple-500 text-white shadow-sm">
-                      New
-                    </span>
-                  </div>
-                </SubNavLink>
                 {isCanvasSettings && (
                   <motion.div
                     className="flex items-center gap-1 ml-2 pl-2 border-l border-foreground/10"

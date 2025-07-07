@@ -24,8 +24,13 @@ function generateUUID() {
 }
 
 export async function GET(request: Request) {
-  const requestUrl = new URL(request.url);
+  // Always use an absolute URL for parsing
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  const requestUrl = new URL(request.url, baseUrl);
   const code = requestUrl.searchParams.get("code");
+
+  console.log("Auth callback request URL:", request.url);
+  console.log("Parsed code from query:", code);
 
   if (DEBUG) {
     console.log("Auth callback started", { hasCode: !!code });
@@ -152,6 +157,10 @@ export async function GET(request: Request) {
           provider_scopes: userData.provider_scopes,
         });
 
+        console.log("Prepared userData for insert/update:", userData);
+        console.log("site_role value and type:", userData.site_role, typeof userData.site_role);
+        console.log("provider_scopes value and type:", userData.provider_scopes, Array.isArray(userData.provider_scopes));
+
         let result;
 
         if (existingTwitchUser) {
@@ -174,9 +183,10 @@ export async function GET(request: Request) {
         }
 
         if (result.error) {
-          console.error("Error managing user data:", result.error);
+          console.error("Error managing user data (full error):", result.error);
+          console.error("userData that caused error:", userData);
           return NextResponse.redirect(
-            `${requestUrl.origin}/login?error=db_error`
+            `${requestUrl.origin}/login?error=db_error&error_message=${encodeURIComponent(result.error.message)}`
           );
         }
 
