@@ -7,7 +7,7 @@ import { Upload, Settings, Download, Eye, AlertTriangle, Shield, Clock, FileImag
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { LoadingSpinner } from '@/components/LoadingSpinner'
-import { processBatchEmotes, ProcessedEmoteData as OriginalProcessedEmoteData, ProcessingOptions, TWITCH_EMOTE_SIZES } from '@/lib/emote-processor'
+import { processBatchEmotes, ProcessedEmoteData as OriginalProcessedEmoteData, ProcessingOptions, TWITCH_EMOTE_SIZES, TWITCH_SUB_BADGE_SIZES } from '@/lib/emote-processor'
 import { CopyButton, DeleteButton, ViewButton, ActionButtonWithProvider } from '@/components/ui/action-button'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import {
@@ -140,6 +140,7 @@ export default function EmoteStudioPage() {
         variationCount: 12
     })
     const [userRole, setUserRole] = useState<string | null>(null)
+    const [mode, setMode] = useState<'emote' | 'subbadge'>('emote')
 
     const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -183,15 +184,18 @@ export default function EmoteStudioPage() {
             const processed: ProcessedEmoteData[] = []
 
             // 1. Process static files in-browser (as before)
+            const sizes = mode === 'emote' ? TWITCH_EMOTE_SIZES : TWITCH_SUB_BADGE_SIZES
             if (staticFiles.length > 0) {
                 const options: ProcessingOptions & {
                     generateVariations?: boolean
                     variationCount?: number
                     shine?: boolean
+                    sizes?: typeof sizes
                 } = {
                     generateVariations: settings.generateVariations,
                     variationCount: settings.variationCount,
-                    shine: settings.shine
+                    shine: settings.shine,
+                    sizes
                 }
                 const staticResults = await processBatchEmotes(staticFiles, options)
                 // Add uploadedAt to each static emote
@@ -236,7 +240,7 @@ export default function EmoteStudioPage() {
         } finally {
             setIsProcessing(false)
         }
-    }, [uploadedFiles, settings])
+    }, [uploadedFiles, settings, mode])
 
     const handleDownloadEmoteAsZip = useCallback(async (emote: ProcessedEmoteData) => {
         try {
@@ -292,7 +296,48 @@ export default function EmoteStudioPage() {
         return () => { isMounted = false }
     }, [])
 
-    const orderedSizeKeys: string[] = ['28x28', '56x56', '112x112']
+    // Auto-reprocess on mode change
+    useEffect(() => {
+        if (uploadedFiles.length === 0) return;
+        // Only reprocess if not currently processing
+        if (isProcessing) return;
+        // Re-run processEmotes logic
+        (async () => {
+            setIsProcessing(true);
+            try {
+                const animatedFiles = uploadedFiles.filter(isAnimatedFile);
+                const staticFiles = uploadedFiles.filter(f => !isAnimatedFile(f));
+                const processed: ProcessedEmoteData[] = [];
+                const sizes = mode === 'emote' ? TWITCH_EMOTE_SIZES : TWITCH_SUB_BADGE_SIZES;
+                if (staticFiles.length > 0) {
+                    const options: ProcessingOptions & {
+                        generateVariations?: boolean;
+                        variationCount?: number;
+                        shine?: boolean;
+                        sizes?: typeof sizes;
+                    } = {
+                        generateVariations: settings.generateVariations,
+                        variationCount: settings.variationCount,
+                        shine: settings.shine,
+                        sizes
+                    };
+                    const staticResults = await processBatchEmotes(staticFiles, options);
+                    processed.push(...staticResults.map(emote => ({ ...emote, uploadedAt: Date.now() })));
+                }
+                // Animated emotes logic (if any) can be added here if needed
+                setProcessedEmotes(processed);
+                toast.success(`Regenerated for ${mode === 'emote' ? 'Emote' : 'Badge'} sizes`);
+            } catch (error) {
+                toast.error('Failed to regenerate emotes for new mode');
+            } finally {
+                setIsProcessing(false);
+            }
+        })();
+    }, [mode]);
+
+    const orderedSizeKeys: string[] = (mode === 'emote')
+        ? ['28x28', '56x56', '112x112']
+        : ['18x18', '36x36', '72x72']
 
     // Fetch Cloudinary usage
     const { data: cloudinaryUsage, isLoading: usageLoading, error: usageError } = useQuery({
@@ -475,6 +520,23 @@ export default function EmoteStudioPage() {
 
                             {/* Settings */}
                             <div className="flex items-center gap-4 mt-4">
+                                {/* Mode Toggle */}
+                                <div className="flex items-center bg-glass/30 border border-cyber-cyan rounded-full overflow-hidden mr-4">
+                                    <button
+                                        type="button"
+                                        className={`px-4 py-1 text-xs font-semibold transition-colors focus:outline-none ${mode === 'emote' ? 'bg-cyber-cyan text-white' : 'text-cyber-cyan'}`}
+                                        onClick={() => setMode('emote')}
+                                    >
+                                        Emote
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className={`px-4 py-1 text-xs font-semibold transition-colors focus:outline-none ${mode === 'subbadge' ? 'bg-cyber-cyan text-white' : 'text-cyber-cyan'}`}
+                                        onClick={() => setMode('subbadge')}
+                                    >
+                                        Badge
+                                    </button>
+                                </div>
                                 <button
                                     type="button"
                                     className={`px-4 py-2 rounded-full font-semibold transition-colors border border-cyber-pink shadow-cyber focus:outline-none focus:ring-2 focus:ring-cyber-pink/50 ${settings.generateVariations ? 'bg-cyber-pink text-white' : 'bg-glass/30 text-cyber-pink'}`}
@@ -577,7 +639,7 @@ export default function EmoteStudioPage() {
                                                                 const dataURL = emote.sizes[size]
                                                                 if (!dataURL) return null
                                                                 const actualSize = parseInt(size.split('x')[0])
-                                                                const containerPercent = actualSize === 28 ? 0.4 : actualSize === 56 ? 0.7 : 1
+                                                                const containerPercent = (actualSize === 28 || actualSize === 18) ? 0.4 : (actualSize === 56 || actualSize === 36) ? 0.7 : 1
                                                                 return (
                                                                     <div
                                                                         key={size}
@@ -627,7 +689,7 @@ export default function EmoteStudioPage() {
                                                                         <div className="grid grid-cols-3 gap-1">
                                                                             {Object.entries(variation.sizes).map(([size, dataURL]) => {
                                                                                 const actualSize = parseInt(size.split('x')[0])
-                                                                                const containerPercent = actualSize === 28 ? 0.4 : actualSize === 56 ? 0.7 : 1
+                                                                                const containerPercent = (actualSize === 28 || actualSize === 18) ? 0.4 : (actualSize === 56 || actualSize === 36) ? 0.7 : 1
                                                                                 return (
                                                                                     <div
                                                                                         key={size}

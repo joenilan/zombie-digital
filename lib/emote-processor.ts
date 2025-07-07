@@ -40,6 +40,12 @@ export const EXTENDED_SIZES: EmoteSize[] = [
   { width: 72, height: 72, label: '72x72' }
 ]
 
+export const TWITCH_SUB_BADGE_SIZES: EmoteSize[] = [
+  { width: 18, height: 18, label: '18x18' },
+  { width: 36, height: 36, label: '36x36' },
+  { width: 72, height: 72, label: '72x72' }
+]
+
 export class EmoteProcessor {
   private canvas: HTMLCanvasElement
   private ctx: CanvasRenderingContext2D
