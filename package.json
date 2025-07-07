@@ -55,6 +55,7 @@
     "ajv": "^8.17.1",
     "autoprefixer": "^10.4.20",
     "class-variance-authority": "^0.7.1",
+    "cloudinary": "^2.7.0",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "fabric": "^6.0.0",

@@ -35,9 +35,11 @@
     "**/*.ts",
     "**/*.tsx",
     "tests/**/*.ts",
-    ".next/types/**/*.ts"
-, "app/admin/layout.tsx"  ],
+    ".next/types/**/*.ts",
+    "app/admin/layout.tsx"
+  ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "supabase/functions"
   ]
 }

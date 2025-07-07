@@ -74,6 +74,19 @@ export function downloadEmoteVariation(
   })
 }
 
+function isDataURL(url: string): boolean {
+  return url.startsWith('data:');
+}
+
+async function urlToBlob(url: string): Promise<Blob> {
+  if (isDataURL(url)) {
+    return dataURLToBlob(url);
+  } else {
+    const response = await fetch(url, { mode: 'cors' });
+    return await response.blob();
+  }
+}
+
 /**
  * Create a ZIP archive with all emote sizes and variations
  */
@@ -97,7 +110,7 @@ export async function createEmoteZip(
     if (mainFolder) {
       for (const [size, dataURL] of Object.entries(emote.sizes)) {
         const filename = `${size}.${format}`
-        const blob = dataURLToBlob(dataURL)
+        const blob = await urlToBlob(dataURL)
         mainFolder.file(filename, blob)
       }
     }
@@ -111,7 +124,7 @@ export async function createEmoteZip(
           // Add all sizes for this variation directly in variations folder
           for (const [size, dataURL] of Object.entries(variation.sizes)) {
             const filename = `${variation.name.toLowerCase().replace(' ', '_')}_${size}.${format}`
-            const blob = dataURLToBlob(dataURL)
+            const blob = await urlToBlob(dataURL)
             variationsFolder.file(filename, blob)
           }
         }
