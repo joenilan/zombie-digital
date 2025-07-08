@@ -129,6 +129,37 @@ export default function SocialLinksPage() {
   // Local custom colors state
   const [customColors, setCustomColors] = useState<CustomColors | null>(null)
 
+  // --- FIX: Move bioDraft and bioSaving hooks to the top, before any returns ---
+  const [bioDraft, setBioDraft] = useState('')
+  const [bioSaving, setBioSaving] = useState(false)
+
+  // Sync bioDraft with twitchUser.custom_bio when twitchUser changes
+  useEffect(() => {
+    setBioDraft(twitchUser?.custom_bio || '')
+  }, [twitchUser?.custom_bio])
+
+  // Debounced save effect
+  useEffect(() => {
+    if (!twitchUser) return
+    const handler = setTimeout(async () => {
+      if (bioDraft !== twitchUser.custom_bio) {
+        setBioSaving(true)
+        const { error } = await supabase
+          .from('twitch_users')
+          .update({ custom_bio: bioDraft })
+          .eq('id', twitchUser.id)
+        setBioSaving(false)
+        if (error) {
+          toast.error('Failed to update bio', { description: error.message })
+        } else {
+          setTwitchUser({ ...twitchUser, custom_bio: bioDraft })
+          toast.success('Bio updated!')
+        }
+      }
+    }, 600)
+    return () => clearTimeout(handler)
+  }, [bioDraft, twitchUser?.id])
+
   // Initialize custom colors from user data
   useEffect(() => {
     if (authUser?.theme_scheme) {
@@ -405,9 +436,18 @@ export default function SocialLinksPage() {
     window.open(`/${twitchUser.username}`, '_blank')
   }
 
-  const handleBioUpdate = (newBio: string) => {
+  const handleBioUpdate = async (newBio: string) => {
     if (twitchUser) {
       setTwitchUser({ ...twitchUser, custom_bio: newBio })
+      const { error } = await supabase
+        .from('twitch_users')
+        .update({ custom_bio: newBio })
+        .eq('id', twitchUser.id)
+      if (error) {
+        toast.error('Failed to update bio', { description: error.message })
+      } else {
+        toast.success('Bio updated!')
+      }
     }
   }
 
@@ -763,8 +803,8 @@ export default function SocialLinksPage() {
                           Custom Bio
                         </label>
                         <textarea
-                          value={twitchUser.custom_bio || ''}
-                          onChange={(e) => handleBioUpdate(e.target.value)}
+                          value={bioDraft}
+                          onChange={e => setBioDraft(e.target.value)}
                           placeholder="Tell visitors about yourself..."
                           className="w-full p-3 bg-glass/20 border border-white/10 rounded-lg backdrop-blur-xl 
                                 focus:bg-glass/30 focus:border-white/20 transition-all duration-300
@@ -772,6 +812,9 @@ export default function SocialLinksPage() {
                           rows={4}
                           maxLength={200}
                         />
+                        {bioSaving && (
+                          <p className="text-xs text-muted-foreground mt-1">Saving...</p>
+                        )}
                         <p className="text-xs text-muted-foreground mt-1">
                           {twitchUser.custom_bio?.length || 0}/200 characters
                         </p>
