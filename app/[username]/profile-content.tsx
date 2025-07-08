@@ -13,6 +13,7 @@ import { EditButton } from '@/components/ui/action-button'
 import { Edit } from '@/lib/icons'
 import { getActiveTheme } from '@/lib/theme-system'
 import { debug } from '@/lib/debug'
+import { RealtimeLinks } from '@/components/realtime-links'
 
 interface Profile {
     user_id: string
@@ -199,10 +200,14 @@ export function ProfileContent({ profile, initialLinks, isTransparent, isOwner }
                         </div>
 
                         {/* Social Links */}
-                        <div>
-                            {/* The RealtimeLinks component was removed, so this section will be empty or need to be re-added */}
-                            {/* For now, we'll just leave it empty as per the edit hint */}
-                        </div>
+                        <RealtimeLinks
+                            userId={profile.user_id}
+                            initialLinks={initialLinks}
+                            isOwner={isOwner}
+                            iconStyle={normalizedIconStyle}
+                            mainTwitchChannel={profile.twitch_id}
+                            activeTheme={activeTheme}
+                        />
                     </div>
                 </div>
 
