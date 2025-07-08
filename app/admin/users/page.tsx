@@ -61,6 +61,7 @@ import {
 } from "@/components/ui/dialog";
 import { useAdminUsersStore, type Role, type SortField, type SortDirection, type PageSize } from "@/stores/useAdminUsersStore";
 import dynamic from 'next/dynamic'
+import { logError } from '@/lib/debug'
 
 interface TwitchUser {
   id: string;
@@ -145,6 +146,7 @@ function UserAnalyticsDialog({ user }: { user: TwitchUser }) {
                 width={40}
                 height={40}
                 className="rounded-full"
+                sizes="40px"
               />
             </div>
             <div>
@@ -196,6 +198,7 @@ function UserDetailsDialog({ user, userStats }: { user: TwitchUser; userStats?: 
                 width={50}
                 height={50}
                 className="rounded-full"
+                sizes="50px"
               />
             </div>
             <div>
@@ -348,7 +351,7 @@ export default function UsersPage() {
         .order(sortField, { ascending: sortDirection === 'asc' });
 
       if (error) {
-        console.error('❌ Error fetching users:', error);
+        logError('❌ Error fetching users:', error);
         throw error;
       }
 
@@ -747,6 +750,7 @@ export default function UsersPage() {
                           width={32}
                           height={32}
                           className="rounded-full"
+                          sizes="32px"
                         />
                         <div>
                           <div className="font-medium">{user.display_name}</div>
@@ -823,6 +827,7 @@ export default function UsersPage() {
                                   width={40}
                                   height={40}
                                   className="rounded-full border-2 border-white/20"
+                                  sizes="40px"
                                 />
                                 <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-background"></div>
                               </div>

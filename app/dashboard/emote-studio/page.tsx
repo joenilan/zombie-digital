@@ -37,6 +37,7 @@ import {
     copyEmoteToClipboard,
     getDownloadSummary
 } from '@/lib/emote-downloads'
+import { logError } from '@/lib/debug'
 
 interface EmoteSettings extends ProcessingOptions {
     generateVariations: boolean
@@ -138,7 +139,7 @@ export default function EmoteStudioPage() {
             toast.success(`Successfully processed ${results.length} emote(s)`)
 
         } catch (error) {
-            console.error('Error processing emotes:', error)
+            logError('Error processing emotes:', error)
             toast.error('Failed to process emotes')
         } finally {
             setIsProcessing(false)
@@ -152,7 +153,7 @@ export default function EmoteStudioPage() {
             await downloadEmotesAsZip(processedEmotes, settings.outputFormat)
             toast.success('Download started!')
         } catch (error) {
-            console.error('Download failed:', error)
+            logError('Download failed:', error)
             toast.error('Failed to create download')
         }
     }, [processedEmotes, settings.outputFormat])
@@ -162,7 +163,7 @@ export default function EmoteStudioPage() {
             await copyEmoteToClipboard(dataURL)
             toast.success('Copied to clipboard!')
         } catch (error) {
-            console.error('Copy failed:', error)
+            logError('Copy failed:', error)
             toast.error('Failed to copy to clipboard')
         }
     }, [])
@@ -172,7 +173,7 @@ export default function EmoteStudioPage() {
             await downloadEmoteAsZip(emote, settings.outputFormat)
             toast.success('Download started!')
         } catch (error) {
-            console.error('Download failed:', error)
+            logError('Download failed:', error)
             toast.error('Failed to create download')
         }
     }, [settings.outputFormat])

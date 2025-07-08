@@ -18,6 +18,7 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { createClient } from '@supabase/supabase-js'
 import { CopyButton, DeleteButton, ViewButton } from '@/components/ui/action-button'
 import { TooltipProvider } from '@/components/ui/tooltip'
+import { debug, logError } from '@/lib/debug'
 
 interface FlowCanvasV2Props {
   canvasId: string
@@ -457,7 +458,7 @@ function Flow({ canvasId, isOwner, userId }: FlowCanvasV2Props) {
           })
           .eq('id', nodeId)
       } catch (error) {
-        console.error('Error updating dimensions:', error)
+        logError('Error updating dimensions:', error)
       }
     },
     onRotate: async (nodeId: string, rotation: number) => {
@@ -498,7 +499,7 @@ function Flow({ canvasId, isOwner, userId }: FlowCanvasV2Props) {
           })
           .eq('id', nodeId)
       } catch (error) {
-        console.error('Error updating rotation:', error)
+        logError('Error updating rotation:', error)
       }
     }
   }), [setNodes, supabase])
@@ -547,7 +548,7 @@ function Flow({ canvasId, isOwner, userId }: FlowCanvasV2Props) {
 
       if (error) throw error
     } catch (error) {
-      console.error('Error updating layer order:', error)
+      logError('Error updating layer order:', error)
     }
   }, [nodes, canvasId, isOwner, supabase])
 
@@ -588,7 +589,7 @@ function Flow({ canvasId, isOwner, userId }: FlowCanvasV2Props) {
           // Handle drag end
           if ('dragging' in change && change.dragging === false) {
             try {
-              console.log('Saving final position to database...')
+              debug.canvas('Saving final position to database...')
 
               // First, send a final position update with dragId to ensure all clients are in sync
               if (dragIdRef.current) {
@@ -601,7 +602,7 @@ function Flow({ canvasId, isOwner, userId }: FlowCanvasV2Props) {
                   dragId: dragIdRef.current,
                   final: true
                 }
-                console.log('[FlowCanvas] Sending final position broadcast:', finalPayload)
+                debug.canvas('[FlowCanvas] Sending final position broadcast:', finalPayload)
                 channelRef.current?.send({
                   type: 'broadcast',
                   event: 'position',
@@ -619,7 +620,7 @@ function Flow({ canvasId, isOwner, userId }: FlowCanvasV2Props) {
                 .eq('id', change.id)
 
               if (error) {
-                console.error('Error saving position to database:', error)
+                logError('Error saving position to database:', error)
               }
 
               // Reset dragId and remove any transition styles
@@ -638,7 +639,7 @@ function Flow({ canvasId, isOwner, userId }: FlowCanvasV2Props) {
                 return n
               }))
             } catch (error) {
-              console.error('Error updating position in database:', error)
+              logError('Error updating position in database:', error)
             }
           }
 
@@ -661,7 +662,7 @@ function Flow({ canvasId, isOwner, userId }: FlowCanvasV2Props) {
                 dragId: dragIdRef.current,
                 final: false
               }
-              console.log('[FlowCanvas] Sending position broadcast:', broadcastPayload)
+              debug.canvas('[FlowCanvas] Sending position broadcast:', broadcastPayload)
               channelRef.current?.send({
                 type: 'broadcast',
                 event: 'position',
@@ -678,34 +679,34 @@ function Flow({ canvasId, isOwner, userId }: FlowCanvasV2Props) {
 
   // Update useEffect for subscription handling
   useEffect(() => {
-    console.log(`[FlowCanvas] Component mounted - canvasId: ${canvasId}, isOwner: ${isOwner}`)
-    console.log(`[FlowCanvas] useEffect running, about to call loadNodes`)
+    debug.canvas(`[FlowCanvas] Component mounted - canvasId: ${canvasId}, isOwner: ${isOwner}`)
+    debug.canvas(`[FlowCanvas] useEffect running, about to call loadNodes`)
 
     let channel: ReturnType<typeof supabase.channel> | null = null
     let isSubscribed = false
 
     const loadNodes = async () => {
-      console.log(`[Overlay] Loading nodes for canvas ${canvasId}, isOwner: ${isOwner}`)
+      debug.canvas(`[Overlay] Loading nodes for canvas ${canvasId}, isOwner: ${isOwner}`)
 
       try {
         // For overlay (non-owner), use API route to avoid client auth issues
         if (!isOwner) {
-          console.log('[Overlay] Using API route for data fetching')
+          debug.canvas('[Overlay] Using API route for data fetching')
 
           try {
             const response = await fetch(`/api/canvas/${canvasId}/test-access`)
-            console.log('[Overlay] API response status:', response.status)
+            debug.canvas('[Overlay] API response status:', response.status)
 
             const result = await response.json()
-            console.log('[Overlay] API response data:', result)
+            debug.canvas('[Overlay] API response data:', result)
 
             if (!result.success) {
-              console.error('[Overlay] API route error:', result.error)
+              logError('[Overlay] API route error:', result.error)
               return
             }
 
             const mediaObjects = result.mediaObjects
-            console.log(`[Overlay] Loaded ${mediaObjects?.length || 0} media objects via API:`, mediaObjects)
+            debug.canvas(`[Overlay] Loaded ${mediaObjects?.length || 0} media objects via API:`, mediaObjects)
 
             const loadedNodes = mediaObjects.map((obj: any) => ({
               id: obj.id,
@@ -722,17 +723,17 @@ function Flow({ canvasId, isOwner, userId }: FlowCanvasV2Props) {
               selectable: isOwner
             }))
 
-            console.log(`[Overlay] Setting ${loadedNodes.length} nodes:`, loadedNodes)
+            debug.canvas(`[Overlay] Setting ${loadedNodes.length} nodes:`, loadedNodes)
             setNodes(loadedNodes)
 
             // Debug: Check if nodes were set
             setTimeout(() => {
-              console.log(`[Overlay] Nodes state after setting:`, loadedNodes.length)
+              debug.canvas(`[Overlay] Nodes state after setting:`, loadedNodes.length)
             }, 100)
 
             return
           } catch (fetchError) {
-            console.error('[Overlay] Fetch error:', fetchError)
+            logError('[Overlay] Fetch error:', fetchError)
             return
           }
         }
@@ -745,11 +746,11 @@ function Flow({ canvasId, isOwner, userId }: FlowCanvasV2Props) {
           .order('z_index', { ascending: true })
 
         if (error) {
-          console.error('[Overlay] Error loading nodes:', error)
+          logError('[Overlay] Error loading nodes:', error)
           return
         }
 
-        console.log(`[Overlay] Loaded ${mediaObjects?.length || 0} media objects:`, mediaObjects)
+        debug.canvas(`[Overlay] Loaded ${mediaObjects?.length || 0} media objects:`, mediaObjects)
 
         const loadedNodes = mediaObjects.map(obj => ({
           id: obj.id,
@@ -766,15 +767,15 @@ function Flow({ canvasId, isOwner, userId }: FlowCanvasV2Props) {
           selectable: isOwner
         }))
 
-        console.log(`[Overlay] Setting ${loadedNodes.length} nodes:`, loadedNodes)
+        debug.canvas(`[Overlay] Setting ${loadedNodes.length} nodes:`, loadedNodes)
         setNodes(loadedNodes)
 
         // Debug: Check if nodes were set
         setTimeout(() => {
-          console.log(`[Overlay] Nodes state after setting:`, loadedNodes.length)
+          debug.canvas(`[Overlay] Nodes state after setting:`, loadedNodes.length)
         }, 100)
       } catch (error) {
-        console.error('[Overlay] Unexpected error in loadNodes:', error)
+        logError('[Overlay] Unexpected error in loadNodes:', error)
       }
     }
 
@@ -791,7 +792,7 @@ function Flow({ canvasId, isOwner, userId }: FlowCanvasV2Props) {
         channel = supabase.channel(channelId)
         channelRef.current = channel
 
-        console.log(`[FlowCanvas] Creating channel: ${channelId}`)
+        debug.canvas(`[FlowCanvas] Creating channel: ${channelId}`)
 
         // Set up channel handlers
         channel
@@ -805,7 +806,7 @@ function Flow({ canvasId, isOwner, userId }: FlowCanvasV2Props) {
             },
             (payload) => {
               if (!isSubscribed) return
-              console.log('[FlowCanvas] Received database update:', payload)
+              debug.canvas('[FlowCanvas] Received database update:', payload)
 
               switch (payload.eventType) {
                 case 'INSERT':
@@ -857,7 +858,7 @@ function Flow({ canvasId, isOwner, userId }: FlowCanvasV2Props) {
             { event: 'position' },
             ({ payload }) => {
               if (!isSubscribed) return
-              console.log('[FlowCanvas] Received position broadcast:', payload)
+              debug.canvas('[FlowCanvas] Received position broadcast:', payload)
               // Update all views except the one doing the dragging
               if (payload.dragId !== dragIdRef.current) {
                 setNodes((nds) => nds.map(node => {
@@ -917,10 +918,15 @@ function Flow({ canvasId, isOwner, userId }: FlowCanvasV2Props) {
           )
 
         // Subscribe to channel
-        await channel.subscribe()
+        await channel.subscribe((status, err) => {
+          debug.canvas('[FlowCanvas] Realtime subscription status:', status)
+          if (err) {
+            logError('[FlowCanvas] Realtime subscription error:', err)
+          }
+        })
         isSubscribed = true
       } catch (error) {
-        console.error('Error setting up channel:', error)
+        logError('Error setting up channel:', error)
       }
     }
 
@@ -1004,7 +1010,7 @@ function Flow({ canvasId, isOwner, userId }: FlowCanvasV2Props) {
           .remove([filePath])
 
         if (storageError) {
-          console.error('Error deleting from storage:', storageError)
+          logError('Error deleting from storage:', storageError)
         }
       }))
 
@@ -1013,7 +1019,7 @@ function Flow({ canvasId, isOwner, userId }: FlowCanvasV2Props) {
       setSelectedNodes([])
 
     } catch (error) {
-      console.error('Error deleting nodes:', error)
+      logError('Error deleting nodes:', error)
     }
   }, [canvasId, setNodes, supabase, nodes])
 
@@ -1123,7 +1129,7 @@ function Flow({ canvasId, isOwner, userId }: FlowCanvasV2Props) {
       setNodes((nds) => nds.concat(newNode))
 
     } catch (error) {
-      console.error('Error uploading file:', error)
+      logError('Error uploading file:', error)
     }
   }, [canvasId, supabase, uploadPosition, setNodes, userId])
 

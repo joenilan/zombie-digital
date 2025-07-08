@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { useParams } from 'next/navigation'
 import { useAuthStore } from '@/stores/useAuthStore'
+import { logError } from '@/lib/debug'
 
 interface CanvasData {
   id: string
@@ -51,13 +52,13 @@ export default function CanvasPage() {
           .single()
 
         if (error) {
-          console.error('[CanvasPage] Error fetching canvas:', error)
+          logError('[CanvasPage] Error fetching canvas:', error)
           return
         }
 
         setCanvas(canvas)
       } catch (error) {
-        console.error('[CanvasPage] Unexpected error fetching canvas:', error)
+        logError('[CanvasPage] Unexpected error fetching canvas:', error)
       } finally {
         setCanvasLoading(false)
       }

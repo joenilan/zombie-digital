@@ -1,6 +1,7 @@
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { logError } from '@/lib/debug'
 
 export async function POST(request: Request) {
   try {
@@ -66,7 +67,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ isMod });
   } catch (error) {
-    console.error("Error checking mod status:", error);
+    logError('Error checking mod status:', error);
     return NextResponse.json(
       { error: "Failed to check mod status" },
       { status: 500 }

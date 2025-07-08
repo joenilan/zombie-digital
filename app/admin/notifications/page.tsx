@@ -9,6 +9,7 @@ import { Pencil, Trash2, Check, X, Plus } from "lucide-react";
 import { format } from "date-fns";
 import { useAuthStore } from '@/stores/useAuthStore'
 import { CopyButton, DeleteButton, ViewButton } from '@/components/ui/action-button'
+import { debug, logError } from '@/lib/debug'
 
 interface NotificationForm {
   message: string;
@@ -46,7 +47,7 @@ export default function NotificationsPage() {
         throw new Error('Not authenticated');
       }
 
-      console.log('Creating notification with:', {
+      debug.admin('Creating notification with:', {
         ...notification,
         createdBy: user.id
       });
@@ -65,20 +66,20 @@ export default function NotificationsPage() {
         .single();
 
       if (error) {
-        console.error('Supabase error:', error);
+        logError('Supabase error:', error);
         throw error;
       }
 
       return data;
     },
     onSuccess: (data) => {
-      console.log('Successfully created notification:', data);
+      debug.admin('Successfully created notification:', data);
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
       toast.success('Notification created');
       reset();
     },
     onError: (error: any) => {
-      console.error('Detailed error:', error);
+      logError('Detailed error:', error);
       toast.error(error.message || 'Failed to create notification');
     }
   });

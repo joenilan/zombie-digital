@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import Image from 'next/image'
+import { debug, logError } from '@/lib/debug'
 
 interface RealtimeBackgroundProps {
   userId: string
@@ -28,7 +29,7 @@ export function RealtimeBackground({ userId, initialBackground }: RealtimeBackgr
           filter: `id=eq.${userId}`
         },
         async (payload) => {
-          console.log('Background update:', payload)
+          debug.realtime('Background update:', payload)
           const newData = payload.new as any
 
           if (newData) {
@@ -39,7 +40,12 @@ export function RealtimeBackground({ userId, initialBackground }: RealtimeBackgr
           }
         }
       )
-      .subscribe()
+      .subscribe((status, err) => {
+        debug.realtime('[RealtimeBackground] Realtime subscription status:', status)
+        if (err) {
+          logError('[RealtimeBackground] Realtime subscription error:', err)
+        }
+      })
 
     return () => {
       channel.unsubscribe()

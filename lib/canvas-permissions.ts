@@ -1,4 +1,5 @@
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { logError } from '@/lib/debug'
 
 export type CanvasRole = "owner" | "moderator" | "allowed" | "viewer" | null;
 
@@ -28,7 +29,7 @@ async function verifyModStatus(
     const { isMod } = await response.json();
     return isMod;
   } catch (error) {
-    console.error("Error verifying mod status:", error);
+    logError("Error verifying mod status:", error);
     return false;
   }
 }
@@ -63,7 +64,7 @@ export async function checkCanvasAccess(
       .single();
 
     if (canvasError || !canvas) {
-      console.error("Error fetching canvas:", canvasError);
+      logError("Error fetching canvas:", canvasError);
       return { allowed: false, role: null, canEdit: false };
     }
 
@@ -120,7 +121,7 @@ export async function checkCanvasAccess(
     // Default to viewer with no edit permissions
     return { allowed: true, role: "viewer", canEdit: false };
   } catch (error) {
-    console.error("Error checking canvas access:", error);
+    logError("Error checking canvas access:", error);
     return { allowed: false, role: null, canEdit: false };
   }
 }
@@ -140,7 +141,7 @@ export async function updateModStatus(
       last_checked: new Date().toISOString(),
     });
 
-    if (error) console.error("Error updating mod cache:", error);
+    if (error) logError("Error updating mod cache:", error);
   } else {
     // Remove mod status
     const { error } = await supabase
@@ -149,6 +150,6 @@ export async function updateModStatus(
       .eq("broadcaster_id", broadcasterId)
       .eq("moderator_id", moderatorId);
 
-    if (error) console.error("Error removing mod cache:", error);
+    if (error) logError("Error removing mod cache:", error);
   }
 }

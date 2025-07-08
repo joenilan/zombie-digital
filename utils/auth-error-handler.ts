@@ -1,5 +1,6 @@
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { toast } from 'sonner'
+import { debug, logError } from '@/lib/debug'
 
 const supabase = createClientComponentClient()
 
@@ -29,7 +30,7 @@ export class AuthErrorHandler {
     this.isHandlingError = true
 
     try {
-      console.error(`[AuthErrorHandler] ${context || 'Auth error'}:`, error)
+      logError(`[AuthErrorHandler] ${context || 'Auth error'}:`, error)
 
       // Check if this is a token-related error
       const isTokenError = 
@@ -41,14 +42,14 @@ export class AuthErrorHandler {
         error.message?.includes('Invalid JWT')
 
       if (isTokenError) {
-        console.log('[AuthErrorHandler] Token error detected, attempting recovery')
+        debug.auth('[AuthErrorHandler] Token error detected, attempting recovery')
         
         try {
           // Try to get a fresh session
           const { data: { session }, error: sessionError } = await supabase.auth.getSession()
           
           if (sessionError || !session) {
-            console.log('[AuthErrorHandler] No valid session, forcing sign out')
+            debug.auth('[AuthErrorHandler] No valid session, forcing sign out')
             await this.forceSignOut('Session expired or invalid')
             return true
           }
@@ -57,15 +58,15 @@ export class AuthErrorHandler {
           const { data: { session: refreshedSession }, error: refreshError } = await supabase.auth.refreshSession()
           
           if (refreshError || !refreshedSession) {
-            console.log('[AuthErrorHandler] Session refresh failed, forcing sign out')
+            debug.auth('[AuthErrorHandler] Session refresh failed, forcing sign out')
             await this.forceSignOut('Unable to refresh session')
             return true
           }
 
-          console.log('[AuthErrorHandler] Session refreshed successfully')
+          debug.auth('[AuthErrorHandler] Session refreshed successfully')
           return false // Error was handled, no need for caller to handle
         } catch (refreshError) {
-          console.error('[AuthErrorHandler] Error during session refresh:', refreshError)
+          logError('[AuthErrorHandler] Error during session refresh:', refreshError)
           await this.forceSignOut('Authentication error')
           return true
         }
@@ -80,7 +81,7 @@ export class AuthErrorHandler {
 
   private async forceSignOut(reason: string): Promise<void> {
     try {
-      console.log(`[AuthErrorHandler] Forcing sign out: ${reason}`)
+      debug.auth(`[AuthErrorHandler] Forcing sign out: ${reason}`)
       
       // Clear the session
       await supabase.auth.signOut()
@@ -98,7 +99,7 @@ export class AuthErrorHandler {
         }
       }, 1000)
     } catch (signOutError) {
-      console.error('[AuthErrorHandler] Error during forced sign out:', signOutError)
+      logError('[AuthErrorHandler] Error during forced sign out:', signOutError)
       // Force redirect even if sign out fails
       if (typeof window !== 'undefined') {
         window.location.href = '/auth/signin'

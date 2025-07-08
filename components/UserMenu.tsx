@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAuthStore } from "@/stores/useAuthStore";
 import { ChevronDown, LayoutDashboard, Shield, LogOut, User } from "lucide-react";
 import type { TwitchUser } from '@/types/auth'
+import { logError } from '@/lib/debug'
 
 
 const menuVariants = {
@@ -60,7 +61,7 @@ export default function UserMenu({ user }: { user: TwitchUser }) {
 
       router.push('/');
     } catch (error) {
-      console.error('Error signing out:', error);
+      logError('Error signing out:', error);
     } finally {
       setIsSigningOut(false);
     }
@@ -87,6 +88,7 @@ export default function UserMenu({ user }: { user: TwitchUser }) {
             onError={(e) => {
               e.currentTarget.src = `https://ui-avatars.com/api/?name=${user.display_name}&background=random`;
             }}
+            sizes="36px"
           />
         </div>
       </motion.button>
@@ -125,6 +127,7 @@ export default function UserMenu({ user }: { user: TwitchUser }) {
                       onError={(e) => {
                         e.currentTarget.src = `https://ui-avatars.com/api/?name=${user.display_name}&background=random`;
                       }}
+                      sizes="40px"
                     />
                     <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-background"></div>
                   </div>

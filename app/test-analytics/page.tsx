@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { CopyButton } from '@/components/ui/action-button'
 import { Activity } from '@/lib/icons'
+import { logError } from '@/lib/debug'
 
 export default function TestAnalyticsPage() {
     const [sessionId, setSessionId] = useState<string | null>(null)
@@ -26,7 +27,7 @@ export default function TestAnalyticsPage() {
                 const storedSessionId = localStorage.getItem('umami_session_id')
                 setSessionId(storedSessionId)
             } catch (error) {
-                console.error('Error initializing tracking:', error)
+                logError('Error initializing tracking:', error)
             }
         }
 
@@ -49,7 +50,7 @@ export default function TestAnalyticsPage() {
             const recentEvents = await umami.getPageViews()
             setEvents(recentEvents || [])
         } catch (error) {
-            console.error('Error tracking event:', error)
+            logError('Error tracking event:', error)
         } finally {
             setLoading(false)
         }

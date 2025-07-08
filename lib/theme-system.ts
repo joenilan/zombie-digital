@@ -1,3 +1,5 @@
+import { debug, logError, logWarning } from '@/lib/debug'
+
 export interface ColorScheme {
   name: string
   displayName: string
@@ -443,7 +445,7 @@ export function parseCustomColors(themeScheme?: string): {
         }
       }
     } catch (error) {
-      console.warn('Failed to parse compact custom colors from theme_scheme:', error)
+      logWarning('Failed to parse compact custom colors from theme_scheme', { data: error })
     }
   }
   
@@ -459,7 +461,7 @@ export function parseCustomColors(themeScheme?: string): {
         }
       }
     } catch (error) {
-      console.warn('Failed to parse JSON custom colors from theme_scheme:', error)
+      logWarning('Failed to parse JSON custom colors from theme_scheme', { data: error })
     }
   }
   
@@ -505,7 +507,7 @@ export function getActiveTheme(userScheme?: string, seasonalEnabled?: boolean, c
 export function applyThemeToContainer(container: HTMLElement, theme: ColorScheme) {
   if (typeof window === 'undefined') return // Skip on server
   
-  console.log(`[Theme System] Applying theme to container: ${theme.name}`, theme.colors)
+  debug.theme(`Applying theme to container: ${theme.name}`, theme.colors)
   
   // Apply ALL CSS custom properties from the theme (including enhanced ones for cyber-default)
   Object.entries(theme.cssVariables).forEach(([property, value]) => {
@@ -535,7 +537,7 @@ export function applyThemeToContainer(container: HTMLElement, theme: ColorScheme
   // NOTE: We don't set data-theme attribute to avoid conflicts with dark mode CSS
   // Our custom CSS properties handle all the theming we need
   
-  console.log(`[Theme System] Theme applied to container successfully. Using CSS custom properties only.`)
+  debug.theme(`Theme applied to container successfully. Using CSS custom properties only.`)
 }
 
 export function applyThemeToDOM(theme: ColorScheme) {
@@ -544,7 +546,7 @@ export function applyThemeToDOM(theme: ColorScheme) {
   const root = document.documentElement
   const body = document.body
   
-  console.log(`[Theme System] Applying theme: ${theme.name}`, theme.colors)
+  debug.theme(`Applying theme: ${theme.name}`, theme.colors)
   
   // Apply CSS custom properties
   Object.entries(theme.cssVariables).forEach(([property, value]) => {
@@ -570,7 +572,7 @@ export function applyThemeToDOM(theme: ColorScheme) {
   
   // Debug current URL and path
   const currentPath = window.location.pathname
-  console.log(`[Theme System] Current URL path: ${currentPath}`)
+  debug.theme(`Current URL path: ${currentPath}`)
   
   // Update body background with theme colors for profile pages
   const isUsernamePage = currentPath.startsWith('/') &&
@@ -587,7 +589,7 @@ export function applyThemeToDOM(theme: ColorScheme) {
     !currentPath.startsWith('/privacy') &&
     !currentPath.startsWith('/terms')
 
-  console.log(`[Theme System] Username page detection:`, {
+  debug.theme(`Username page detection:`, {
     path: currentPath,
     isUsernamePage,
     pathParts: currentPath.split('/'),
@@ -595,7 +597,7 @@ export function applyThemeToDOM(theme: ColorScheme) {
   })
 
   if (isUsernamePage) {
-    console.log(`[Theme System] APPLYING background to username page: ${currentPath}`)
+    debug.theme(`APPLYING background to username page: ${currentPath}`)
     
     // For username pages, apply the theme background with balanced colors
     // For cyber-default: subtle pink primary with cyan accents, not overwhelming cyan
@@ -621,7 +623,7 @@ export function applyThemeToDOM(theme: ColorScheme) {
     // Add some dynamic background properties
     root.style.setProperty('--theme-bg-animated', newBackground)
     
-    console.log(`[Theme System] Applied ENHANCED background for username page:`, {
+    debug.theme(`Applied ENHANCED background for username page:`, {
       primary: theme.colors.primary,
       secondary: theme.colors.secondary,
       accent: theme.colors.accent,
@@ -630,7 +632,7 @@ export function applyThemeToDOM(theme: ColorScheme) {
       bodyStyleBackground: body.style.background
     })
   } else {
-    console.log(`[Theme System] NOT a username page, skipping background application`)
+    debug.theme(`NOT a username page, skipping background application`)
     // Reset background for non-profile pages
     body.style.background = ''
     body.style.backgroundAttachment = ''
@@ -639,7 +641,7 @@ export function applyThemeToDOM(theme: ColorScheme) {
   // NOTE: We don't set data-theme attribute to avoid conflicts with dark mode CSS
   // Our custom CSS properties handle all the theming we need
   
-  console.log(`[Theme System] Theme applied successfully. Using CSS custom properties only.`)
+  debug.theme(`Theme applied successfully. Using CSS custom properties only.`)
 }
 
 export function generateThemeCSS(theme: ColorScheme): string {

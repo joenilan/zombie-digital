@@ -6,6 +6,7 @@ import { Upload, Loader2, X, ImageIcon } from '@/lib/icons'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
 import Image from 'next/image'
+import { debug, logError } from '@/lib/debug'
 
 interface BackgroundUploadProps {
     userId: string
@@ -36,7 +37,7 @@ export function BackgroundUpload({ userId, onSuccess, showPreview }: BackgroundU
                     .single()
 
                 if (error) {
-                    console.error('Error loading current background:', error)
+                    logError('Error loading current background:', error)
                     return
                 }
 
@@ -45,7 +46,7 @@ export function BackgroundUpload({ userId, onSuccess, showPreview }: BackgroundU
                     type: data.background_media_type
                 })
             } catch (error) {
-                console.error('Error loading current background:', error)
+                logError('Error loading current background:', error)
             } finally {
                 setIsLoadingCurrent(false)
             }
@@ -75,14 +76,14 @@ export function BackgroundUpload({ userId, onSuccess, showPreview }: BackgroundU
                 .remove([filename])
 
             if (error) {
-                console.error('Error deleting old background:', error)
+                logError('Error deleting old background:', error)
                 return false
             }
 
-            console.log('Successfully deleted old background:', filename)
+            debug.admin('Successfully deleted old background:', filename)
             return true
         } catch (error) {
-            console.error('Error deleting old background:', error)
+            logError('Error deleting old background:', error)
             return false
         }
     }
@@ -114,7 +115,7 @@ export function BackgroundUpload({ userId, onSuccess, showPreview }: BackgroundU
         try {
             // Delete old background if it exists
             if (currentBackground.url) {
-                console.log('Deleting old background before upload...')
+                debug.admin('Deleting old background before upload...')
                 await deleteOldBackground(currentBackground.url)
             }
 
@@ -123,7 +124,7 @@ export function BackgroundUpload({ userId, onSuccess, showPreview }: BackgroundU
             const fileExtension = file.name.split('.').pop()
             const filename = `${userId}-${timestamp}.${fileExtension}`
 
-            console.log('Uploading new background:', filename)
+            debug.admin('Uploading new background:', filename)
 
             // Upload to storage
             const { data: uploadData, error: uploadError } = await supabase.storage
@@ -134,7 +135,7 @@ export function BackgroundUpload({ userId, onSuccess, showPreview }: BackgroundU
                 })
 
             if (uploadError) {
-                console.error('Upload error:', uploadError)
+                logError('Upload error:', uploadError)
                 toast.error('Upload failed', {
                     description: uploadError.message
                 })
@@ -146,7 +147,7 @@ export function BackgroundUpload({ userId, onSuccess, showPreview }: BackgroundU
                 .from('backgrounds')
                 .getPublicUrl(filename)
 
-            console.log('Generated public URL:', publicUrl)
+            debug.admin('Generated public URL:', publicUrl)
 
             // Update database
             const { error: updateError } = await supabase
@@ -158,7 +159,7 @@ export function BackgroundUpload({ userId, onSuccess, showPreview }: BackgroundU
                 .eq('id', userId)
 
             if (updateError) {
-                console.error('Database update error:', updateError)
+                logError('Database update error:', updateError)
                 toast.error('Failed to save background', {
                     description: updateError.message
                 })
@@ -175,7 +176,7 @@ export function BackgroundUpload({ userId, onSuccess, showPreview }: BackgroundU
             onSuccess?.(publicUrl, file.type)
 
         } catch (error) {
-            console.error('Unexpected error:', error)
+            logError('Unexpected error:', error)
             toast.error('Upload failed', {
                 description: 'An unexpected error occurred'
             })
@@ -198,7 +199,7 @@ export function BackgroundUpload({ userId, onSuccess, showPreview }: BackgroundU
             await deleteOldBackground(currentBackground.url)
 
             // Update database
-            console.log('[RemoveBackground] Attempting to update user', userId)
+            debug.admin('[RemoveBackground] Attempting to update user', userId)
             const { data, error, status } = await supabase
                 .from('twitch_users')
                 .update({
@@ -208,7 +209,7 @@ export function BackgroundUpload({ userId, onSuccess, showPreview }: BackgroundU
                 .eq('id', userId)
                 .select()
 
-            console.log('[RemoveBackground] Update response:', { data, error, status })
+            debug.admin('[RemoveBackground] Update response:', { data, error, status })
 
             if (error) {
                 toast.error('Failed to remove background: ' + error.message)

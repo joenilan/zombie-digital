@@ -2,6 +2,7 @@ import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { debug, logError } from '@/lib/debug'
 
 export async function POST(req: Request) {
   try {
@@ -19,7 +20,7 @@ export async function POST(req: Request) {
     }
 
     const twitchId = session.user.user_metadata?.provider_id;
-    console.log("Checking permissions for:", { twitchId });
+    debug.admin("Checking permissions for:", { twitchId });
 
     const { data: currentUser, error: userError } = await supabase
       .from("twitch_users")
@@ -27,7 +28,7 @@ export async function POST(req: Request) {
       .eq("twitch_id", twitchId)
       .single();
 
-    console.log("Current user check:", { currentUser, userError });
+    debug.admin("Current user check:", { currentUser, userError });
 
     if (
       userError ||
@@ -44,7 +45,7 @@ export async function POST(req: Request) {
     }
 
     const { userId, role } = await req.json();
-    console.log("Attempting update:", { userId, role });
+    debug.admin("Attempting update:", { userId, role });
 
     const { error: updateError } = await supabaseAdmin
       .from("twitch_users")
@@ -52,7 +53,7 @@ export async function POST(req: Request) {
       .eq("id", userId);
 
     if (updateError) {
-      console.error("Update error:", updateError);
+      logError("Update error:", updateError);
       return NextResponse.json(
         {
           error: "Update failed",
@@ -70,7 +71,7 @@ export async function POST(req: Request) {
       .single();
 
     if (fetchError) {
-      console.error("Fetch error:", fetchError);
+      logError("Fetch error:", fetchError);
       return NextResponse.json(
         {
           error: "Update succeeded but fetch failed",
@@ -80,10 +81,10 @@ export async function POST(req: Request) {
       );
     }
 
-    console.log("Update successful:", updatedUser);
+    debug.admin("Update successful:", updatedUser);
     return NextResponse.json(updatedUser);
   } catch (error: any) {
-    console.error("Server error:", error);
+    logError("Server error:", error);
     return NextResponse.json(
       {
         error: error.message,

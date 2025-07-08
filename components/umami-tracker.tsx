@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react'
 import { umami } from '@/lib/umami'
+import { logError } from '@/lib/debug'
 
 interface UmamiTrackerProps {
     userId?: string
@@ -33,7 +34,7 @@ export function UmamiTracker({ userId, isOwner }: UmamiTrackerProps) {
                     })
                 }
             } catch (error) {
-                console.error('Error tracking page view:', error)
+                logError('Error tracking page view:', error)
             }
         }
 

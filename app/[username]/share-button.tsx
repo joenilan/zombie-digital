@@ -4,6 +4,7 @@ import { Share2 } from '@/lib/icons'
 import { ViewButton } from '@/components/ui/action-button'
 
 import { useState } from 'react'
+import { logError } from '@/lib/debug'
 
 interface ShareButtonProps {
     username: string
@@ -34,7 +35,7 @@ export function ShareButton({ username, displayName }: ShareButtonProps) {
                 }
             }
         } catch (error) {
-            console.error('Error sharing:', error)
+            logError('Error sharing:', error)
         }
     }
 

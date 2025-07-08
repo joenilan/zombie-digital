@@ -10,6 +10,7 @@ import { motion } from 'framer-motion'
 import { useQuery } from '@tanstack/react-query'
 import { SkeletonForm } from '@/components/ui/skeleton'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { logError } from '@/lib/debug'
 
 export default function CanvasSettingsPage() {
   const params = useParams()
@@ -30,7 +31,7 @@ export default function CanvasSettingsPage() {
           .single()
 
         if (settingsError) {
-          console.error('Error fetching canvas settings:', settingsError)
+          logError('Error fetching canvas settings:', settingsError)
           setError('Failed to load canvas settings')
           return
         }
@@ -38,7 +39,7 @@ export default function CanvasSettingsPage() {
         // Get current user's auth ID to check permissions
         const { data: { user: authUser }, error: userError } = await supabase.auth.getUser()
         if (userError || !authUser) {
-          console.error('Auth error:', userError)
+          logError('Auth error:', userError)
           setError('Not authenticated')
           return
         }
@@ -51,7 +52,7 @@ export default function CanvasSettingsPage() {
           .single()
 
         if (twitchUserError || !currentUser) {
-          console.error('Error fetching twitch user:', twitchUserError)
+          logError('Error fetching twitch user:', twitchUserError)
           setError('Failed to load user profile')
           return
         }
@@ -64,7 +65,7 @@ export default function CanvasSettingsPage() {
 
         setCanvasSettings(settings)
       } catch (err) {
-        console.error('Error:', err)
+        logError('Error:', err)
         setError('An unexpected error occurred')
       } finally {
         setLoading(false)

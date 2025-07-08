@@ -1,6 +1,7 @@
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { debug } from '@/lib/debug'
 
 const DEBUG = false;
 
@@ -14,7 +15,7 @@ export async function GET() {
     .order("createdAt", { ascending: false });
 
   if (DEBUG && error) {
-    console.log("GET notifications error:", error);
+    debug.api.log("GET notifications error:", error);
   }
 
   if (error) {
@@ -33,7 +34,7 @@ export async function POST(request: Request) {
   } = await supabase.auth.getSession();
 
   if (DEBUG && !session) {
-    console.log("POST unauthorized: No session");
+    debug.api.log("POST unauthorized: No session");
   }
 
   if (!session) {
@@ -49,9 +50,9 @@ export async function POST(request: Request) {
 
   if (DEBUG) {
     if (userError) {
-      console.log("POST user lookup error:", userError);
+      debug.api.log("POST user lookup error:", userError);
     }
-    console.log("POST user role check:", {
+    debug.api.log("POST user role check:", {
       user,
       hasValidRole: user && ["owner", "admin"].includes(user.site_role),
     });
@@ -78,7 +79,7 @@ export async function POST(request: Request) {
     .single();
 
   if (DEBUG && error) {
-    console.log("POST insert error:", error);
+    debug.api.log("POST insert error:", error);
   }
 
   if (error) {

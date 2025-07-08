@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { umami } from '@/lib/umami'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Eye, Users, TrendingUp } from '@/lib/icons'
+import { logError } from '@/lib/debug'
 
 interface AnalyticsData {
     totalPageViews: number
@@ -51,7 +52,7 @@ export function UmamiAnalytics({ websiteId, days = 30 }: UmamiAnalyticsProps) {
                     topPages: topPages || []
                 })
             } catch (err) {
-                console.error('Error fetching analytics:', err)
+                logError('Error fetching analytics:', err)
                 setError('Failed to load analytics data')
             } finally {
                 setLoading(false)

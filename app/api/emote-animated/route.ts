@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { v2 as cloudinary } from 'cloudinary'
+import { logError } from '@/lib/debug'
 
 cloudinary.config(process.env.CLOUDINARY_URL!)
 
@@ -37,7 +38,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ urls, public_id: uploadResult.public_id })
   } catch (error) {
-    console.error(error)
+    logError('Cloudinary processing failed', error)
     return NextResponse.json({ error: 'Cloudinary processing failed' }, { status: 500 })
   }
 } 

@@ -5,6 +5,7 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { toast } from 'sonner'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { useThemeStore, type IconStyle, type CustomColors } from '@/stores/useThemeStore'
+import { debug, logError } from '@/lib/debug'
 
 const supabase = createClientComponentClient()
 
@@ -18,7 +19,7 @@ export function useThemeUpdates() {
     mutationFn: async ({ scheme, customColors }: { scheme: string; customColors?: CustomColors }) => {
       if (!user?.id) throw new Error('User not authenticated')
 
-      console.log('[useThemeUpdates] Updating color scheme:', { scheme, customColors, userId: user.id })
+      debug.theme('[useThemeUpdates] Updating color scheme:', { scheme, customColors, userId: user.id })
 
       let themeSchemeValue = scheme
 
@@ -34,11 +35,11 @@ export function useThemeUpdates() {
         .eq('id', user.id)
 
       if (error) {
-        console.error('Theme update error:', error)
+        logError('Theme update error:', error)
         throw error
       }
 
-      console.log('[useThemeUpdates] Color scheme updated successfully in database')
+      debug.theme('[useThemeUpdates] Color scheme updated successfully in database')
       return { scheme, customColors }
     },
     onMutate: () => {
@@ -74,7 +75,7 @@ export function useThemeUpdates() {
       toast.success(customColors ? 'Custom theme saved successfully!' : 'Theme updated successfully!')
     },
     onError: (error) => {
-      console.error('Theme update error:', error)
+      logError('Theme update error:', error)
       toast.error('Failed to update theme')
     },
     onSettled: () => {
@@ -87,7 +88,7 @@ export function useThemeUpdates() {
     mutationFn: async (enabled: boolean) => {
       if (!user?.id) throw new Error('User not authenticated')
 
-      console.log('[useThemeUpdates] Toggling seasonal themes:', { enabled, userId: user.id })
+      debug.theme('[useThemeUpdates] Toggling seasonal themes:', { enabled, userId: user.id })
 
       const { error } = await supabase
         .from('twitch_users')
@@ -95,11 +96,11 @@ export function useThemeUpdates() {
         .eq('id', user.id)
 
       if (error) {
-        console.error('Seasonal themes update error:', error)
+        logError('Seasonal themes update error:', error)
         throw error
       }
 
-      console.log('[useThemeUpdates] Seasonal themes updated successfully in database')
+      debug.theme('[useThemeUpdates] Seasonal themes updated successfully in database')
       return enabled
     },
     onMutate: () => {
@@ -131,7 +132,7 @@ export function useThemeUpdates() {
       toast.success(`Seasonal themes ${enabled ? 'enabled' : 'disabled'}!`)
     },
     onError: (error) => {
-      console.error('Seasonal themes update error:', error)
+      logError('Seasonal themes update error:', error)
       toast.error('Failed to update seasonal themes')
     },
     onSettled: () => {
@@ -144,7 +145,7 @@ export function useThemeUpdates() {
     mutationFn: async (style: IconStyle) => {
       if (!user?.id) throw new Error('User not authenticated')
 
-      console.log('[useThemeUpdates] Updating icon style:', { style, userId: user.id })
+      debug.theme('[useThemeUpdates] Updating icon style:', { style, userId: user.id })
 
       const { error } = await supabase
         .from('twitch_users')
@@ -152,11 +153,11 @@ export function useThemeUpdates() {
         .eq('id', user.id)
 
       if (error) {
-        console.error('Icon style update error:', error)
+        logError('Icon style update error:', error)
         throw error
       }
 
-      console.log('[useThemeUpdates] Icon style updated successfully in database')
+      debug.theme('[useThemeUpdates] Icon style updated successfully in database')
       return style
     },
     onMutate: () => {
@@ -188,7 +189,7 @@ export function useThemeUpdates() {
       toast.success('Icon style updated successfully!')
     },
     onError: (error) => {
-      console.error('Icon style update error:', error)
+      logError('Icon style update error:', error)
       toast.error('Failed to update icon style')
     },
     onSettled: () => {

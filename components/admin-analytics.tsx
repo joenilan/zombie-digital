@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Eye, Users, TrendingUp, Calendar } from '@/lib/icons'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts'
+import { logError } from '@/lib/debug'
 
 interface AnalyticsData {
     totalPageViews: number
@@ -92,7 +93,7 @@ export function AdminAnalytics({ websiteId, initialDays = 30 }: AdminAnalyticsPr
                     dailyViews
                 })
             } catch (err) {
-                console.error('Error fetching analytics:', err)
+                logError('Error fetching analytics:', err)
                 setError('Failed to load analytics data')
             } finally {
                 setLoading(false)

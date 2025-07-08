@@ -24,6 +24,7 @@ import type { FileWithPath } from 'react-dropzone'
 import { supabase } from '@/lib/supabase'
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
 import { useQuery } from '@tanstack/react-query'
+import { logError } from '@/lib/debug'
 
 // Extend ProcessedEmoteData to include uploadedAt
 interface ProcessedEmoteData extends OriginalProcessedEmoteData {
@@ -249,7 +250,7 @@ export default function EmoteStudioPage() {
             setProcessedEmotes(processed)
             toast.success(`Successfully processed ${processed.length} emote(s)!`)
         } catch (error) {
-            console.error('Processing failed:', error)
+            logError('Processing failed:', error)
             toast.error('Failed to process emotes')
         } finally {
             setIsProcessing(false)
@@ -261,7 +262,7 @@ export default function EmoteStudioPage() {
             await downloadEmoteAsZip(emote, 'png') // Always use PNG for ZIP download
             toast.success('Download started!')
         } catch (error) {
-            console.error('Download failed:', error)
+            logError('Download failed:', error)
             toast.error('Failed to create download')
         }
     }, [])
@@ -271,7 +272,7 @@ export default function EmoteStudioPage() {
             await downloadEmotesAsZip(processedEmotes, 'png') // Always use PNG for ZIP download
             toast.success('Download started!')
         } catch (error) {
-            console.error('Download failed:', error)
+            logError('Download failed:', error)
             toast.error('Failed to create download')
         }
     }, [processedEmotes])

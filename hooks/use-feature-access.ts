@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { useUserRole } from './use-user-role'
 import type { TwitchUser } from '@/types/auth'
+import { logError } from '@/lib/debug'
 
 export interface Feature {
   id: string
@@ -57,7 +58,7 @@ export function useFeatureAccess(user: TwitchUser | null): UseFeatureAccessRetur
 
       setFeatures(featuresWithAccess)
     } catch (err) {
-      console.error('Error fetching features:', err)
+      logError('Error fetching features:', err)
       setError(err as Error)
     } finally {
       setIsLoading(false)

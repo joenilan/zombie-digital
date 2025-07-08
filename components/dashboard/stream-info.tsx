@@ -23,6 +23,7 @@ export function StreamInfo({ user }: StreamInfoProps) {
             width={100}
             height={133}
             className="rounded-lg"
+            sizes="100px"
           />
         )}
         <div className="flex-1">
@@ -39,7 +40,7 @@ export function StreamInfo({ user }: StreamInfoProps) {
           {user.tags && user.tags.length > 0 && (
             <div className="flex flex-wrap gap-2">
               {user.tags.map((tag) => (
-                <span 
+                <span
                   key={tag}
                   className="px-2 py-1 text-xs rounded-full bg-background/50"
                 >

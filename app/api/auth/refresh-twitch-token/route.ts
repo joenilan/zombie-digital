@@ -1,6 +1,7 @@
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { logError } from '@/lib/debug'
 
 export async function POST(request: Request) {
   try {
@@ -13,7 +14,7 @@ export async function POST(request: Request) {
       error: sessionError,
     } = await supabase.auth.getSession();
     if (sessionError || !session) {
-      console.error("Session error:", sessionError);
+      logError("Session error:", sessionError);
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
@@ -31,7 +32,7 @@ export async function POST(request: Request) {
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("Twitch token refresh failed:", {
+      logError("Twitch token refresh failed:", {
         status: response.status,
         statusText: response.statusText,
         error: errorText,
@@ -64,7 +65,7 @@ export async function POST(request: Request) {
       .eq("twitch_id", twitch_id);
 
     if (updateError) {
-      console.error("Database update error:", updateError);
+      logError("Database update error:", updateError);
       return new NextResponse(
         `Failed to update tokens in database: ${updateError.message}`,
         { status: 500 }
@@ -76,7 +77,7 @@ export async function POST(request: Request) {
       expires_in: data.expires_in,
     });
   } catch (error) {
-    console.error("Error refreshing Twitch token:", error);
+    logError("Error refreshing Twitch token:", error);
     return new NextResponse(
       error instanceof Error ? error.message : "Internal Server Error",
       { status: 500 }

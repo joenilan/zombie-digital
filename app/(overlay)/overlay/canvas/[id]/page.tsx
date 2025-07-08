@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { debug, logError } from '@/lib/debug'
 
 interface MediaObject {
   id: string
@@ -19,7 +20,7 @@ export default function CanvasOverlay({ params }: { params: { id: string } }) {
   const [error, setError] = useState<string>('')
 
   useEffect(() => {
-    console.log('[Overlay] Page loading for canvas:', params.id)
+    debug.canvas(`Page loading for canvas: ${params.id}`)
 
     const loadData = async () => {
       try {
@@ -29,13 +30,13 @@ export default function CanvasOverlay({ params }: { params: { id: string } }) {
 
         if (result.success) {
           setMediaObjects(result.mediaObjects || [])
-          console.log('[Overlay] Loaded media objects:', result.mediaObjects)
+          debug.canvas(`Loaded media objects: ${result.mediaObjects.length}`)
         } else {
           setError('Failed to load data: ' + result.error)
         }
       } catch (err) {
         setError('Error loading data: ' + err)
-        console.error('[Overlay] Error:', err)
+        logError('[Overlay] Error:', err)
       } finally {
         setLoading(false)
       }

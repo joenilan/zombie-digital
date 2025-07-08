@@ -16,6 +16,7 @@ import { toast } from 'sonner'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { UserCircle } from '@/lib/icons'
 import { TooltipProvider } from '@/components/ui/tooltip'
+import { logError } from '@/lib/debug'
 
 export default function CanvasPage() {
   const { user } = useAuthStore()
@@ -66,7 +67,7 @@ export default function CanvasPage() {
         await fetchWidgetCounts(data.map(c => c.id))
       }
     } catch (err) {
-      console.error('Error fetching canvases:', err)
+      logError('Error fetching canvases:', err)
       const errorMessage = err instanceof Error ? err.message : 'Failed to load canvases'
       setCanvasesError(errorMessage)
       toast.error('Failed to load canvases', {
@@ -80,7 +81,7 @@ export default function CanvasPage() {
   const fetchWidgetCounts = async (canvasIds: string[]) => {
     try {
       const { data, error } = await supabase
-        .from('media_objects')
+        .from('canvas_media_objects')
         .select('canvas_id')
         .in('canvas_id', canvasIds)
 
@@ -95,7 +96,7 @@ export default function CanvasPage() {
 
       setWidgetCounts(counts)
     } catch (err) {
-      console.error('Error fetching widget counts:', err)
+      logError('Error fetching widget counts:', err)
     }
   }
 
@@ -141,7 +142,7 @@ export default function CanvasPage() {
 
       toast.success('Canvas deleted successfully')
     } catch (err) {
-      console.error('Error deleting canvas:', err)
+      logError('Error deleting canvas:', err)
       const errorMessage = err instanceof Error ? err.message : 'Failed to delete canvas'
       toast.error('Failed to delete canvas', {
         description: errorMessage

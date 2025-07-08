@@ -1,6 +1,7 @@
 import JSZip from 'jszip'
 import { saveAs } from 'file-saver'
 import { ProcessedEmoteData, generateEmoteFilename } from './emote-processor'
+import { logError } from '@/lib/debug'
 
 /**
  * Convert data URL to blob for better download handling
@@ -59,7 +60,7 @@ export function downloadEmoteVariation(
 ): void {
   const variation = emote.variations?.[variationIndex]
   if (!variation) {
-    console.error('Variation not found')
+    logError('Variation not found')
     return
   }
 
@@ -101,7 +102,7 @@ export async function createEmoteZip(
     const emoteFolder = zip.folder(baseName)
 
     if (!emoteFolder) {
-      console.error(`Failed to create folder for ${baseName}`)
+      logError(`Failed to create folder for ${baseName}`)
       continue
     }
 
@@ -148,7 +149,7 @@ export async function downloadEmoteAsZip(
     const zipBlob = await createEmoteZip([emote], format)
     saveAs(zipBlob, filename)
   } catch (error) {
-    console.error('Failed to create ZIP archive:', error)
+    logError('Failed to create ZIP archive:', error)
     throw new Error('Failed to create download archive')
   }
 }
@@ -165,7 +166,7 @@ export async function downloadEmotesAsZip(
     const zipBlob = await createEmoteZip(emotes, format)
     saveAs(zipBlob, filename)
   } catch (error) {
-    console.error('Failed to create ZIP archive:', error)
+    logError('Failed to create ZIP archive:', error)
     throw new Error('Failed to create download archive')
   }
 }
@@ -216,7 +217,7 @@ export async function copyEmoteToClipboard(dataURL: string): Promise<void> {
     const item = new ClipboardItem({ [blob.type]: blob })
     await navigator.clipboard.write([item])
   } catch (error) {
-    console.error('Failed to copy to clipboard:', error)
+    logError('Failed to copy to clipboard:', error)
     throw new Error('Failed to copy emote to clipboard')
   }
 }
@@ -242,7 +243,7 @@ export async function shareEmote(
       files: [file]
     })
   } catch (error) {
-    console.error('Failed to share emote:', error)
+    logError('Failed to share emote:', error)
     throw new Error('Failed to share emote')
   }
 }

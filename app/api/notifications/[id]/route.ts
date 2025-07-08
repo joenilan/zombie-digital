@@ -1,6 +1,7 @@
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { debug } from '@/lib/debug'
 
 const DEBUG = false;
 
@@ -16,7 +17,7 @@ export async function DELETE(
   } = await supabase.auth.getSession();
 
   if (DEBUG && !session) {
-    console.log("DELETE unauthorized: No session");
+    debug.api("DELETE unauthorized: No session");
   }
 
   if (!session) {
@@ -32,9 +33,9 @@ export async function DELETE(
 
   if (DEBUG) {
     if (userError) {
-      console.log("DELETE user lookup error:", userError);
+      debug.api("DELETE user lookup error:", userError);
     }
-    console.log("DELETE user role check:", {
+    debug.api("DELETE user role check:", {
       user,
       hasValidRole: user && ["owner", "admin"].includes(user.site_role),
     });
@@ -50,7 +51,7 @@ export async function DELETE(
     .eq("id", params.id);
 
   if (DEBUG && error) {
-    console.log("DELETE update error:", error);
+    debug.api("DELETE update error:", error);
   }
 
   if (error) {

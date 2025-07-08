@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Eye, Users, TrendingUp, Calendar, ExternalLink } from '@/lib/icons'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts'
+import { logError } from '@/lib/debug'
 
 interface UserAnalyticsData {
     totalProfileViews: number
@@ -120,7 +121,7 @@ export function UserAnalytics({ userId, username, websiteId, initialDays = 30, i
                     topReferrers
                 })
             } catch (err) {
-                console.error('Error fetching user analytics:', err)
+                logError('Error fetching user analytics:', err)
                 setError('Failed to load analytics data')
             } finally {
                 setLoading(false)

@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { toast } from "sonner"
+import { debug } from '@/lib/debug'
 
 interface FormData {
     name: string
@@ -118,7 +119,7 @@ export default function ContactPage() {
             await new Promise(resolve => setTimeout(resolve, 2000))
 
             // Here you would typically send the form data to your API
-            console.log('Form submitted:', formData)
+            debug.admin('Form submitted', formData)
 
             setIsSubmitted(true)
             toast.success('Message sent successfully!')

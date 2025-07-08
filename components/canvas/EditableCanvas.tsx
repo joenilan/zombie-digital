@@ -1,6 +1,7 @@
 'use client'
 
 import { forwardRef, useImperativeHandle, useRef } from 'react'
+import { debug, logError } from '@/lib/debug'
 
 interface EditableCanvasProps {
   resolution: string
@@ -24,16 +25,16 @@ export const EditableCanvas = forwardRef<EditableCanvasRef, EditableCanvasProps>
 
     useImperativeHandle(ref, () => ({
       zoomIn: () => {
-        console.log('Zoom in functionality will be implemented')
+        debug.canvas('Zoom in functionality will be implemented')
       },
       zoomOut: () => {
-        console.log('Zoom out functionality will be implemented')
+        debug.canvas('Zoom out functionality will be implemented')
       },
       zoomToFit: () => {
-        console.log('Zoom to fit functionality will be implemented')
+        debug.canvas('Zoom to fit functionality will be implemented')
       },
       resetView: () => {
-        console.log('Reset view functionality will be implemented')
+        debug.canvas('Reset view functionality will be implemented')
       },
     }))
 

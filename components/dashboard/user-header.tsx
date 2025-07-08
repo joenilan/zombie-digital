@@ -20,6 +20,7 @@ export function UserHeader({ user }: UserHeaderProps) {
             height={80}
             className="rounded-full relative z-10"
             priority
+            sizes="80px"
           />
           <div className="absolute inset-0 rounded-full ring-2 ring-purple-500/20 z-20"></div>
           {user.stream_live && (
@@ -49,7 +50,7 @@ export function UserHeader({ user }: UserHeaderProps) {
               </span>
             )}
           </div>
-          <a 
+          <a
             href={`/${user.username}`}
             className="text-foreground/60 hover:text-foreground transition-colors relative z-10"
           >

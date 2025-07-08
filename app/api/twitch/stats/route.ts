@@ -1,6 +1,7 @@
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { debug, logError } from '@/lib/debug'
 
 const TWITCH_API_URL = "https://api.twitch.tv/helix";
 
@@ -30,8 +31,8 @@ interface TwitchStats {
 }
 
 async function refreshTwitchToken(userId: string, refreshToken: string) {
-  console.log('Attempting to refresh token for user:', userId);
-  console.log('Refresh token length:', refreshToken?.length || 0);
+  debug.api('Attempting to refresh token for user:', userId);
+  debug.api('Refresh token length:', refreshToken?.length || 0);
   
   if (!refreshToken) {
     throw new Error('No refresh token provided');
@@ -56,7 +57,7 @@ async function refreshTwitchToken(userId: string, refreshToken: string) {
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error('Token refresh failed:', response.status, errorText);
+    logError(`Token refresh failed: ${response.status} - ${errorText}`);
     
     // Parse the error response for more specific error handling
     try {
@@ -72,8 +73,8 @@ async function refreshTwitchToken(userId: string, refreshToken: string) {
   }
 
   const data = await response.json();
-  console.log('Token refreshed successfully');
-  console.log('New token expires in:', data.expires_in, 'seconds');
+  debug.api('Token refreshed successfully');
+  debug.api('New token expires in:', data.expires_in, 'seconds');
   
   // Update the database with new tokens
   const supabase = createRouteHandlerClient({ cookies });
@@ -87,7 +88,7 @@ async function refreshTwitchToken(userId: string, refreshToken: string) {
     .eq("twitch_id", userId);
 
   if (error) {
-    console.error('Failed to update tokens in database:', error);
+    logError('Failed to update tokens in database:', error);
     throw new Error('Failed to update tokens in database');
   }
 
@@ -95,11 +96,11 @@ async function refreshTwitchToken(userId: string, refreshToken: string) {
 }
 
 async function makeApiCall(url: string, headers: any): Promise<Response> {
-  console.log(`Making API call to: ${url}`);
+  debug.api(`Making API call to: ${url}`);
   
   const response = await fetch(url, { headers });
   
-  console.log(`API response status: ${response.status}`);
+  debug.api(`API response status: ${response.status}`);
   
   return response;
 }
@@ -112,7 +113,7 @@ export async function GET(request: Request) {
 
     
     if (!userId) {
-      console.error('Missing userId parameter');
+      logError('Missing userId parameter');
       return new NextResponse("Missing userId parameter", { status: 400 });
     }
 
@@ -125,7 +126,7 @@ export async function GET(request: Request) {
     } = await supabase.auth.getSession();
     
     if (sessionError || !session) {
-      console.error('Authentication failed:', sessionError);
+      logError('Authentication failed:', sessionError);
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
@@ -137,7 +138,7 @@ export async function GET(request: Request) {
       .single();
 
     if (userError || !user) {
-      console.error('User not found:', userError);
+      logError('User not found:', userError);
       return new NextResponse("User not found", { status: 404 });
     }
 
@@ -157,13 +158,13 @@ export async function GET(request: Request) {
 
     // Proactively refresh token if it's expired or expiring soon
     if ((isTokenExpired || isTokenExpiringSoon) && user.provider_refresh_token) {
-      console.log('Token is expired or expiring soon, proactively refreshing...');
+      debug.api('Token is expired or expiring soon, proactively refreshing...');
       try {
         accessToken = await refreshTwitchToken(userId, user.provider_refresh_token);
         hasTriedRefresh = true;
-        console.log('Proactive token refresh successful');
+        debug.api('Proactive token refresh successful');
       } catch (refreshError) {
-        console.error('Proactive token refresh failed:', refreshError);
+        logError('Proactive token refresh failed', refreshError);
         if (refreshError instanceof Error && refreshError.message.includes('Refresh token is invalid or expired')) {
           return new NextResponse("Your Twitch authentication has expired. Please sign out and sign back in to continue.", { status: 401 });
         }
@@ -181,12 +182,12 @@ export async function GET(request: Request) {
       
       // If we get a 401 and haven't tried refreshing yet, attempt token refresh
       if (response.status === 401 && !hasTriedRefresh && user.provider_refresh_token) {
-        console.log('Received 401, attempting token refresh...');
+        debug.api('Received 401, attempting token refresh...');
         hasTriedRefresh = true;
         
         try {
           accessToken = await refreshTwitchToken(userId, user.provider_refresh_token);
-          console.log('Token refreshed successfully, retrying API call...');
+          debug.api('Token refreshed successfully, retrying API call...');
           
           // Retry with new token
           const newHeaders = {
@@ -195,12 +196,12 @@ export async function GET(request: Request) {
           };
           return await makeApiCall(url, newHeaders);
         } catch (refreshError) {
-          console.error('Token refresh failed:', refreshError);
+          logError('Token refresh failed', refreshError);
           throw new Error("UNAUTHORIZED");
         }
       } else if (response.status === 401) {
         // If we still get 401 after refresh attempt, or no refresh token available
-        console.error('Authentication failed - token refresh not available or already attempted');
+        logError('Authentication failed - token refresh not available or already attempted');
         throw new Error("UNAUTHORIZED");
       }
       
@@ -241,7 +242,7 @@ export async function GET(request: Request) {
           stats.isAffiliate = userInfo.broadcaster_type === "affiliate" || userInfo.broadcaster_type === "partner";
         }
       } else {
-        console.error('Failed to fetch user info:', userResponse.status, await userResponse.text());
+        logError(`Failed to fetch user info: ${userResponse.status} - ${await userResponse.text()}`);
       }
 
       // Get channel information (includes current game, title, etc.)
@@ -261,7 +262,7 @@ export async function GET(request: Request) {
           }
         }
       } else {
-        console.error('Failed to fetch channel info:', channelResponse.status, await channelResponse.text());
+        logError(`Failed to fetch channel info: ${channelResponse.status} - ${await channelResponse.text()}`);
       }
 
       // Get followers count
@@ -271,7 +272,7 @@ export async function GET(request: Request) {
           const followersData = await followersResponse.json();
           stats.followers = followersData.total || 0;
         } else {
-          console.error('Failed to fetch followers:', followersResponse.status, await followersResponse.text());
+          logError(`Failed to fetch followers: ${followersResponse.status} - ${await followersResponse.text()}`);
         }
       } catch (error) {
         // Could not fetch followers (may not have required scope)
@@ -285,7 +286,7 @@ export async function GET(request: Request) {
             const subsData = await subsResponse.json();
             stats.subscribers = subsData.total || 0;
           } else {
-            console.error('Failed to fetch subscribers:', subsResponse.status, await subsResponse.text());
+            logError(`Failed to fetch subscribers: ${subsResponse.status} - ${await subsResponse.text()}`);
           }
         } catch (error) {
           // Could not fetch subscribers (may not have required scope)
@@ -299,7 +300,7 @@ export async function GET(request: Request) {
           const modsData = await modsResponse.json();
           stats.moderators = modsData.data ? modsData.data.length : 0;
         } else {
-          console.error('Failed to fetch moderators:', modsResponse.status, await modsResponse.text());
+          logError(`Failed to fetch moderators: ${modsResponse.status} - ${await modsResponse.text()}`);
         }
       } catch (error) {
         // Could not fetch moderators
@@ -312,7 +313,7 @@ export async function GET(request: Request) {
           const vipsData = await vipsResponse.json();
           stats.vips = vipsData.data ? vipsData.data.length : 0;
         } else {
-          console.error('Failed to fetch VIPs:', vipsResponse.status, await vipsResponse.text());
+          logError(`Failed to fetch VIPs: ${vipsResponse.status} - ${await vipsResponse.text()}`);
         }
       } catch (error) {
         // Could not fetch VIPs
@@ -337,7 +338,7 @@ export async function GET(request: Request) {
             stats.tags = stream.tags || [];
           }
         } else {
-          console.error('Failed to fetch stream status:', streamResponse.status, await streamResponse.text());
+          logError(`Failed to fetch stream status: ${streamResponse.status} - ${await streamResponse.text()}`);
         }
       } catch (error) {
         // Could not fetch stream status
@@ -354,7 +355,7 @@ export async function GET(request: Request) {
               activeRewards: rewardsData.data ? rewardsData.data.filter((r: any) => r.is_enabled).length : 0,
             };
           } else {
-            console.error('Failed to fetch channel points:', rewardsResponse.status, await rewardsResponse.text());
+            logError(`Failed to fetch channel points: ${rewardsResponse.status} - ${await rewardsResponse.text()}`);
           }
         } catch (error) {
           // Could not fetch channel points
@@ -362,16 +363,16 @@ export async function GET(request: Request) {
       }
 
     } catch (error) {
-      console.error("Error fetching Twitch stats:", error);
+      logError("Error fetching Twitch stats:", error);
       if (error instanceof Error) {
         if (error.message === "UNAUTHORIZED") {
-          console.error('Authentication failed after token refresh attempt');
+          logError('Authentication failed after token refresh attempt');
           return new NextResponse("Your Twitch authentication has expired. Please sign out and sign back in to continue.", { status: 401 });
         } else if (error.message.includes('Refresh token is invalid or expired')) {
-          console.error('Refresh token is invalid - user needs to re-authenticate');
+          logError('Refresh token is invalid - user needs to re-authenticate');
           return new NextResponse("Your Twitch authentication has expired. Please sign out and sign back in to continue.", { status: 401 });
         } else if (error.message.includes('No refresh token')) {
-          console.error('No refresh token available');
+          logError('No refresh token available');
           return new NextResponse("Authentication error - please sign out and sign back in.", { status: 401 });
         }
       }
@@ -381,7 +382,7 @@ export async function GET(request: Request) {
     
     return NextResponse.json(stats);
   } catch (error) {
-    console.error("Error in Twitch stats API:", error);
+    logError("Error in Twitch stats API:", error);
     return new NextResponse(
       error instanceof Error ? error.message : "Internal Server Error",
       { status: 500 }

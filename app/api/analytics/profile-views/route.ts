@@ -1,6 +1,7 @@
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
+import { logError } from '@/lib/debug'
 
 export async function GET(request: NextRequest) {
   try {
@@ -23,7 +24,7 @@ export async function GET(request: NextRequest) {
       .single()
 
     if (userError || !twitchUser) {
-      console.error('User lookup error:', userError, 'Twitch ID:', twitchId)
+      logError(`User lookup error: Twitch ID: ${twitchId}`, userError)
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
@@ -131,7 +132,7 @@ export async function GET(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('Error fetching analytics:', error)
+    logError('Error fetching analytics:', error)
     return NextResponse.json(
       { error: 'Failed to fetch analytics' },
       { status: 500 }

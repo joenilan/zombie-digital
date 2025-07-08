@@ -1,6 +1,7 @@
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
+import { debug, logError } from '@/lib/debug'
 
 export async function GET(
   request: NextRequest,
@@ -9,7 +10,7 @@ export async function GET(
   try {
     const supabase = createRouteHandlerClient({ cookies })
     
-    console.log('[Test API] Testing database access for canvas:', params.id)
+    debug.canvas(`[Test API] Testing database access for canvas: ${params.id}`)
     
     // Test canvas_media_objects access
     const { data: mediaObjects, error: mediaError } = await supabase
@@ -19,7 +20,7 @@ export async function GET(
       .order('z_index', { ascending: true })
 
     if (mediaError) {
-      console.error('[Test API] Media objects error:', mediaError)
+      logError('[Test API] Media objects error:', mediaError)
       return NextResponse.json({ 
         success: false, 
         error: 'Media objects query failed',
@@ -35,10 +36,10 @@ export async function GET(
       .single()
 
     if (settingsError) {
-      console.error('[Test API] Settings error:', settingsError)
+      logError('[Test API] Settings error:', settingsError)
     }
 
-    console.log('[Test API] Results:', {
+    debug.canvas(`[Test API] Results:`, {
       mediaObjectsCount: mediaObjects?.length || 0,
       settingsFound: !!settings
     })
@@ -52,7 +53,7 @@ export async function GET(
     })
 
   } catch (error) {
-    console.error('[Test API] Unexpected error:', error)
+    logError('[Test API] Unexpected error:', error)
     return NextResponse.json({ 
       success: false, 
       error: 'Unexpected error',

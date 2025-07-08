@@ -1,6 +1,7 @@
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { logError } from '@/lib/debug'
 
 // Helper function to check feature access
 async function checkFeatureAccess(featureId: string, userId: string) {
@@ -69,7 +70,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json(settings || {});
   } catch (error) {
-    console.error("Error fetching canvas settings:", error);
+    logError("Error fetching canvas settings:", error);
     return new NextResponse("Internal Server Error", { status: 500 });
   }
 }
@@ -125,7 +126,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(settings);
   } catch (error) {
-    console.error("Error updating canvas settings:", error);
+    logError("Error updating canvas settings:", error);
     return new NextResponse("Internal Server Error", { status: 500 });
   }
 }
@@ -175,7 +176,7 @@ export async function PATCH(request: Request) {
 
     return NextResponse.json(settings);
   } catch (error) {
-    console.error("Error updating canvas settings:", error);
+    logError("Error updating canvas settings:", error);
     return new NextResponse("Internal Server Error", { status: 500 });
   }
 }

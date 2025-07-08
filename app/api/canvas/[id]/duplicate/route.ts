@@ -1,6 +1,7 @@
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { logError } from '@/lib/debug'
 
 export async function POST(
   request: Request,
@@ -59,7 +60,7 @@ export async function POST(
 
     return redirect("/dashboard/canvas");
   } catch (error) {
-    console.error("Error duplicating canvas:", error);
+    logError("Error duplicating canvas:", error);
     return redirect("/dashboard/canvas?error=failed-to-duplicate");
   }
 }

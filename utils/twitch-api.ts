@@ -1,6 +1,7 @@
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { supabase as globalSupabase } from "@/lib/supabase";
 import { handleAuthError } from "@/utils/auth-error-handler";
+import { debug, logError } from '@/lib/debug'
 
 const TWITCH_API_URL = "https://api.twitch.tv/helix";
 
@@ -48,7 +49,7 @@ async function refreshTwitchToken(userId: string, refreshToken: string) {
 
       if (!response.ok) {
         const errorData = await response.text();
-        console.error(`Token refresh failed (${response.status}):`, errorData);
+        debug.api(`Token refresh failed (${response.status}):`, errorData);
 
         // Use the auth error handler for auth-related errors
         if (response.status === 401 || response.status === 403) {
@@ -98,12 +99,12 @@ async function refreshTwitchToken(userId: string, refreshToken: string) {
         .single();
 
       if (dbError) {
-        console.error("Database error after token refresh:", dbError);
+        debug.api("Database error after token refresh:", dbError);
         throw new Error(`Database error: ${dbError.message}`);
       }
 
       if (!user?.provider_token) {
-        console.error("No provider token found after successful refresh");
+        debug.api("No provider token found after successful refresh");
         throw new Error("No provider token found after refresh");
       }
 
@@ -121,7 +122,7 @@ async function refreshTwitchToken(userId: string, refreshToken: string) {
       }
 
       if (retryCount === maxRetries - 1) {
-        console.error("Max retries reached for token refresh:", error);
+        debug.api("Max retries reached for token refresh:", error);
         throw error;
       }
 
@@ -149,7 +150,7 @@ export async function fetchTwitchStats(
     
     // If we get a 401 and haven't retried yet, try to refresh the token
     if (response.status === 401 && retryCount === 0) {
-      console.log('Token expired, attempting refresh...');
+      debug.api('Token expired, attempting refresh...');
       retryCount++;
       
       try {
@@ -178,7 +179,7 @@ export async function fetchTwitchStats(
         // Retry the request with new token
         return await fetch(url, { headers: newHeaders });
       } catch (refreshError) {
-        console.error('Token refresh failed:', refreshError);
+        debug.api('Token refresh failed:', refreshError);
         throw new Error('Authentication failed - please sign in again');
       }
     }
@@ -229,7 +230,7 @@ export async function fetchTwitchStats(
         }
       }
     } catch (err) {
-      console.error("Error fetching channel info:", err);
+      debug.api("Error fetching channel info:", err);
     }
 
     // Get followers count (new endpoint)
@@ -243,7 +244,7 @@ export async function fetchTwitchStats(
         stats.followers = followersData.total || 0;
       }
     } catch (err) {
-      console.error("Error fetching followers:", err);
+      debug.api("Error fetching followers:", err);
     }
 
     // Only fetch these stats for affiliates/partners
@@ -259,7 +260,7 @@ export async function fetchTwitchStats(
           stats.subscribers = subsData.total || 0;
         }
       } catch (err) {
-        console.error("Error fetching subscribers:", err);
+        debug.api("Error fetching subscribers:", err);
       }
 
       // Channel Points
@@ -276,7 +277,7 @@ export async function fetchTwitchStats(
           };
         }
       } catch (err) {
-        console.error("Error fetching channel points:", err);
+        debug.api("Error fetching channel points:", err);
       }
     }
 
@@ -303,7 +304,7 @@ export async function fetchTwitchStats(
         }
       }
     } catch (err) {
-      console.error("Error fetching stream info:", err);
+      debug.api("Error fetching stream info:", err);
     }
 
     // Moderators and VIPs (available for all)
@@ -334,12 +335,12 @@ export async function fetchTwitchStats(
         stats.vips = vipsData.total || 0;
       }
     } catch (err) {
-      console.error("Error fetching mods/vips:", err);
+      debug.api("Error fetching mods/vips:", err);
     }
 
     return stats;
   } catch (err) {
-    console.error("Error fetching Twitch stats:", err);
+    debug.api("Error fetching Twitch stats:", err);
     throw err;
   }
 }

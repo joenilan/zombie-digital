@@ -1,6 +1,7 @@
 import { createMiddlewareClient } from "@supabase/auth-helpers-nextjs";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { debug, logError } from '@/lib/debug'
 
 export async function middleware(req: NextRequest) {
   const res = NextResponse.next();
@@ -21,7 +22,7 @@ export async function middleware(req: NextRequest) {
 
     // Log session state for debugging (only in development)
     if (process.env.NODE_ENV === 'development') {
-      console.log("Middleware session check:", {
+      debug.auth("Middleware session check:", {
         path: req.nextUrl.pathname,
         hasSession: !!session,
         error: error?.message,
@@ -49,7 +50,7 @@ export async function middleware(req: NextRequest) {
 
     return res;
   } catch (error) {
-    console.error("Middleware error:", error);
+    logError("Middleware error:", error);
     
     // If there's an auth error on protected routes, redirect to signin
     if (req.nextUrl.pathname.startsWith("/dashboard") || req.nextUrl.pathname.startsWith("/canvas")) {

@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react'
 import { useThemeStore, type IconStyle } from '@/stores/useThemeStore'
 import { getActiveTheme, applyThemeToContainer } from '@/lib/theme-system'
+import { debug } from '@/lib/debug'
 
 interface ThemeWrapperProps {
     userTheme?: string | null
@@ -17,7 +18,7 @@ export function ThemeWrapper({ userTheme, seasonalThemes, iconStyle, children }:
 
     // Apply theme to container when props change (for real-time updates)
     useEffect(() => {
-        console.log(`[ThemeWrapper] Theme props changed - applying to container:`, {
+        debug.theme(`Theme props changed - applying to container:`, {
             userTheme,
             seasonalThemes,
             iconStyle,
@@ -28,7 +29,7 @@ export function ThemeWrapper({ userTheme, seasonalThemes, iconStyle, children }:
             const theme = getActiveTheme(userTheme || 'cyber-default', seasonalThemes || false)
             applyThemeToContainer(containerRef.current, theme)
             setIconStyle(iconStyle || 'colored')
-            console.log(`[ThemeWrapper] Theme applied to container for real-time update`)
+            debug.theme(`Theme applied to container for real-time update`)
         }
     }, [userTheme, seasonalThemes, iconStyle, setIconStyle]) // Re-run whenever theme props change
 
@@ -73,7 +74,7 @@ export function ThemeWrapper({ userTheme, seasonalThemes, iconStyle, children }:
 
             body.style.background = newBackground
             body.style.backgroundAttachment = 'fixed'
-            console.log(`[ThemeWrapper] Applied background for username page`)
+            debug.theme(`Applied background for username page`)
         }
 
         // Cleanup function to reset background when component unmounts
@@ -82,7 +83,7 @@ export function ThemeWrapper({ userTheme, seasonalThemes, iconStyle, children }:
                 const body = document.body
                 body.style.background = ''
                 body.style.backgroundAttachment = ''
-                console.log(`[ThemeWrapper] Background reset on cleanup`)
+                debug.theme(`Background reset on cleanup`)
             }
         }
     }, [userTheme, seasonalThemes])

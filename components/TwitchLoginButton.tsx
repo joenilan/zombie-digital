@@ -5,6 +5,7 @@ import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { Button } from "@/components/ui/button";
 import { TWITCH_SCOPES_DASHBOARD } from "@/utils/twitch-constants";
+import { logError } from '@/lib/debug'
 
 export default function TwitchLoginButton({ size = "default" }: { size?: "default" | "lg" }) {
   const [isLoading, setIsLoading] = useState(false);
@@ -31,7 +32,7 @@ export default function TwitchLoginButton({ size = "default" }: { size?: "defaul
 
       // The redirect will happen automatically, so we don't need to set loading to false
     } catch (err) {
-      console.error("Login error:", err);
+      logError('Login error:', err);
       setError(err instanceof Error ? err.message : "An error occurred");
       setIsLoading(false);
     }

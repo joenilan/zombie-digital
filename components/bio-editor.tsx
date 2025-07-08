@@ -5,6 +5,7 @@ import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { toast } from 'sonner'
 import { Edit3 } from '@/lib/icons'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { logError } from '@/lib/debug'
 
 interface BioEditorProps {
     userId: string
@@ -62,7 +63,7 @@ export function BioEditor({ userId, initialBio = '', onBioUpdate, className = ''
             queryClient.invalidateQueries({ queryKey: ['profile'] })
         },
         onError: (error) => {
-            console.error('Error updating bio:', error)
+            logError('Error updating bio:', error)
             toast.error('Failed to update bio')
             setTempBio(bio) // Reset to original
         }

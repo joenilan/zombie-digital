@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { logError } from '@/lib/debug'
 
 /**
  * @swagger
@@ -42,7 +43,7 @@ export async function PUT(req: Request) {
 
     return NextResponse.json(updates);
   } catch (error) {
-    console.error("Error reordering links:", error);
+    logError('Error reordering links:', error);
     return NextResponse.json(
       { error: "Error reordering links" },
       { status: 500 }

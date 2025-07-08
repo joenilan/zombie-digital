@@ -2,6 +2,7 @@ import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { Database } from "@/lib/database.types";
+import { logError } from '@/lib/debug'
 
 export async function DELETE(
   request: Request,
@@ -59,13 +60,13 @@ export async function DELETE(
       .eq("id", canvasId);
 
     if (deleteError) {
-      console.error("Error deleting canvas:", deleteError);
+      logError("Error deleting canvas:", deleteError);
       return new NextResponse("Failed to delete canvas", { status: 500 });
     }
 
     return new NextResponse(null, { status: 204 });
   } catch (err) {
-    console.error("Error:", err);
+    logError("Error:", err);
     return new NextResponse("Internal Server Error", { status: 500 });
   }
 }

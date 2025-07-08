@@ -1,3 +1,5 @@
+import { logError } from '@/lib/debug'
+
 export interface EmoteSize {
   width: number
   height: number
@@ -314,7 +316,7 @@ export class EmoteProcessor {
   }[]> {
     const variations = []
     const style = baseOptions.variantStyle || 'hue'
-
+    
     // Calculate evenly distributed hue shifts across the color wheel
     const hueStep = 360 / variationCount
     const selectedHues = Array.from({ length: variationCount }, (_, i) => Math.round(i * hueStep))
@@ -473,7 +475,7 @@ export async function processBatchEmotes(
       const processed = await processor.processEmote(file, options)
       results.push(processed)
     } catch (error) {
-      console.error(`Failed to process ${file.name}:`, error)
+      logError(`Failed to process ${file.name}:`, error)
       // Continue with other files
     } finally {
       processor.dispose()

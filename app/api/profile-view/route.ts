@@ -1,6 +1,7 @@
 import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
 import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
+import { logError } from '@/lib/debug'
 
 export async function POST(request: NextRequest) {
   try {
@@ -34,17 +35,8 @@ export async function POST(request: NextRequest) {
       .gte('viewed_at', thirtyMinutesAgo)
       .limit(1)
 
-    console.log('Deduplication check:', {
-      sessionId,
-      thirtyMinutesAgo,
-      recentViews,
-      dedupeError,
-      hasRecentViews: recentViews && recentViews.length > 0
-    })
-
     // If there's a recent view from this session, don't count it again
     if (recentViews && recentViews.length > 0) {
-      console.log('Blocking duplicate view for session:', sessionId)
       return NextResponse.json({ 
         success: true, 
         counted: false, 
@@ -109,7 +101,7 @@ export async function POST(request: NextRequest) {
       sessionId: sessionId 
     })
   } catch (error) {
-    console.error('Error tracking profile view:', error)
+    logError('Error tracking profile view:', error)
     return NextResponse.json(
       { error: 'Failed to track profile view' },
       { status: 500 }

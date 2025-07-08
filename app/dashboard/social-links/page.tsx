@@ -1,6 +1,8 @@
 "use client"
 
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
+import { debug, logError, logWarning } from '@/lib/debug'
+import { supabase as singletonSupabase } from '@/lib/supabase'
 import { useEffect, useState } from 'react'
 import dynamic from 'next/dynamic'
 import type { SocialLink } from '@/stores/useSocialLinksStore'
@@ -51,6 +53,7 @@ import { useAuthStore } from '@/stores/useAuthStore'
 import { LoadingSpinner } from '@/components/LoadingSpinner'
 import { useSocialLinksStore } from '@/stores/useSocialLinksStore'
 import { umami } from '@/lib/umami'
+import { createClient } from '@supabase/supabase-js'
 
 // Dynamic imports for heavy components
 const SocialLinksManagerV2 = dynamic(() => import('@/components/social-links-manager-v2').then(mod => ({ default: mod.SocialLinksManagerV2 })), {
@@ -193,7 +196,7 @@ export default function SocialLinksPage() {
   // Define refs at the component level
   const currentLinkIdsRef = React.useRef(new Set<string>())
   const isHandlingEventRef = React.useRef(false)
-  const channelRef = React.useRef<RealtimeChannel | null>(null)
+
 
   // Auth is handled by dashboard layout - no need for redirect logic here
 
@@ -226,7 +229,7 @@ export default function SocialLinksPage() {
           .single()
 
         if (!user) {
-          console.error('User not found in database')
+          logError('User not found in database', null, { component: 'Dashboard' })
           return
         }
 
@@ -248,7 +251,7 @@ export default function SocialLinksPage() {
         setLinks(socialLinks || [])
         setProfileViews(viewsData?.view_count ?? 0)
       } catch (error) {
-        console.error('Error loading data:', error)
+        logError('Error loading data', error, { component: 'Dashboard' })
       } finally {
         setIsLoading(false)
       }
@@ -265,78 +268,9 @@ export default function SocialLinksPage() {
     currentLinkIdsRef.current = new Set(links.map(link => link.id));
   }, [links]);
 
-  // Subscribe to real-time changes in social_tree
-  useEffect(() => {
-    if (!twitchUser) return;
-
-    // Clean up existing channel first
-    if (channelRef.current) {
-      try {
-        supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
-      } catch (e) {
-        console.error('Error removing existing channel:', e);
-      }
-    }
-
-    // Set up realtime subscription for dashboard
-    const channelId = `dashboard_social_links_${twitchUser.id}_${Date.now()}`;
-
-    const channel = supabase
-      .channel(channelId)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'social_tree',
-          filter: `user_id=eq.${twitchUser.id}`
-        },
-        async (payload) => {
-          // Prevent duplicate handling
-          if (isHandlingEventRef.current) return;
-          isHandlingEventRef.current = true;
-
-          // Fetch fresh data when changes occur
-          try {
-            const { data: freshLinks, error } = await supabase
-              .from('social_tree')
-              .select('*')
-              .eq('user_id', twitchUser.id)
-              .order('order_index', { ascending: true });
-
-            if (error) {
-              console.error('Error fetching fresh links:', error);
-              return;
-            }
-
-            setLinks(freshLinks || []);
-          } catch (error) {
-            console.error('Error fetching fresh links:', error);
-          } finally {
-            // Reset handling flag after a delay
-            setTimeout(() => {
-              isHandlingEventRef.current = false;
-            }, 100);
-          }
-        }
-      )
-      .subscribe();
-
-    // Store channel reference
-    channelRef.current = channel;
-
-    return () => {
-      try {
-        if (channelRef.current) {
-          supabase.removeChannel(channelRef.current);
-          channelRef.current = null;
-        }
-      } catch (e) {
-        console.error('Error removing dashboard channel:', e);
-      }
-    };
-  }, [twitchUser?.id, supabase]) // Only depend on twitchUser.id, not the whole object
+  // Note: Dashboard realtime removed due to WebSocket connection issues
+  // The main realtime functionality (dashboard -> profile) still works via the profile page subscription
+  // Multi-tab sync is an edge case that doesn't justify the connection complexity
 
   // Fetch analytics data
   const fetchAnalytics = async () => {
@@ -350,7 +284,7 @@ export default function SocialLinksPage() {
         setAnalyticsData(data)
       }
     } catch (error) {
-      console.error('Error fetching analytics:', error)
+      logError('Error fetching analytics', error, { component: 'Dashboard' })
     } finally {
       setAnalyticsLoading(false)
     }
@@ -392,7 +326,7 @@ export default function SocialLinksPage() {
           uniqueVisitors: uniqueSessionIds.size
         })
       } catch (error) {
-        console.error('Error fetching quick stats:', error)
+        logError('Error fetching quick stats', error, { component: 'Dashboard' })
         // Fallback to 0 if there's an error
         setQuickStats({
           profileViews: 0,
@@ -1085,6 +1019,7 @@ export default function SocialLinksPage() {
                                       src={twitchUser.background_media_url}
                                       alt="Background"
                                       fill
+                                      sizes="100vw"
                                       className="object-cover opacity-40"
                                     />
                                   )}
@@ -1172,6 +1107,7 @@ export default function SocialLinksPage() {
                                       borderStyle: 'solid',
                                       boxShadow: `0 0 20px rgba(var(--theme-primary), 0.4), 0 0 40px rgba(var(--theme-accent), 0.2)`
                                     }}
+                                    sizes="80px"
                                   />
                                 </div>
                                 <h1

@@ -30,6 +30,7 @@ export function MediaNode({ data }: NodeProps<MediaNodeData>) {
           height={data.height}
           style={{ transform: `rotate(${data.rotation}deg)` }}
           className="rounded-lg shadow-lg"
+          sizes="(max-width: 768px) 100vw, 400px"
         />
       ) : (
         <video

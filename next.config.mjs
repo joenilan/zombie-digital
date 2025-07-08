@@ -24,11 +24,28 @@ const nextConfig = {
       }
     ]
   },
-  webpack: (config) => {
+  webpack: (config, { dev, isServer }) => {
     config.resolve.alias = {
       ...config.resolve.alias,
       'ajv$': 'ajv/dist/2020',
     };
+    // In production, remove console.log statements but keep console.error and console.warn
+    if (!dev && !isServer) {
+      if (Array.isArray(config.optimization.minimizer)) {
+        config.optimization.minimizer.forEach((minimizer) => {
+          if (
+            minimizer?.options?.terserOptions?.compress
+          ) {
+            minimizer.options.terserOptions.compress.drop_console = true;
+            minimizer.options.terserOptions.compress.pure_funcs = [
+              'console.log',
+              'console.info',
+              'console.debug',
+            ];
+          }
+        });
+      }
+    }
     return config;
   },
 };

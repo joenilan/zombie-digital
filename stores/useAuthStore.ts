@@ -3,6 +3,7 @@ import { devtools } from 'zustand/middleware'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import type { Session } from '@supabase/auth-helpers-nextjs'
 import type { TwitchUser } from '@/types/auth'
+import { debug, logError } from '@/lib/debug'
 
 interface AuthState {
   // State
@@ -43,10 +44,10 @@ export const useAuthStore = create<AuthState>()(
           const { data: { session }, error } = await supabase.auth.getSession()
           
           if (error) {
-            console.error('[AuthStore] Session error:', error)
+            logError('[AuthStore] Session error:', error)
             // If there's a session error, try to refresh once
             if (error.message?.includes('refresh_token_not_found') || error.message?.includes('invalid_refresh_token')) {
-              console.log('[AuthStore] Attempting to clear invalid session')
+              debug.auth('[AuthStore] Attempting to clear invalid session')
               await supabase.auth.signOut()
             }
             set({ 
@@ -70,10 +71,12 @@ export const useAuthStore = create<AuthState>()(
               if (!userError && data) {
                 userData = data as TwitchUser
               } else {
-                console.error('[AuthStore] User data error:', userError)
+                if (userError) {
+                  logError('[AuthStore] User data error:', userError)
+                }
               }
             } catch (err) {
-              console.error('[AuthStore] Error fetching user:', err)
+              logError('[AuthStore] Error fetching user:', err)
             }
           }
 
@@ -119,10 +122,12 @@ export const useAuthStore = create<AuthState>()(
                     if (!userError && data) {
                       userData = data as TwitchUser
                     } else {
-                      console.error('[AuthStore] User data error for event:', event, userError)
+                      if (userError) {
+                        logError(`[AuthStore] User data error for event: ${event}`, userError)
+                      }
                     }
                   } catch (err) {
-                    console.error('[AuthStore] Error fetching user on auth change:', err)
+                    logError('[AuthStore] Error fetching user on auth change:', err)
                   }
                 }
                 
@@ -153,14 +158,14 @@ export const useAuthStore = create<AuthState>()(
                     }, false, 'twitch:token_refreshed')
                   }
                 } catch (err) {
-                  console.error('[AuthStore] Error updating user after token refresh:', err)
+                  logError('[AuthStore] Error updating user after token refresh:', err)
                 }
               })
             }
           }
 
         } catch (error) {
-          console.error('[AuthStore] Initialize error:', error)
+          logError('[AuthStore] Initialize error:', error)
           set({ 
             session: null, 
             user: null, 
@@ -200,7 +205,7 @@ export const useAuthStore = create<AuthState>()(
             isLoading: false 
           }, false, 'signOut:success')
         } catch (error) {
-          console.error('[AuthStore] Sign out error:', error)
+          logError('[AuthStore] Sign out error:', error)
           set({ isLoading: false }, false, 'signOut:error')
         }
       },
@@ -221,7 +226,7 @@ export const useAuthStore = create<AuthState>()(
             set({ user: data as TwitchUser }, false, 'refreshUser:success')
           }
         } catch (error) {
-          console.error('[AuthStore] Refresh user error:', error)
+          logError('[AuthStore] Refresh user error:', error)
         }
       },
     }),

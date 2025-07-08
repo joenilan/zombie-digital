@@ -14,6 +14,7 @@ import * as Toast from '@radix-ui/react-toast'
 import { useState } from 'react'
 import { CopyButton } from '@/components/ui/action-button'
 import { Check } from '@/lib/icons'
+import { logError } from '@/lib/debug'
 
 const formSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -69,7 +70,7 @@ export function CanvasSettingsForm({ initialData, canvasId }: CanvasSettingsForm
       setToastMessage('Your canvas settings have been saved.')
       setOpen(true)
     } catch (error) {
-      console.error('Error updating canvas settings:', error)
+      logError('Error updating canvas settings:', error)
       setToastType('error')
       setToastMessage('Failed to update canvas settings. Please try again.')
       setOpen(true)

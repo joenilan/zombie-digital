@@ -4,6 +4,7 @@ import { useEffect, useMemo } from 'react'
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { useProfileStore } from '@/stores/useProfileStore'
+import { logError } from '@/lib/debug'
 
 interface OwnershipCheckerProps {
     username: string
@@ -44,7 +45,7 @@ export function OwnershipChecker({ username, children }: OwnershipCheckerProps) 
                     setIsOwner(false)
                 }
             } catch (error) {
-                console.error('Error checking ownership:', error)
+                logError('Error checking ownership:', error)
                 setIsOwner(false)
             } finally {
                 setOwnershipLoading(false)

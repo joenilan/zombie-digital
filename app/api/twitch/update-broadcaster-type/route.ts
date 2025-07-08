@@ -1,11 +1,12 @@
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { debug, logError } from '@/lib/debug'
 
 const TWITCH_API_URL = "https://api.twitch.tv/helix";
 
 async function refreshTwitchToken(userId: string, refreshToken: string) {
-  console.log('Attempting to refresh token for broadcaster type update:', userId);
+  debug.api('Attempting to refresh token for broadcaster type update:', userId);
   
   const response = await fetch("https://id.twitch.tv/oauth2/token", {
     method: "POST",
@@ -22,12 +23,12 @@ async function refreshTwitchToken(userId: string, refreshToken: string) {
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error('Token refresh failed:', response.status, errorText);
+    logError(`Token refresh failed: ${response.status} - ${errorText}`);
     throw new Error(`Failed to refresh token: ${response.status} - ${errorText}`);
   }
 
   const data = await response.json();
-  console.log('Token refreshed successfully for broadcaster type update');
+  debug.api('Token refreshed successfully for broadcaster type update');
   
   // Update the database with new tokens
   const supabase = createRouteHandlerClient({ cookies });
@@ -41,7 +42,7 @@ async function refreshTwitchToken(userId: string, refreshToken: string) {
     .eq("twitch_id", userId);
 
   if (error) {
-    console.error('Failed to update tokens in database:', error);
+    logError('Failed to update tokens in database:', error);
     throw new Error('Failed to update tokens in database');
   }
 
@@ -52,7 +53,7 @@ export async function POST(request: Request) {
   try {
     const { userId } = await request.json();
     
-    console.log('Updating broadcaster type for user:', userId);
+    debug.api('Updating broadcaster type for user:', userId);
     
     if (!userId) {
       return new NextResponse("Missing userId parameter", { status: 400 });
@@ -78,11 +79,11 @@ export async function POST(request: Request) {
       .single();
 
     if (userError || !user) {
-      console.error('User not found:', userError);
+      logError('User not found:', userError);
       return new NextResponse("User not found", { status: 404 });
     }
 
-    console.log('Token expires at:', user.token_expires_at);
+    debug.api('Token expires at:', user.token_expires_at);
 
     let accessToken = user.provider_token;
 
@@ -96,7 +97,7 @@ export async function POST(request: Request) {
     
     // If token is expired, try to refresh it
     if (response.status === 401 && user.provider_refresh_token) {
-      console.log('Token expired, refreshing...');
+      debug.api('Token expired, refreshing...');
       try {
         accessToken = await refreshTwitchToken(userId, user.provider_refresh_token);
         headers = {
@@ -105,13 +106,13 @@ export async function POST(request: Request) {
         };
         response = await fetch(`${TWITCH_API_URL}/users?id=${userId}`, { headers });
       } catch (refreshError) {
-        console.error('Token refresh failed:', refreshError);
+        logError('Token refresh failed:', refreshError);
         return new NextResponse("Token refresh failed - please re-authenticate", { status: 401 });
       }
     }
     
     if (!response.ok) {
-      console.error('Failed to fetch user info:', response.status);
+      logError('Failed to fetch user info:', response.status);
       return new NextResponse(`Failed to fetch user info: ${response.status}`, { status: 500 });
     }
 
@@ -123,7 +124,7 @@ export async function POST(request: Request) {
     }
 
     const broadcasterType = twitchUser.broadcaster_type || 'none';
-    console.log('Fetched broadcaster type:', broadcasterType);
+    debug.api('Fetched broadcaster type:', broadcasterType);
 
     // Update the broadcaster type in the database
     const { error: updateError } = await supabase
@@ -132,11 +133,11 @@ export async function POST(request: Request) {
       .eq("twitch_id", userId);
 
     if (updateError) {
-      console.error('Failed to update broadcaster type:', updateError);
+      logError('Failed to update broadcaster type:', updateError);
       return new NextResponse(`Failed to update broadcaster type: ${updateError.message}`, { status: 500 });
     }
 
-    console.log('Broadcaster type updated successfully:', broadcasterType);
+    debug.api('Broadcaster type updated successfully:', broadcasterType);
 
     return NextResponse.json({ 
       success: true, 
@@ -144,7 +145,7 @@ export async function POST(request: Request) {
       message: `Broadcaster type updated to: ${broadcasterType}`
     });
   } catch (error) {
-    console.error("Error updating broadcaster type:", error);
+    logError("Error updating broadcaster type:", error);
     return new NextResponse(
       error instanceof Error ? error.message : "Internal Server Error",
       { status: 500 }

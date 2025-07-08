@@ -45,6 +45,7 @@ import { useAdminStore, type Feature, type UserRole, type PermissionLevel, type 
 import { LoadingSpinner } from '@/components/LoadingSpinner'
 import { CopyButton, DeleteButton, EditButton } from '@/components/ui/action-button'
 import { getFeatureIcon } from '@/lib/icons'
+import { logError } from '@/lib/debug'
 
 interface FeatureWithPermissions extends Feature {
     permissions: FeaturePermission[]
@@ -139,7 +140,7 @@ export default function FeaturesPage() {
             setFeatures(featuresData || [])
             setFeaturesWithPermissions(featuresWithPerms)
         } catch (error) {
-            console.error('Error fetching features with permissions:', error)
+            logError('Error fetching features with permissions:', error)
             toast.error('Failed to load features')
         } finally {
             setFeaturesLoading(false)
@@ -183,7 +184,7 @@ export default function FeaturesPage() {
 
             toast.success(`Updated ${role} permissions for ${featuresWithPermissions.find(f => f.feature_id === featureId)?.name}`)
         } catch (error) {
-            console.error('Error updating permission:', error)
+            logError('Error updating permission:', error)
             toast.error('Failed to update permission')
         }
     }
@@ -231,7 +232,7 @@ export default function FeaturesPage() {
             // Refresh to get the new permissions
             fetchFeaturesWithPermissions()
         } catch (error) {
-            console.error('Error creating feature:', error)
+            logError('Error creating feature:', error)
             toast.error('Failed to create feature')
         }
     }
@@ -257,7 +258,7 @@ export default function FeaturesPage() {
 
             toast.success(`Feature ${enabled ? 'enabled' : 'disabled'}`)
         } catch (error) {
-            console.error('Error toggling feature:', error)
+            logError('Error toggling feature:', error)
             toast.error('Failed to update feature')
         }
     }

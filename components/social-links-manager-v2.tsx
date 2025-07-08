@@ -20,6 +20,7 @@ import { useSocialLinksManagerStore } from '@/stores/useSocialLinksManagerStore'
 import { type IconStyle } from '@/stores/useThemeStore'
 import { type ColorScheme } from '@/lib/theme-system'
 import { useQuery } from '@tanstack/react-query'
+import { debug, logError } from '@/lib/debug'
 
 // Constants
 const ItemTypes = {
@@ -51,6 +52,12 @@ export type SocialLink = {
 
 // Official API hook for main user's Twitch status
 function useOfficialTwitchStats(userId: string) {
+  // Defensive: Only call API if userId is a valid Twitch ID (numeric string)
+  if (!userId || !/^\d+$/.test(userId)) {
+    // Not a valid Twitch ID, skip fetch
+    return { data: null, error: null, isLoading: false } as any;
+  }
+  debug.socialLinks(`[SocialLinksManagerV2] Fetching Twitch stats for: ${userId}`);
   return useQuery<{ isLive: boolean; viewers: number; title: string | null }, Error>({
     queryKey: ['official-twitch-stats', userId],
     queryFn: async () => {
@@ -289,7 +296,7 @@ const EditLinkDialog = ({
         },
       })
     } catch (error) {
-      console.error('Error updating link:', error)
+      logError('Error updating link:', error)
       toast.error('Failed to update link')
     }
   }
@@ -495,7 +502,7 @@ const AddLink = ({ userId, onAdd, open, onOpenChange }: {
         },
       })
     } catch (error) {
-      console.error('Error adding link:', error)
+      logError('Error adding link:', error)
       toast.error('Failed to add link')
     }
   }
@@ -612,7 +619,7 @@ const EmptyState = ({ onAddClick }: { onAddClick: () => void }) => {
 
 export function SocialLinksManagerV2({ initialLinks = [], twitchUserId, mainTwitchUsername, mainTwitchId, onLinksChange, iconStyle = 'colored', activeTheme }: {
   initialLinks: SocialLink[]
-  twitchUserId: string
+  twitchUserId: string // Pass the Twitch ID (numeric string) here
   mainTwitchUsername: string
   mainTwitchId: string
   onLinksChange?: (links: SocialLink[]) => void
@@ -694,7 +701,7 @@ export function SocialLinksManagerV2({ initialLinks = [], twitchUserId, mainTwit
         duration: 3000,
       })
     } catch (error) {
-      console.error('Error updating order:', error)
+      logError('Error updating order:', error)
       toast.error('Failed to update order')
     }
   }
@@ -721,7 +728,7 @@ export function SocialLinksManagerV2({ initialLinks = [], twitchUserId, mainTwit
         duration: 3000,
       })
     } catch (error) {
-      console.error('Error deleting link:', error)
+      logError('Error deleting link:', error)
       toast.error('Failed to delete link')
     }
   }
@@ -786,7 +793,7 @@ export function SocialLinksManagerV2({ initialLinks = [], twitchUserId, mainTwit
         },
       })
     } catch (error: any) {
-      console.error('Error adding link:', error)
+      logError('Error adding link:', error)
       toast.error('Failed to add link')
     }
   }

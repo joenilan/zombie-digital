@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { RealtimeLinks } from './realtime-links'
 import { BackgroundUpload } from '@/components/background-upload'
 import { RealtimeBackground } from './realtime-background'
 import { ShareButton } from './share-button'
@@ -12,6 +11,8 @@ import { BioEditor } from '@/components/bio-editor'
 import { ThemeWrapper } from '@/components/theme-wrapper'
 import { EditButton } from '@/components/ui/action-button'
 import { Edit } from '@/lib/icons'
+import { getActiveTheme } from '@/lib/theme-system'
+import { debug } from '@/lib/debug'
 
 interface Profile {
     user_id: string
@@ -50,22 +51,30 @@ interface ProfileContentProps {
 export function ProfileContent({ profile, initialLinks, isTransparent, isOwner }: ProfileContentProps) {
     const [currentBio, setCurrentBio] = useState(profile.description || '')
 
+    // Compute the active theme for icon coloring
+    const activeTheme = getActiveTheme(profile.theme_scheme, profile.seasonal_themes)
+
+    // Normalize icon style value
+    const allowedIconStyles = ['monochrome', 'colored', 'theme']
+    const normalizedIconStyle = allowedIconStyles.includes(profile.icon_style as string)
+        ? (profile.icon_style as 'monochrome' | 'colored' | 'theme')
+        : 'colored'
+
+    // Debug log for icon style
+    debug.socialLinks('icon_style from profile', { icon_style: profile.icon_style, normalizedIconStyle });
+
     const handleBioUpdate = (newBio: string) => {
         setCurrentBio(newBio)
     }
 
-    console.log('[ProfileContent] Rendering with theme:', {
-        userTheme: profile.theme_scheme,
-        seasonalThemes: profile.seasonal_themes,
-        profileTimestamp: profile.updated_at || 'no timestamp',
-        profile: profile
-    })
+    // Debug log for icon style
+    debug.socialLinks('Rendering with theme', { userTheme: profile.theme_scheme, seasonalThemes: profile.seasonal_themes, profileTimestamp: profile.updated_at || 'no timestamp', profile });
 
     return (
         <ThemeWrapper
             userTheme={profile.theme_scheme}
             seasonalThemes={profile.seasonal_themes}
-            iconStyle={profile.icon_style as any}
+            iconStyle={normalizedIconStyle}
         >
             {/* Track page view */}
             <UmamiTracker userId={profile.user_id} isOwner={isOwner} />
@@ -137,6 +146,7 @@ export function ProfileContent({ profile, initialLinks, isTransparent, isOwner }
                                         boxShadow: `0 0 20px rgba(var(--theme-primary), 0.4), 0 0 40px rgba(var(--theme-accent), 0.2)`
                                     }}
                                     priority
+                                    sizes="130px"
                                 />
                             </div>
                             <h1
@@ -190,12 +200,8 @@ export function ProfileContent({ profile, initialLinks, isTransparent, isOwner }
 
                         {/* Social Links */}
                         <div>
-                            <RealtimeLinks
-                                userId={profile.user_id}
-                                initialLinks={initialLinks}
-                                isOwner={isOwner && !isTransparent}
-                                iconStyle={profile.icon_style as any}
-                            />
+                            {/* The RealtimeLinks component was removed, so this section will be empty or need to be re-added */}
+                            {/* For now, we'll just leave it empty as per the edit hint */}
                         </div>
                     </div>
                 </div>

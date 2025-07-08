@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { logError } from '@/lib/debug'
 
 async function getAppAccessToken() {
   const clientId = process.env.NEXT_PUBLIC_TWITCH_CLIENT_ID;
@@ -53,7 +54,7 @@ export async function GET(request: Request) {
     );
 
     if (!response.ok) {
-      console.error("Twitch API error:", {
+      logError("Twitch API error:", {
         status: response.status,
         statusText: response.statusText,
       });
@@ -68,7 +69,7 @@ export async function GET(request: Request) {
       stream: data.data?.[0] || null,
     });
   } catch (error) {
-    console.error("Error checking Twitch status:", error);
+    logError("Error checking Twitch status:", error);
     return NextResponse.json(
       {
         error:

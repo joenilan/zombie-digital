@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
+import { logError } from '@/lib/debug'
 
 // Helper function to check feature access
 async function checkFeatureAccess(featureId: string, userId: string) {
@@ -94,7 +95,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json(link);
   } catch (error) {
-    console.error("Error creating social link:", error);
+    logError("Error creating social link:", error);
     return NextResponse.json(
       { error: "Error creating social link" },
       { status: 500 }
@@ -156,7 +157,7 @@ export async function GET(req: Request) {
 
     return NextResponse.json(links);
   } catch (error) {
-    console.error("Error fetching social links:", error);
+    logError("Error fetching social links:", error);
     return NextResponse.json(
       { error: "Error fetching social links" },
       { status: 500 }
@@ -176,7 +177,7 @@ export async function DELETE(req: Request) {
 
     return NextResponse.json(link);
   } catch (error) {
-    console.error("Error deleting social link:", error);
+    logError("Error deleting social link:", error);
     return NextResponse.json(
       { error: "Error deleting social link" },
       { status: 500 }

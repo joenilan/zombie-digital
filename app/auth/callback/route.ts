@@ -3,6 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { TWITCH_SCOPES } from "@/utils/twitch-constants";
+import { debug, logError } from '@/lib/debug'
 
 const DEBUG = true;
 
@@ -29,11 +30,11 @@ export async function GET(request: Request) {
   const requestUrl = new URL(request.url, baseUrl);
   const code = requestUrl.searchParams.get("code");
 
-  console.log("Auth callback request URL:", request.url);
-  console.log("Parsed code from query:", code);
+  debug.auth("Auth callback request URL:", request.url);
+  debug.auth("Parsed code from query:", code);
 
   if (DEBUG) {
-    console.log("Auth callback started", { hasCode: !!code });
+    debug.auth("Auth callback started", { hasCode: !!code });
   }
 
   // Verify environment variables
@@ -41,7 +42,7 @@ export async function GET(request: Request) {
   const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!supabaseUrl || !supabaseServiceKey) {
-    console.error("Missing environment variables:", {
+    logError("Missing environment variables:", {
       hasUrl: !!supabaseUrl,
       hasServiceKey: !!supabaseServiceKey,
     });
@@ -76,12 +77,12 @@ export async function GET(request: Request) {
       } = await supabase.auth.exchangeCodeForSession(code);
 
       if (sessionError) {
-        console.error("Session error:", sessionError);
+        logError("Session error:", sessionError);
         return NextResponse.redirect(`${requestUrl.origin}/?error=session`);
       }
 
       if (!session?.user) {
-        console.error("No session or user");
+        logError("No session or user");
         return NextResponse.redirect(`${requestUrl.origin}/?error=no_session`);
       }
 
@@ -89,7 +90,7 @@ export async function GET(request: Request) {
       const { user } = session;
       const metadata = user.user_metadata;
 
-      console.log("Processing user data", {
+      debug.auth("Processing user data", {
         id: user.id,
         metadata: metadata,
       });
@@ -104,7 +105,7 @@ export async function GET(request: Request) {
             .maybeSingle();
 
         if (checkError && checkError.code !== "PGRST116") {
-          console.error("Error checking existing user:", checkError);
+          logError("Error checking existing user:", checkError);
         }
 
         // Get the OAuth tokens from the session
@@ -114,11 +115,11 @@ export async function GET(request: Request) {
         } = await supabase.auth.getSession();
 
         if (oauthError) {
-          console.error("OAuth session error:", oauthError);
+          logError("OAuth session error:", oauthError);
         }
 
         // Log the full session data to see what we get from Twitch
-        console.log("Full OAuth session:", oauthSession);
+        debug.auth("Full OAuth session:", oauthSession);
 
         // Prepare user data with scopes
         const userData = {
@@ -150,16 +151,16 @@ export async function GET(request: Request) {
           is_anonymous: false,
         };
 
-        console.log("Saving user data with tokens:", {
+        debug.auth("Saving user data with tokens:", {
           id: userData.id,
           provider_token: !!userData.provider_token,
           provider_refresh_token: !!userData.provider_refresh_token,
           provider_scopes: userData.provider_scopes,
         });
 
-        console.log("Prepared userData for insert/update:", userData);
-        console.log("site_role value and type:", userData.site_role, typeof userData.site_role);
-        console.log("provider_scopes value and type:", userData.provider_scopes, Array.isArray(userData.provider_scopes));
+        debug.auth("Prepared userData for insert/update:", userData);
+        debug.auth("site_role value and type:", userData.site_role, typeof userData.site_role);
+        debug.auth("provider_scopes value and type:", userData.provider_scopes, Array.isArray(userData.provider_scopes));
 
         let result;
 
@@ -183,8 +184,8 @@ export async function GET(request: Request) {
         }
 
         if (result.error) {
-          console.error("Error managing user data (full error):", result.error);
-          console.error("userData that caused error:", userData);
+          logError("Error managing user data (full error):", result.error);
+          logError("userData that caused error:", userData);
           return NextResponse.redirect(
             `${requestUrl.origin}/login?error=db_error&error_message=${encodeURIComponent(result.error.message)}`
           );
@@ -198,13 +199,13 @@ export async function GET(request: Request) {
           .single();
 
         if (verifyError || !verifyUser) {
-          console.error("Error verifying user data:", verifyError);
+          logError("Error verifying user data:", verifyError);
           return NextResponse.redirect(
             `${requestUrl.origin}/login?error=verification_failed`
           );
         }
 
-        console.log("User managed successfully", {
+        debug.auth("User managed successfully", {
           userId: verifyUser.id,
           twitch_id: verifyUser.twitch_id,
           operation: existingTwitchUser ? "updated" : "inserted",
@@ -220,10 +221,10 @@ export async function GET(request: Request) {
         });
 
         if (updateError) {
-          console.error("Error updating user metadata:", updateError);
+          logError("Error updating user metadata:", updateError);
         }
 
-        console.log("Updated user metadata:", {
+        debug.auth("Updated user metadata:", {
           role: verifyUser.site_role,
           metadata: metadata,
         });
@@ -238,17 +239,17 @@ export async function GET(request: Request) {
 
         return response;
       } catch (error) {
-        console.error("Error processing user data:", error);
+        logError("Error processing user data:", error);
         return NextResponse.redirect(
           `${requestUrl.origin}/login?error=unknown`
         );
       }
     } catch (error) {
-      console.error("Error processing user data:", error);
+      logError("Error processing user data:", error);
       return NextResponse.redirect(`${requestUrl.origin}/login?error=unknown`);
     }
   }
 
-  console.log("No code provided in callback");
+  debug.auth("No code provided in callback");
   return NextResponse.redirect(`${requestUrl.origin}/login?error=no_code`);
 }

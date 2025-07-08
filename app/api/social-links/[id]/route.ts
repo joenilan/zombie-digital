@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { logError } from '@/lib/debug'
 
 /**
  * @swagger
@@ -31,7 +32,7 @@ export async function DELETE(
 
     return NextResponse.json(link);
   } catch (error) {
-    console.error("Error deleting social link:", error);
+    logError('Error deleting social link:', error);
     return NextResponse.json(
       { error: "Error deleting social link" },
       { status: 500 }

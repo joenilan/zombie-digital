@@ -24,6 +24,7 @@ import {
   spinAnimation
 } from "@/lib/animations";
 import { ViewButton } from '@/components/ui/action-button'
+import { debug, logError, logWarning } from '@/lib/debug'
 
 
 interface TwitchStats {
@@ -127,6 +128,7 @@ export default function DashboardPage() {
 
   const fetchStats = useCallback(async () => {
     if (!user?.twitch_id) return;
+    debug.dashboard('Fetching Twitch stats for', user.twitch_id);
 
     try {
       // First, update the broadcaster type if it's not set
@@ -140,7 +142,7 @@ export default function DashboardPage() {
         if (updateResponse.ok) {
           const updateResult = await updateResponse.json();
         } else {
-          console.warn('Failed to update broadcaster type:', updateResponse.status);
+          logWarning('Failed to update broadcaster type', updateResponse.status);
         }
       }
 
@@ -149,7 +151,7 @@ export default function DashboardPage() {
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('Stats API error:', response.status, errorText);
+        logError('Stats API error', { status: response.status, errorText });
 
         // Use auth error handler for authentication errors
         const authErrorHandled = await handleAuthError({
@@ -173,7 +175,7 @@ export default function DashboardPage() {
         throw new Error('Invalid stats data received');
       }
     } catch (err) {
-      console.error('Error fetching stats:', err);
+      logError('Error fetching stats', err);
       const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
       setError(errorMessage);
       setStats(null);

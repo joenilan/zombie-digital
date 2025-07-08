@@ -15,6 +15,7 @@ import {
   staggerItem
 } from "@/lib/animations";
 import { AlertCircle } from '@/lib/icons'
+import { debug, logError } from '@/lib/debug'
 
 interface PageProps {
   params: {
@@ -85,10 +86,10 @@ export default function ProfilePage({ params, searchParams }: PageProps) {
 
       if (!profileError && profileData) {
         setProfile(profileData)
-        console.log('[Profile] Data refreshed:', profileData)
+        debug.socialLinks('Profile data refreshed', profileData)
       }
     } catch (err) {
-      console.error('Error refreshing profile data:', err)
+      logError('Error refreshing profile data:', err)
     }
   }
 
@@ -133,6 +134,7 @@ export default function ProfilePage({ params, searchParams }: PageProps) {
         }
 
         setProfile(profileData)
+        debug.socialLinks('Profile data refreshed', profileData)
 
         // Get public social links (no auth needed)
         const { data: linksData, error: linksError } = await supabase
@@ -142,14 +144,14 @@ export default function ProfilePage({ params, searchParams }: PageProps) {
           .order('order_index', { ascending: true })
 
         if (linksError) {
-          console.error('Error fetching links:', linksError)
+          logError('Error fetching links:', linksError)
           // Don't fail the whole page if links fail to load
           setInitialLinks([])
         } else {
           setInitialLinks(linksData || [])
         }
       } catch (err) {
-        console.error('Error fetching profile data:', err)
+        logError('Error fetching profile data:', err)
         setError('Failed to load profile')
       } finally {
         setLoading(false)
@@ -165,9 +167,8 @@ export default function ProfilePage({ params, searchParams }: PageProps) {
   useEffect(() => {
     if (!profile?.user_id) return
 
-    console.log('[Profile] Setting up real-time subscription for user_id:', profile.user_id)
-
-    const channel = supabase
+    debug.theme('Setting up real-time subscription', { user_id: profile.user_id })
+    supabase
       .channel(`profile_theme_updates_${profile.user_id}`)
       .on(
         'postgres_changes',
@@ -178,21 +179,10 @@ export default function ProfilePage({ params, searchParams }: PageProps) {
           filter: `id=eq.${profile.user_id}`
         },
         async (payload) => {
-          console.log('[Profile] Theme update detected:', {
-            payload,
-            old: payload.old,
-            new: payload.new
-          })
-
+          debug.theme('Theme update detected', { payload, old: payload.old, new: payload.new })
           // Update profile with new theme data
           const newRecord = payload.new as any
           if (newRecord) {
-            console.log('[Profile] Updating profile state with new theme data:', {
-              theme_scheme: newRecord.theme_scheme,
-              seasonal_themes: newRecord.seasonal_themes,
-              icon_style: newRecord.icon_style
-            })
-
             setProfile(prevProfile => {
               if (!prevProfile) return prevProfile
               const updatedProfile = {
@@ -201,19 +191,19 @@ export default function ProfilePage({ params, searchParams }: PageProps) {
                 seasonal_themes: newRecord.seasonal_themes,
                 icon_style: newRecord.icon_style
               }
-              console.log('[Profile] Profile state updated:', updatedProfile)
               return updatedProfile
             })
           }
         }
       )
-      .subscribe((status) => {
-        console.log('[Profile] Real-time subscription status:', status)
+      .subscribe((status, err) => {
+        if (err) {
+          logError('Real-time subscription error:', err)
+        }
       })
 
     return () => {
-      console.log('[Profile] Cleaning up real-time subscription')
-      channel.unsubscribe()
+      debug.theme('Cleaning up real-time subscription')
     }
   }, [profile?.user_id, supabase])
 
@@ -225,8 +215,6 @@ export default function ProfilePage({ params, searchParams }: PageProps) {
       if (e.key === 'theme-update' && e.newValue) {
         try {
           const update = JSON.parse(e.newValue)
-          console.log('[Profile] Cross-tab theme update detected:', update)
-
           // Update profile state with new theme
           setProfile(prevProfile => {
             if (!prevProfile) return prevProfile
@@ -241,11 +229,10 @@ export default function ProfilePage({ params, searchParams }: PageProps) {
               updatedProfile.icon_style = update.style
             }
 
-            console.log('[Profile] Profile updated via cross-tab communication:', updatedProfile)
             return updatedProfile
           })
         } catch (error) {
-          console.error('[Profile] Error parsing cross-tab theme update:', error)
+          logError('Error parsing cross-tab theme update:', error)
         }
       }
     }
@@ -257,8 +244,6 @@ export default function ProfilePage({ params, searchParams }: PageProps) {
         try {
           const update = JSON.parse(updateData)
           if (Date.now() - update.timestamp < 500) { // Only if very recent
-            console.log('[Profile] Same-tab theme update detected:', update)
-
             setProfile(prevProfile => {
               if (!prevProfile) return prevProfile
 
@@ -272,12 +257,11 @@ export default function ProfilePage({ params, searchParams }: PageProps) {
                 updatedProfile.icon_style = update.style
               }
 
-              console.log('[Profile] Profile updated via same-tab detection:', updatedProfile)
               return updatedProfile
             })
           }
         } catch (error) {
-          console.error('[Profile] Error parsing same-tab theme update:', error)
+          logError('Error parsing same-tab theme update:', error)
         }
       }
     }
@@ -297,7 +281,6 @@ export default function ProfilePage({ params, searchParams }: PageProps) {
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (!document.hidden && profile) {
-        console.log('[Profile] Page visible again, refreshing data')
         refreshProfileData()
       }
     }

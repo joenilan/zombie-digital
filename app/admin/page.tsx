@@ -16,6 +16,7 @@ import {
   scaleIn,
   pulseAnimation
 } from "@/lib/animations";
+import { logError } from '@/lib/debug'
 
 // Dynamic import for heavy analytics component
 const AdminAnalytics = dynamicImport(() => import('@/components/admin-analytics').then(mod => ({ default: mod.AdminAnalytics })), {
@@ -58,7 +59,7 @@ export default function AdminPage() {
         setUserCount(users || 0)
         setNotificationCount(notifications || 0)
       } catch (error) {
-        console.error('Error fetching admin data:', error)
+        logError('Error fetching admin data:', error)
       } finally {
         setLoading(false)
       }

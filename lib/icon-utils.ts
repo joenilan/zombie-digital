@@ -1,6 +1,7 @@
 import { getPlatformColor } from '@/lib/icons'
 import { type IconStyle } from '@/stores/useThemeStore'
 import { type ColorScheme } from '@/lib/theme-system'
+import { debug } from '@/lib/debug'
 
 /**
  * Get icon styles based on the icon style setting
@@ -14,7 +15,8 @@ export function getIconStyle(
     case 'colored':
       return { color: getPlatformColor(platform) }
     case 'theme':
-      return activeTheme ? { color: activeTheme.colors.primary } : {}
+      debug.theme('getIconStyle', { platform, iconStyle, themeColor: activeTheme?.colors.primary })
+      return activeTheme ? { color: activeTheme.colors.primary, fill: activeTheme.colors.primary } : {}
     case 'monochrome':
     default:
       return {} // Use default CSS colors (white/gray)
