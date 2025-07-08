@@ -19,6 +19,7 @@ import { getIconStyle } from '@/lib/icon-utils'
 import { useSocialLinksManagerStore, type SocialLink } from '@/stores/useSocialLinksManagerStore'
 import { type IconStyle } from '@/stores/useThemeStore'
 import { type ColorScheme } from '@/lib/theme-system'
+import { useQuery } from '@tanstack/react-query'
 
 // Constants
 const ItemTypes = {
@@ -35,6 +36,52 @@ interface DraggableLinkProps {
   isDragging: boolean
   iconStyle?: IconStyle
   activeTheme?: ColorScheme | null
+}
+
+// DecAPI hooks for Twitch info
+function useTwitchUptime(channel: string) {
+  return useQuery<{ live: boolean; uptime: string | null }, Error>({
+    queryKey: ['twitch-uptime', channel],
+    queryFn: async () => {
+      const res = await fetch(`https://decapi.me/twitch/uptime/${channel}`)
+      if (!res.ok) throw new Error('DecAPI error')
+      const text = await res.text()
+      if (text.includes('offline')) {
+        return { live: false, uptime: null }
+      }
+      return { live: true, uptime: text }
+    },
+    staleTime: 60_000,
+    retry: 1,
+  })
+}
+function useTwitchViewerCount(channel: string) {
+  return useQuery<number | null, Error>({
+    queryKey: ['twitch-viewercount', channel],
+    queryFn: async () => {
+      const res = await fetch(`https://decapi.me/twitch/viewercount/${channel}`)
+      if (!res.ok) throw new Error('DecAPI error')
+      const text = await res.text()
+      if (text.includes('offline')) return null
+      return parseInt(text, 10)
+    },
+    staleTime: 60_000,
+    retry: 1,
+  })
+}
+function useTwitchTitle(channel: string) {
+  return useQuery<string | null, Error>({
+    queryKey: ['twitch-title', channel],
+    queryFn: async () => {
+      const res = await fetch(`https://decapi.me/twitch/title/${channel}`)
+      if (!res.ok) throw new Error('DecAPI error')
+      const text = await res.text()
+      if (text.includes('offline')) return null
+      return text
+    },
+    staleTime: 60_000,
+    retry: 1,
+  })
 }
 
 const DraggableLink = ({ link, index, moveLink, onDelete, onDrop, onEdit, isDragging, iconStyle = 'colored', activeTheme }: DraggableLinkProps) => {
@@ -83,6 +130,26 @@ const DraggableLink = ({ link, index, moveLink, onDelete, onDrop, onEdit, isDrag
   const handleDoubleClick = () => {
     onEdit(link)
   }
+
+  // --- DecAPI Twitch info for secondary Twitch links ---
+  // Only show for platform 'twitch' and not the main user's own account
+  let twitchChannel = ''
+  if (link.platform === 'twitch') {
+    // Try to extract the channel name from the URL
+    try {
+      const url = new URL(link.url)
+      twitchChannel = url.pathname.replace(/^\//, '').toLowerCase()
+    } catch {
+      // fallback: try to use the title or url as channel name
+      twitchChannel = link.title?.toLowerCase() || ''
+    }
+  }
+  // Assume main user's Twitch username is passed via activeTheme?.mainTwitchUsername (or similar prop if available)
+  // For now, just show DecAPI info for all Twitch links
+  const showTwitchInfo = link.platform === 'twitch' && twitchChannel
+  const { data: uptime, isLoading: uptimeLoading, isError: uptimeError } = useTwitchUptime(twitchChannel)
+  const { data: viewers, isLoading: viewersLoading, isError: viewersError } = useTwitchViewerCount(twitchChannel)
+  const { data: title, isLoading: titleLoading, isError: titleError } = useTwitchTitle(twitchChannel)
 
   return (
     <div
@@ -133,6 +200,22 @@ const DraggableLink = ({ link, index, moveLink, onDelete, onDrop, onEdit, isDrag
               <ExternalLink className="w-3 h-3" />
             </a>
           </div>
+          {/* --- Twitch status/info for secondary Twitch links --- */}
+          {showTwitchInfo && !uptimeLoading && !uptimeError && uptime && typeof uptime === 'object' && 'live' in uptime && (
+            <div className="flex items-center gap-2 mt-1 text-xs">
+              {uptime.live ? (
+                <span className="text-green-500 font-semibold">LIVE{uptime.uptime ? ` (${uptime.uptime})` : ''}</span>
+              ) : (
+                <span className="text-gray-400">Offline</span>
+              )}
+              {uptime.live && !viewersLoading && !viewersError && typeof viewers === 'number' && (
+                <span className="text-cyan-400 ml-2">👁️ {viewers}</span>
+              )}
+              {uptime.live && !titleLoading && !titleError && typeof title === 'string' && title && (
+                <span className="ml-2 text-foreground/70 truncate max-w-[180px]">{title}</span>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
