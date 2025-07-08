@@ -4,6 +4,8 @@ export interface EmoteSize {
   label: string
 }
 
+export type VariantStyle = 'hue' | 'vibrant' | 'pastel' | 'solid'
+
 export interface ProcessingOptions {
   hueShift?: number
   saturation?: number
@@ -11,6 +13,7 @@ export interface ProcessingOptions {
   contrast?: number
   outputFormat?: 'png' | 'gif' | 'webp'
   quality?: number
+  variantStyle?: VariantStyle // NEW
 }
 
 export interface ProcessedEmoteData {
@@ -45,6 +48,14 @@ export const TWITCH_SUB_BADGE_SIZES: EmoteSize[] = [
   { width: 36, height: 36, label: '36x36' },
   { width: 72, height: 72, label: '72x72' }
 ]
+
+// Extend ProcessingOptions for solid overlays
+// interface SolidPreset {
+//   name: string
+//   options: ProcessingOptions
+//   blendColor?: string // e.g. '#ff69b4'
+//   blendAlpha?: number // 0.0 - 1.0
+// }
 
 export class EmoteProcessor {
   private canvas: HTMLCanvasElement
@@ -289,7 +300,7 @@ export class EmoteProcessor {
   }
 
   /**
-   * Generate color variations by shifting hue
+   * Generate color variations by shifting hue or using other styles
    */
   async generateColorVariations(
     variationCount: number = 6,
@@ -302,27 +313,38 @@ export class EmoteProcessor {
     sizes: Record<string, string>
   }[]> {
     const variations = []
-    
+    const style = baseOptions.variantStyle || 'hue'
+
     // Calculate evenly distributed hue shifts across the color wheel
     const hueStep = 360 / variationCount
     const selectedHues = Array.from({ length: variationCount }, (_, i) => Math.round(i * hueStep))
 
-    // Generate variations
     for (let i = 0; i < variationCount; i++) {
       const hueShift = selectedHues[i]
-      const options: ProcessingOptions = {
-        ...baseOptions,
-        hueShift,
-        saturation: 110, // Slight saturation boost
-        brightness: 100
-      }
+      let options: ProcessingOptions = { ...baseOptions, hueShift }
+      let colorName = this.getColorName(hueShift)
 
-      // Get color name based on hue
-      const colorName = this.getColorName(hueShift)
+      if (style === 'solid') {
+        options.saturation = 200
+        options.brightness = 120
+        options.contrast = 110
+      } else if (style === 'vibrant') {
+        options.saturation = 150
+        options.contrast = 120
+        options.brightness = 105
+      } else if (style === 'pastel') {
+        options.saturation = 60
+        options.brightness = 120
+        options.contrast = 100
+      } else {
+        // Default hue
+        options.saturation = 110
+        options.brightness = 100
+        options.contrast = 100
+      }
 
       const id = `variation-${i}`
       const processedSizes = await this.processToSizes(sizes, options)
-      
       variations.push({
         id,
         name: colorName,

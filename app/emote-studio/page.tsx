@@ -7,7 +7,7 @@ import { Upload, Settings, Download, Eye, AlertTriangle, Shield, Clock, FileImag
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { LoadingSpinner } from '@/components/LoadingSpinner'
-import { processBatchEmotes, ProcessedEmoteData as OriginalProcessedEmoteData, ProcessingOptions, TWITCH_EMOTE_SIZES, TWITCH_SUB_BADGE_SIZES } from '@/lib/emote-processor'
+import { processBatchEmotes, ProcessedEmoteData as OriginalProcessedEmoteData, ProcessingOptions, TWITCH_EMOTE_SIZES, TWITCH_SUB_BADGE_SIZES, VariantStyle } from '@/lib/emote-processor'
 import { CopyButton, DeleteButton, ViewButton, ActionButtonWithProvider } from '@/components/ui/action-button'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import {
@@ -137,6 +137,7 @@ export default function EmoteStudioPage() {
         generateVariations: false,
         variationCount: 12
     })
+    const [variantStyle, setVariantStyle] = useState<VariantStyle>('hue')
     const [userRole, setUserRole] = useState<string | null>(null)
     const [mode, setMode] = useState<'emote' | 'subbadge'>('emote')
 
@@ -144,11 +145,26 @@ export default function EmoteStudioPage() {
 
     const { getRootProps, getInputProps, isDragActive } = useDropzone({
         onDrop: (acceptedFiles: FileWithPath[]) => {
+            let animatedAlreadyQueued = uploadedFiles.some(isAnimatedFile)
             const validFiles = acceptedFiles.filter((file: File) => {
                 const validation = validateEmoteFile(file)
                 if (!validation.valid) {
                     toast.error(validation.error)
                     return false
+                }
+                // Check for duplicates by name and size
+                const isDuplicate = uploadedFiles.some(f => f.name === file.name && f.size === file.size)
+                if (isDuplicate) {
+                    toast.error('This file is already in your queue.')
+                    return false
+                }
+                // Only allow one animated emote at a time
+                if (isAnimatedFile(file)) {
+                    if (animatedAlreadyQueued) {
+                        toast.error('You can only upload one animated emote at a time.')
+                        return false
+                    }
+                    animatedAlreadyQueued = true
                 }
                 return true
             })
@@ -188,10 +204,12 @@ export default function EmoteStudioPage() {
                     generateVariations?: boolean
                     variationCount?: number
                     sizes?: typeof sizes
+                    variantStyle?: VariantStyle
                 } = {
                     generateVariations: settings.generateVariations,
                     variationCount: settings.variationCount,
-                    sizes
+                    sizes,
+                    variantStyle
                 }
                 const staticResults = await processBatchEmotes(staticFiles, options)
                 // Add uploadedAt to each static emote
@@ -236,7 +254,7 @@ export default function EmoteStudioPage() {
         } finally {
             setIsProcessing(false)
         }
-    }, [uploadedFiles, settings, mode])
+    }, [uploadedFiles, settings, mode, variantStyle])
 
     const handleDownloadEmoteAsZip = useCallback(async (emote: ProcessedEmoteData) => {
         try {
@@ -292,42 +310,36 @@ export default function EmoteStudioPage() {
         return () => { isMounted = false }
     }, [])
 
-    // Auto-reprocess on mode change
+    // Update the auto-process useEffect to only trigger for static files (not animated)
     useEffect(() => {
         if (uploadedFiles.length === 0) return;
-        // Only reprocess if not currently processing
         if (isProcessing) return;
-        // Re-run processEmotes logic
-        (async () => {
-            setIsProcessing(true);
-            try {
-                const animatedFiles = uploadedFiles.filter(isAnimatedFile);
-                const staticFiles = uploadedFiles.filter(f => !isAnimatedFile(f));
-                const processed: ProcessedEmoteData[] = [];
+        // Only auto-process if there are new static files (not animated)
+        const staticFiles = uploadedFiles.filter(f => !isAnimatedFile(f));
+        if (staticFiles.length > 0) {
+            // Only process static files automatically
+            (async () => {
                 const sizes = mode === 'emote' ? TWITCH_EMOTE_SIZES : TWITCH_SUB_BADGE_SIZES;
-                if (staticFiles.length > 0) {
-                    const options: ProcessingOptions & {
-                        generateVariations?: boolean;
-                        variationCount?: number;
-                        sizes?: typeof sizes;
-                    } = {
-                        generateVariations: settings.generateVariations,
-                        variationCount: settings.variationCount,
-                        sizes
-                    };
-                    const staticResults = await processBatchEmotes(staticFiles, options);
-                    processed.push(...staticResults.map(emote => ({ ...emote, uploadedAt: Date.now() })));
-                }
-                // Animated emotes logic (if any) can be added here if needed
-                setProcessedEmotes(processed);
-                toast.success(`Regenerated for ${mode === 'emote' ? 'Emote' : 'Badge'} sizes`);
-            } catch (error) {
-                toast.error('Failed to regenerate emotes for new mode');
-            } finally {
-                setIsProcessing(false);
-            }
-        })();
-    }, [mode]);
+                const options: ProcessingOptions & {
+                    generateVariations?: boolean;
+                    variationCount?: number;
+                    sizes?: typeof sizes;
+                    variantStyle?: VariantStyle;
+                } = {
+                    generateVariations: settings.generateVariations,
+                    variationCount: settings.variationCount,
+                    sizes,
+                    variantStyle
+                };
+                const staticResults = await processBatchEmotes(staticFiles, options);
+                setProcessedEmotes(prev => [
+                    ...staticResults,
+                    ...prev.filter(e => isAnimatedFile(e.originalFile))
+                ]);
+            })();
+        }
+        // Do NOT auto-process animated files
+    }, [uploadedFiles, mode, variantStyle]);
 
     const orderedSizeKeys: string[] = (mode === 'emote')
         ? ['28x28', '56x56', '112x112']
@@ -375,6 +387,16 @@ export default function EmoteStudioPage() {
             </div>
         );
     };
+
+    const handleVariantSliderRelease = useCallback(() => {
+        if (!settings.generateVariations) return;
+        if (isProcessing) return;
+        // Only reprocess static files
+        if (uploadedFiles.some(f => !isAnimatedFile(f))) {
+            // Trigger reprocessing for static emotes/badges
+            processEmotes();
+        }
+    }, [settings.generateVariations, isProcessing, uploadedFiles, processEmotes]);
 
     return (
         <>
@@ -545,18 +567,47 @@ export default function EmoteStudioPage() {
                                             Color Variations
                                         </button>
                                         {settings.generateVariations && (
-                                            <div className="flex items-center gap-4 mt-3 ml-1">
-                                                <label className="block text-xs text-gray-400">Number of variants</label>
-                                                <input
-                                                    type="range"
-                                                    min="2"
-                                                    max="50"
-                                                    value={settings.variationCount}
-                                                    onChange={e => setSettings(prev => ({ ...prev, variationCount: parseInt(e.target.value) }))}
-                                                    className="w-32"
-                                                />
-                                                <span className="text-lg font-medium text-white">{settings.variationCount}</span>
-                                            </div>
+                                            <>
+                                                <div className="flex items-center gap-4 mt-3 ml-1">
+                                                    <label className="block text-xs text-gray-400">Number of variants</label>
+                                                    <input
+                                                        type="range"
+                                                        min="2"
+                                                        max="50"
+                                                        value={settings.variationCount}
+                                                        onChange={e => setSettings(prev => ({ ...prev, variationCount: parseInt(e.target.value) }))}
+                                                        onMouseUp={handleVariantSliderRelease}
+                                                        onTouchEnd={handleVariantSliderRelease}
+                                                        className="w-32"
+                                                    />
+                                                    <span className="text-lg font-medium text-white">{settings.variationCount}</span>
+                                                </div>
+                                                <div className="mt-3 ml-1">
+                                                    <label className="block text-xs text-gray-400 mb-2">Variant Style</label>
+                                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                                        {[
+                                                            { value: 'hue', label: 'Standard', desc: 'Even hue shift' },
+                                                            { value: 'vibrant', label: 'Vibrant', desc: 'Bold, punchy colors' },
+                                                            { value: 'pastel', label: 'Pastel', desc: 'Soft, light colors' },
+                                                            { value: 'solid', label: 'Solid', desc: 'Hand-picked, distinct' },
+                                                        ].map(opt => (
+                                                            <button
+                                                                key={opt.value}
+                                                                type="button"
+                                                                onClick={() => setVariantStyle(opt.value as VariantStyle)}
+                                                                className={`flex flex-col items-center justify-center px-3 py-2 rounded-lg border transition-all text-xs font-semibold focus:outline-none
+                                                                    ${variantStyle === opt.value
+                                                                        ? 'bg-cyber-pink/80 border-cyber-pink text-white shadow-cyber'
+                                                                        : 'bg-glass/30 border-white/10 text-cyber-pink hover:bg-cyber-pink/20 hover:border-cyber-pink/40'}
+                                                                `}
+                                                            >
+                                                                <span className="text-sm font-bold mb-1">{opt.label}</span>
+                                                                <span className="text-[11px] opacity-80">{opt.desc}</span>
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            </>
                                         )}
                                     </div>
                                     {/* Process Button */}
@@ -628,49 +679,51 @@ export default function EmoteStudioPage() {
                                                     </div>
 
                                                     {/* Main Sizes */}
-                                                    <div className="mb-6">
-                                                        <h4 className="text-sm font-medium text-gray-300 mb-3">Standard Sizes</h4>
-                                                        <div className="grid grid-cols-3 gap-4">
-                                                            {orderedSizeKeys.map((size: string) => {
-                                                                const dataURL = emote.sizes[size]
-                                                                if (!dataURL) return null
-                                                                const actualSize = parseInt(size.split('x')[0])
-                                                                const containerPercent = (actualSize === 28 || actualSize === 18) ? 0.4 : (actualSize === 56 || actualSize === 36) ? 0.7 : 1
-                                                                return (
-                                                                    <div
-                                                                        key={size}
-                                                                        className="text-center cursor-pointer hover:bg-white/10 rounded-lg transition-colors"
-                                                                        onClick={() => {
-                                                                            const filename = generateEmoteFilename(emote.originalFile.name, size, undefined, 'png') // Always use PNG for download
-                                                                            downloadImageFromUrl(dataURL, filename)
-                                                                        }}
-                                                                        title={`Click to download ${size} version`}
-                                                                    >
-                                                                        <div className="bg-white/5 rounded-lg p-2 mb-2 flex items-center justify-center aspect-square">
-                                                                            <img
-                                                                                src={dataURL}
-                                                                                alt={`${size} emote`}
-                                                                                className="mx-auto object-contain"
-                                                                                style={{
-                                                                                    imageRendering: 'pixelated',
-                                                                                    width: `${containerPercent * 100}%`,
-                                                                                    height: `${containerPercent * 100}%`
-                                                                                }}
-                                                                            />
+                                                    {(emote.variations === undefined || emote.variations.length === 0) && (
+                                                        <div className="mb-6">
+                                                            <h4 className="text-sm font-medium text-gray-300 mb-3">Standard Sizes</h4>
+                                                            <div className="grid grid-cols-3 gap-4">
+                                                                {orderedSizeKeys.map((size: string) => {
+                                                                    const dataURL = emote.sizes[size]
+                                                                    if (!dataURL) return null
+                                                                    const actualSize = parseInt(size.split('x')[0])
+                                                                    const containerPercent = (actualSize === 28 || actualSize === 18) ? 0.4 : (actualSize === 56 || actualSize === 36) ? 0.7 : 1
+                                                                    return (
+                                                                        <div
+                                                                            key={size}
+                                                                            className="text-center cursor-pointer hover:bg-white/10 rounded-lg transition-colors"
+                                                                            onClick={() => {
+                                                                                const filename = generateEmoteFilename(emote.originalFile.name, size, undefined, 'png') // Always use PNG for download
+                                                                                downloadImageFromUrl(dataURL, filename)
+                                                                            }}
+                                                                            title={`Click to download ${size} version`}
+                                                                        >
+                                                                            <div className="bg-white/5 rounded-lg p-2 mb-2 flex items-center justify-center aspect-square">
+                                                                                <img
+                                                                                    src={dataURL}
+                                                                                    alt={`${size} emote`}
+                                                                                    className="mx-auto object-contain"
+                                                                                    style={{
+                                                                                        imageRendering: 'pixelated',
+                                                                                        width: `${containerPercent * 100}%`,
+                                                                                        height: `${containerPercent * 100}%`
+                                                                                    }}
+                                                                                />
+                                                                            </div>
+                                                                            <div className="text-xs text-gray-400">{size}</div>
                                                                         </div>
-                                                                        <div className="text-xs text-gray-400">{size}</div>
-                                                                    </div>
-                                                                )
-                                                            })}
+                                                                    )
+                                                                })}
+                                                            </div>
                                                         </div>
-                                                    </div>
+                                                    )}
 
                                                     {/* Color Variations */}
                                                     {emote.variations && emote.variations.length > 0 && (
                                                         <div>
                                                             <h4 className="text-sm font-medium text-gray-300 mb-2">Variations ({emote.variations.length})</h4>
                                                             <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-2">
-                                                                {emote.variations.map((variation, variationIndex) => (
+                                                                {emote.variations?.map((variation, variationIndex) => (
                                                                     <div key={variation.id} className="bg-glass/50 backdrop-blur-sm border border-white/5 rounded-lg p-2">
                                                                         <div className="flex items-center justify-between mb-1">
                                                                             <ViewButton
