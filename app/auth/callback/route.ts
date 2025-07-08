@@ -159,8 +159,8 @@ export async function GET(request: Request) {
         });
 
         debug.auth("Prepared userData for insert/update:", userData);
-        debug.auth("site_role value and type:", userData.site_role, typeof userData.site_role);
-        debug.auth("provider_scopes value and type:", userData.provider_scopes, Array.isArray(userData.provider_scopes));
+        debug.auth("site_role value and type:", { value: userData.site_role, type: typeof userData.site_role });
+        debug.auth("provider_scopes value and type:", { value: userData.provider_scopes, isArray: Array.isArray(userData.provider_scopes) });
 
         let result;
 

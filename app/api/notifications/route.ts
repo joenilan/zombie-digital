@@ -15,7 +15,7 @@ export async function GET() {
     .order("createdAt", { ascending: false });
 
   if (DEBUG && error) {
-    debug.api.log("GET notifications error:", error);
+    debug.api("GET notifications error:", error);
   }
 
   if (error) {
@@ -34,7 +34,7 @@ export async function POST(request: Request) {
   } = await supabase.auth.getSession();
 
   if (DEBUG && !session) {
-    debug.api.log("POST unauthorized: No session");
+    debug.api("POST unauthorized: No session");
   }
 
   if (!session) {
@@ -50,9 +50,9 @@ export async function POST(request: Request) {
 
   if (DEBUG) {
     if (userError) {
-      debug.api.log("POST user lookup error:", userError);
+      debug.api("POST user lookup error:", userError);
     }
-    debug.api.log("POST user role check:", {
+    debug.api("POST user role check:", {
       user,
       hasValidRole: user && ["owner", "admin"].includes(user.site_role),
     });
@@ -79,7 +79,7 @@ export async function POST(request: Request) {
     .single();
 
   if (DEBUG && error) {
-    debug.api.log("POST insert error:", error);
+    debug.api("POST insert error:", error);
   }
 
   if (error) {

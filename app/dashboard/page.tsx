@@ -142,7 +142,7 @@ export default function DashboardPage() {
         if (updateResponse.ok) {
           const updateResult = await updateResponse.json();
         } else {
-          logWarning('Failed to update broadcaster type', updateResponse.status);
+          logWarning('Failed to update broadcaster type', { data: updateResponse.status });
         }
       }
 

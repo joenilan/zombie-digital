@@ -74,7 +74,7 @@ async function refreshTwitchToken(userId: string, refreshToken: string) {
 
   const data = await response.json();
   debug.api('Token refreshed successfully');
-  debug.api('New token expires in:', data.expires_in, 'seconds');
+  debug.api('New token expires in:', { expiresIn: data.expires_in, unit: 'seconds' });
   
   // Update the database with new tokens
   const supabase = createRouteHandlerClient({ cookies });
