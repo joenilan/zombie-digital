@@ -21,10 +21,12 @@ class UmamiAnalytics {
       this.websiteId = websiteId
     } else {
       // Get the default website ID
+      // NOTE: Make sure your umami_website table has a row for your production domain (e.g., 'zombie.digital')
+      // and that RLS allows public inserts for analytics tables.
       const { data } = await this.supabase
         .from('umami_website')
         .select('website_id')
-        .eq('domain', 'localhost:3000')
+        .eq('domain', window.location.hostname)
         .single()
       
       this.websiteId = data?.website_id || null
