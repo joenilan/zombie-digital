@@ -19,6 +19,7 @@ import { motion, AnimatePresence, LayoutGroup } from 'framer-motion'
 import { Card, CardContent } from "@/components/ui/card"
 import { ViewButton } from '@/components/ui/action-button'
 import { TooltipProvider } from '@/components/ui/tooltip'
+import { useQuery } from '@tanstack/react-query'
 
 interface RealtimeLinksProps {
   userId: string
@@ -27,145 +28,307 @@ interface RealtimeLinksProps {
   iconStyle?: string
 }
 
-function TwitchLink({ link, username, iconStyle }: { link: SocialLink; username: string; iconStyle: IconStyle }) {
-  const {
-    isExpanded,
-    isLive,
-    streamInfo,
-    streamError,
-    setIsExpanded,
-    setIsLive,
-    setStreamInfo,
-    setStreamError
-  } = useRealtimeLinksStore()
-
-  useEffect(() => {
-    async function checkTwitchStatus() {
-      try {
-        const response = await fetch(`/api/twitch/status?username=${username}`)
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`)
-        }
-        const data = await response.json()
-        setIsLive(data.isLive)
-        setStreamInfo(data.stream)
-        setStreamError(null)
-      } catch (error) {
-        console.error('Error checking Twitch status:', error)
-        setStreamError(error instanceof Error ? error.message : 'Unknown error')
+// DecAPI hooks for Twitch info
+function useTwitchUptime(channel: string) {
+  return useQuery<{ live: boolean; uptime: string | null }, Error>({
+    queryKey: ['twitch-uptime', channel],
+    queryFn: async () => {
+      const res = await fetch(`https://decapi.me/twitch/uptime/${channel}`)
+      if (!res.ok) throw new Error('DecAPI error')
+      const text = await res.text()
+      if (text.includes('offline')) {
+        return { live: false, uptime: null }
       }
-    }
+      return { live: true, uptime: text }
+    },
+    staleTime: 60_000,
+    retry: 1,
+  })
+}
+function useTwitchViewerCount(channel: string) {
+  return useQuery<number | null, Error>({
+    queryKey: ['twitch-viewercount', channel],
+    queryFn: async () => {
+      const res = await fetch(`https://decapi.me/twitch/viewercount/${channel}`)
+      if (!res.ok) throw new Error('DecAPI error')
+      const text = await res.text()
+      if (text.includes('offline')) return null
+      return parseInt(text, 10)
+    },
+    staleTime: 60_000,
+    retry: 1,
+  })
+}
+function useTwitchTitle(channel: string) {
+  return useQuery<string | null, Error>({
+    queryKey: ['twitch-title', channel],
+    queryFn: async () => {
+      const res = await fetch(`https://decapi.me/twitch/title/${channel}`)
+      if (!res.ok) throw new Error('DecAPI error')
+      const text = await res.text()
+      if (text.includes('offline')) return null
+      return text
+    },
+    staleTime: 60_000,
+    retry: 1,
+  })
+}
 
-    const interval = setInterval(checkTwitchStatus, 60000) // Check every minute
-    checkTwitchStatus() // Initial check
+function TwitchLink({ link, username, iconStyle, mainTwitchChannel }: { link: SocialLink; username: string; iconStyle: IconStyle; mainTwitchChannel: string }) {
+  // Determine if this is the main user's own Twitch link
+  const isMainUserTwitch = username.toLowerCase() === mainTwitchChannel.toLowerCase()
 
-    return () => {
-      clearInterval(interval)
-    }
-  }, [username, setIsLive, setStreamInfo, setStreamError])
+  // If main user's link, use existing logic
+  if (isMainUserTwitch) {
+    const {
+      isExpanded,
+      isLive,
+      streamInfo,
+      streamError,
+      setIsExpanded,
+      setIsLive,
+      setStreamInfo,
+      setStreamError
+    } = useRealtimeLinksStore()
 
-  return (
-    <div
-      className="w-full backdrop-blur-[12px] rounded-lg border transition-all duration-300 overflow-hidden"
-      style={{
-        background: `linear-gradient(135deg, 
-          rgba(var(--theme-primary), 0.10) 0%, 
-          rgba(var(--theme-secondary), 0.05) 50%, 
-          rgba(var(--theme-accent), 0.10) 100%
-        )`,
-        borderColor: `var(--theme-border-primary)`,
-        borderWidth: '1px',
-        borderStyle: 'solid',
-        boxShadow: `
-          0 6px 20px rgba(var(--theme-primary), 0.15), 
-          0 3px 10px rgba(var(--theme-accent), 0.10),
-          inset 0 1px 0 rgba(var(--theme-accent), 0.15)
-        `
-      }}
-    >
-      {/* Header row: Twitch link */}
-      <a
-        href={link.url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="flex items-center justify-center gap-2 sm:gap-3 min-h-[2.5rem] p-3 sm:p-4 text-center group relative select-none transition-all duration-200 hover:bg-white/5 focus:bg-white/10 rounded-t-lg"
-        style={{ textDecoration: 'none' }}
+    useEffect(() => {
+      async function checkTwitchStatus() {
+        try {
+          const response = await fetch(`/api/twitch/status?username=${username}`)
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`)
+          }
+          const data = await response.json()
+          setIsLive(data.isLive)
+          setStreamInfo(data.stream)
+          setStreamError(null)
+        } catch (error) {
+          console.error('Error checking Twitch status:', error)
+          setStreamError(error instanceof Error ? error.message : 'Unknown error')
+        }
+      }
+
+      const interval = setInterval(checkTwitchStatus, 60000) // Check every minute
+      checkTwitchStatus() // Initial check
+
+      return () => {
+        clearInterval(interval)
+      }
+    }, [username, setIsLive, setStreamInfo, setStreamError])
+
+    return (
+      <div
+        className="w-full backdrop-blur-[12px] rounded-lg border transition-all duration-300 overflow-hidden"
+        style={{
+          background: `linear-gradient(135deg, 
+            rgba(var(--theme-primary), 0.10) 0%, 
+            rgba(var(--theme-secondary), 0.05) 50%, 
+            rgba(var(--theme-accent), 0.10) 100%
+          )`,
+          borderColor: `var(--theme-border-primary)`,
+          borderWidth: '1px',
+          borderStyle: 'solid',
+          boxShadow: `
+            0 6px 20px rgba(var(--theme-primary), 0.15), 
+            0 3px 10px rgba(var(--theme-accent), 0.10),
+            inset 0 1px 0 rgba(var(--theme-accent), 0.15)
+          `
+        }}
       >
-        <Twitch
-          className="w-4 h-4 sm:w-6 sm:h-6"
-          style={getIconStyle('twitch', iconStyle)}
-        />
-        <span className="font-medium text-sm sm:text-base" style={{ color: `rgb(var(--theme-foreground))` }}>
-          {link.title || link.platform}
-        </span>
-        {streamError ? (
-          <span className="text-xs text-red-500">
-            (Status check failed)
-          </span>
-        ) : isLive ? (
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-            <span className="text-sm font-medium text-red-500">LIVE</span>
-            {streamInfo?.viewer_count && (
-              <span className="text-xs text-muted-foreground">
-                {new Intl.NumberFormat().format(streamInfo.viewer_count)} viewers
-              </span>
-            )}
-          </div>
-        ) : (
-          <span className="text-xs text-muted-foreground">
-            (Offline)
-          </span>
-        )}
-      </a>
-      {/* Stream title if live */}
-      {isLive && streamInfo && (
-        <div className="px-4 pb-1 text-sm text-muted-foreground text-center">
-          {streamInfo.title}
-        </div>
-      )}
-      {/* Show Stream button as integrated footer, only when live */}
-      {isLive && (
-        <button
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="w-full flex items-center justify-center gap-2 text-sm py-2 border-t border-t-[var(--theme-border-subtle)] focus:outline-none focus:bg-white/5 hover:bg-white/10 transition-colors rounded-b-lg"
-          style={{ color: `rgba(var(--theme-foreground), 0.7)` }}
-          aria-label={isExpanded ? 'Hide Stream' : 'Show Stream'}
-          tabIndex={0}
-          type="button"
+        {/* Header row: Twitch link */}
+        <a
+          href={link.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center justify-center gap-2 sm:gap-3 min-h-[2.5rem] p-3 sm:p-4 text-center group relative select-none transition-all duration-200 hover:bg-white/5 focus:bg-white/10 rounded-t-lg"
+          style={{ textDecoration: 'none' }}
         >
-          <motion.div
-            animate={{ rotate: isExpanded ? 180 : 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            <ChevronDown className="w-4 h-4" />
-          </motion.div>
-          {isExpanded ? 'Hide Stream' : 'Show Stream'}
-        </button>
-      )}
-      {/* Expandable stream player */}
-      {isLive && (
-        <AnimatePresence>
-          {isExpanded && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="relative pt-[56.25%] mt-2 rounded-b-lg overflow-hidden bg-black/50"
-            >
-              <iframe
-                src={`https://player.twitch.tv/?channel=${username}&parent=${window.location.hostname}`}
-                frameBorder="0"
-                allowFullScreen
-                className="absolute top-0 left-0 w-full h-full"
-              />
-            </motion.div>
+          <Twitch
+            className="w-4 h-4 sm:w-6 sm:h-6"
+            style={getIconStyle('twitch', iconStyle)}
+          />
+          <span className="font-medium text-sm sm:text-base" style={{ color: `rgb(var(--theme-foreground))` }}>
+            {link.title || link.platform}
+          </span>
+          {streamError ? (
+            <span className="text-xs text-red-500">
+              (Status check failed)
+            </span>
+          ) : isLive ? (
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+              <span className="text-sm font-medium text-red-500">LIVE</span>
+              {streamInfo?.viewer_count && (
+                <span className="text-xs text-muted-foreground">
+                  {new Intl.NumberFormat().format(streamInfo.viewer_count)} viewers
+                </span>
+              )}
+            </div>
+          ) : (
+            <span className="text-xs text-muted-foreground">
+              (Offline)
+            </span>
           )}
-        </AnimatePresence>
-      )}
-    </div>
-  )
+        </a>
+        {/* Stream title if live */}
+        {isLive && streamInfo && (
+          <div className="px-4 pb-1 text-sm text-muted-foreground text-center">
+            {streamInfo.title}
+          </div>
+        )}
+        {/* Show Stream button as integrated footer, only when live */}
+        {isLive && (
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="w-full flex items-center justify-center gap-2 text-sm py-2 border-t border-t-[var(--theme-border-subtle)] focus:outline-none focus:bg-white/5 hover:bg-white/10 transition-colors rounded-b-lg"
+            style={{ color: `rgba(var(--theme-foreground), 0.7)` }}
+            aria-label={isExpanded ? 'Hide Stream' : 'Show Stream'}
+            tabIndex={0}
+            type="button"
+          >
+            <motion.div
+              animate={{ rotate: isExpanded ? 180 : 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              <ChevronDown className="w-4 h-4" />
+            </motion.div>
+            {isExpanded ? 'Hide Stream' : 'Show Stream'}
+          </button>
+        )}
+        {/* Expandable stream player */}
+        {isLive && (
+          <AnimatePresence>
+            {isExpanded && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="relative pt-[56.25%] mt-2 rounded-b-lg overflow-hidden bg-black/50"
+              >
+                <iframe
+                  src={`https://player.twitch.tv/?channel=${username}&parent=${window.location.hostname}`}
+                  frameBorder="0"
+                  allowFullScreen
+                  className="absolute top-0 left-0 w-full h-full"
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        )}
+      </div>
+    )
+  } else {
+    // Use DecAPI for secondary links
+    const { data: uptime, isLoading: uptimeLoading, isError: uptimeError } = useTwitchUptime(username)
+    const { data: viewers, isLoading: viewersLoading, isError: viewersError } = useTwitchViewerCount(username)
+    const { data: title, isLoading: titleLoading, isError: titleError } = useTwitchTitle(username)
+
+    return (
+      <div
+        className="w-full backdrop-blur-[12px] rounded-lg border transition-all duration-300 overflow-hidden"
+        style={{
+          background: `linear-gradient(135deg, 
+            rgba(var(--theme-primary), 0.10) 0%, 
+            rgba(var(--theme-secondary), 0.05) 50%, 
+            rgba(var(--theme-accent), 0.10) 100%
+          )`,
+          borderColor: `var(--theme-border-primary)`,
+          borderWidth: '1px',
+          borderStyle: 'solid',
+          boxShadow: `
+            0 6px 20px rgba(var(--theme-primary), 0.15), 
+            0 3px 10px rgba(var(--theme-accent), 0.10),
+            inset 0 1px 0 rgba(var(--theme-accent), 0.15)
+          `
+        }}
+      >
+        {/* Header row: Twitch link */}
+        <a
+          href={link.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center justify-center gap-2 sm:gap-3 min-h-[2.5rem] p-3 sm:p-4 text-center group relative select-none transition-all duration-200 hover:bg-white/5 focus:bg-white/10 rounded-t-lg"
+          style={{ textDecoration: 'none' }}
+        >
+          <Twitch
+            className="w-4 h-4 sm:w-6 sm:h-6"
+            style={getIconStyle('twitch', iconStyle)}
+          />
+          <span className="font-medium text-sm sm:text-base" style={{ color: `rgb(var(--theme-foreground))` }}>
+            {link.title || link.platform}
+          </span>
+          {uptimeLoading || viewersLoading || titleLoading ? (
+            <span className="text-xs text-muted-foreground">Loading...</span>
+          ) : uptimeError || viewersError || titleError ? (
+            <span className="text-xs text-red-500">Error fetching status</span>
+          ) : uptime?.live ? (
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+              <span className="text-sm font-medium text-red-500">LIVE</span>
+              {viewers && (
+                <span className="text-xs text-muted-foreground">
+                  {new Intl.NumberFormat().format(viewers)} viewers
+                </span>
+              )}
+            </div>
+          ) : (
+            <span className="text-xs text-muted-foreground">
+              (Offline)
+            </span>
+          )}
+        </a>
+        {/* Stream title if live */}
+        {uptime?.live && title && (
+          <div className="px-4 pb-1 text-sm text-muted-foreground text-center">
+            {title}
+          </div>
+        )}
+        {/* Show Stream button as integrated footer, only when live */}
+        {uptime?.live && (
+          <button
+            onClick={() => {
+              // This button is not expandable, so no state change needed here
+            }}
+            className="w-full flex items-center justify-center gap-2 text-sm py-2 border-t border-t-[var(--theme-border-subtle)] focus:outline-none focus:bg-white/5 hover:bg-white/10 transition-colors rounded-b-lg"
+            style={{ color: `rgba(var(--theme-foreground), 0.7)` }}
+            aria-label="Show Stream"
+            tabIndex={0}
+            type="button"
+          >
+            <motion.div
+              animate={{ rotate: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              <ChevronDown className="w-4 h-4" />
+            </motion.div>
+            Show Stream
+          </button>
+        )}
+        {/* Expandable stream player */}
+        {uptime?.live && (
+          <AnimatePresence>
+            {uptime?.live && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="relative pt-[56.25%] mt-2 rounded-b-lg overflow-hidden bg-black/50"
+              >
+                <iframe
+                  src={`https://player.twitch.tv/?channel=${username}&parent=${window.location.hostname}`}
+                  frameBorder="0"
+                  allowFullScreen
+                  className="absolute top-0 left-0 w-full h-full"
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        )}
+      </div>
+    )
+  }
 }
 
 // Type for the entire payload
@@ -389,7 +552,7 @@ export function RealtimeLinks({ userId, initialLinks, isOwner, iconStyle }: Real
                     exit={{ opacity: 0, y: -20 }}
                     transition={{ duration: 0.3 }}
                   >
-                    <TwitchLink link={link} username={username} iconStyle={(iconStyle as IconStyle) || 'colored'} />
+                    <TwitchLink link={link} username={username} iconStyle={(iconStyle as IconStyle) || 'colored'} mainTwitchChannel={link.twitch_channel || ''} />
                   </motion.div>
                 );
               } catch (error) {

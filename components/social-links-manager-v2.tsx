@@ -49,52 +49,6 @@ export type SocialLink = {
   twitch_channel?: string
 }
 
-// DecAPI hooks for Twitch info
-function useTwitchUptime(channel: string) {
-  return useQuery<{ live: boolean; uptime: string | null }, Error>({
-    queryKey: ['twitch-uptime', channel],
-    queryFn: async () => {
-      const res = await fetch(`https://decapi.me/twitch/uptime/${channel}`)
-      if (!res.ok) throw new Error('DecAPI error')
-      const text = await res.text()
-      if (text.includes('offline')) {
-        return { live: false, uptime: null }
-      }
-      return { live: true, uptime: text }
-    },
-    staleTime: 60_000,
-    retry: 1,
-  })
-}
-function useTwitchViewerCount(channel: string) {
-  return useQuery<number | null, Error>({
-    queryKey: ['twitch-viewercount', channel],
-    queryFn: async () => {
-      const res = await fetch(`https://decapi.me/twitch/viewercount/${channel}`)
-      if (!res.ok) throw new Error('DecAPI error')
-      const text = await res.text()
-      if (text.includes('offline')) return null
-      return parseInt(text, 10)
-    },
-    staleTime: 60_000,
-    retry: 1,
-  })
-}
-function useTwitchTitle(channel: string) {
-  return useQuery<string | null, Error>({
-    queryKey: ['twitch-title', channel],
-    queryFn: async () => {
-      const res = await fetch(`https://decapi.me/twitch/title/${channel}`)
-      if (!res.ok) throw new Error('DecAPI error')
-      const text = await res.text()
-      if (text.includes('offline')) return null
-      return text
-    },
-    staleTime: 60_000,
-    retry: 1,
-  })
-}
-
 // Official API hook for main user's Twitch status
 function useOfficialTwitchStats(userId: string) {
   return useQuery<{ isLive: boolean; viewers: number; title: string | null }, Error>({
@@ -191,26 +145,6 @@ const DraggableLink = ({ link, index, moveLink, onDelete, onDrop, onEdit, isDrag
         )}
       </div>
     ) : null
-  } else if (link.platform === 'twitch' && twitchChannel) {
-    // Use DecAPI for secondary links
-    const { data: uptime, isLoading: uptimeLoading, isError: uptimeError } = useTwitchUptime(twitchChannel)
-    const { data: viewers, isLoading: viewersLoading, isError: viewersError } = useTwitchViewerCount(twitchChannel)
-    const { data: title, isLoading: titleLoading, isError: titleError } = useTwitchTitle(twitchChannel)
-    statusContent = !uptimeLoading && !uptimeError && uptime && typeof uptime === 'object' && 'live' in uptime && (
-      <div className="flex items-center gap-2 mt-1 text-xs">
-        {uptime.live ? (
-          <span className="text-green-500 font-semibold">LIVE{uptime.uptime ? ` (${uptime.uptime})` : ''}</span>
-        ) : (
-          <span className="text-gray-400">Offline</span>
-        )}
-        {uptime.live && !viewersLoading && !viewersError && typeof viewers === 'number' && (
-          <span className="text-cyan-400 ml-2">👁️ {viewers}</span>
-        )}
-        {uptime.live && !titleLoading && !titleError && typeof title === 'string' && title && (
-          <span className="ml-2 text-foreground/70 truncate max-w-[180px]">{title}</span>
-        )}
-      </div>
-    )
   }
 
   return (
@@ -264,23 +198,6 @@ const DraggableLink = ({ link, index, moveLink, onDelete, onDrop, onEdit, isDrag
           </div>
           {/* --- Twitch status/info for secondary Twitch links --- */}
           {statusContent}
-          {/* --- Show Stream button and expanded content for Twitch links --- */}
-          {link.platform === 'twitch' && (
-            <div className="mt-2">
-              <button
-                type="button"
-                className="px-3 py-1 rounded-lg bg-cyber-cyan/10 text-cyber-cyan hover:bg-cyber-cyan/20 transition"
-                onClick={onToggleExpand}
-              >
-                {expanded ? 'Hide Stream' : 'Show Stream'}
-              </button>
-              {expanded && (
-                <div className="mt-2 p-3 rounded-lg bg-glass/30 border border-cyber-cyan/20">
-                  Stream preview here (embed or info)
-                </div>
-              )}
-            </div>
-          )}
         </div>
       </div>
 
