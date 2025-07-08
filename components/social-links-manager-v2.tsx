@@ -84,7 +84,26 @@ function useTwitchTitle(channel: string) {
   })
 }
 
-const DraggableLink = ({ link, index, moveLink, onDelete, onDrop, onEdit, isDragging, iconStyle = 'colored', activeTheme, expanded, onToggleExpand }: DraggableLinkProps & { expanded?: boolean, onToggleExpand?: () => void }) => {
+// Official API hook for main user's Twitch status
+function useOfficialTwitchStats(userId: string) {
+  return useQuery<{ isLive: boolean; viewers: number; title: string | null }, Error>({
+    queryKey: ['official-twitch-stats', userId],
+    queryFn: async () => {
+      const res = await fetch(`/api/twitch/stats?userId=${userId}`)
+      if (!res.ok) throw new Error('Twitch API error')
+      const data = await res.json()
+      return {
+        isLive: !!data.isLive,
+        viewers: data.viewer_count || 0,
+        title: data.title || null
+      }
+    },
+    staleTime: 30_000,
+    retry: 1,
+  })
+}
+
+const DraggableLink = ({ link, index, moveLink, onDelete, onDrop, onEdit, isDragging, iconStyle = 'colored', activeTheme, expanded, onToggleExpand, mainTwitchUsername, mainTwitchId }: DraggableLinkProps & { expanded?: boolean, onToggleExpand?: () => void, mainTwitchUsername: string, mainTwitchId: string }) => {
   const ref = React.useRef<HTMLDivElement>(null)
   const Icon = getPlatformIcon(link.platform)
   const iconColor = getPlatformColor(link.platform)
@@ -131,25 +150,63 @@ const DraggableLink = ({ link, index, moveLink, onDelete, onDrop, onEdit, isDrag
     onEdit(link)
   }
 
-  // --- DecAPI Twitch info for secondary Twitch links ---
-  // Only show for platform 'twitch' and not the main user's own account
+  // --- Determine if this is the main user's own Twitch link ---
   let twitchChannel = ''
   if (link.platform === 'twitch') {
-    // Try to extract the channel name from the URL
     try {
       const url = new URL(link.url)
       twitchChannel = url.pathname.replace(/^\//, '').toLowerCase()
     } catch {
-      // fallback: try to use the title or url as channel name
       twitchChannel = link.title?.toLowerCase() || ''
     }
   }
-  // Assume main user's Twitch username is passed via activeTheme?.mainTwitchUsername (or similar prop if available)
-  // For now, just show DecAPI info for all Twitch links
-  const showTwitchInfo = link.platform === 'twitch' && twitchChannel
-  const { data: uptime, isLoading: uptimeLoading, isError: uptimeError } = useTwitchUptime(twitchChannel)
-  const { data: viewers, isLoading: viewersLoading, isError: viewersError } = useTwitchViewerCount(twitchChannel)
-  const { data: title, isLoading: titleLoading, isError: titleError } = useTwitchTitle(twitchChannel)
+  // Use mainTwitchUsername and mainTwitchId directly
+  const isMainUserTwitch = link.platform === 'twitch' && (
+    (mainTwitchUsername && twitchChannel === mainTwitchUsername.toLowerCase()) ||
+    (mainTwitchId && link.user_id === mainTwitchId)
+  )
+
+  // --- Fetch status using the correct API ---
+  let statusContent = null
+  if (isMainUserTwitch) {
+    // Use official API
+    const { data: stats, isLoading: statsLoading, isError: statsError } = useOfficialTwitchStats(link.user_id)
+    statusContent = !statsLoading && !statsError && stats ? (
+      <div className="flex items-center gap-2 mt-1 text-xs">
+        {stats.isLive ? (
+          <span className="text-green-500 font-semibold">LIVE</span>
+        ) : (
+          <span className="text-gray-400">Offline</span>
+        )}
+        {stats.isLive && (
+          <span className="text-cyan-400 ml-2">👁️ {stats.viewers}</span>
+        )}
+        {stats.isLive && stats.title && (
+          <span className="ml-2 text-foreground/70 truncate max-w-[180px]">{stats.title}</span>
+        )}
+      </div>
+    ) : null
+  } else if (link.platform === 'twitch' && twitchChannel) {
+    // Use DecAPI for secondary links
+    const { data: uptime, isLoading: uptimeLoading, isError: uptimeError } = useTwitchUptime(twitchChannel)
+    const { data: viewers, isLoading: viewersLoading, isError: viewersError } = useTwitchViewerCount(twitchChannel)
+    const { data: title, isLoading: titleLoading, isError: titleError } = useTwitchTitle(twitchChannel)
+    statusContent = !uptimeLoading && !uptimeError && uptime && typeof uptime === 'object' && 'live' in uptime && (
+      <div className="flex items-center gap-2 mt-1 text-xs">
+        {uptime.live ? (
+          <span className="text-green-500 font-semibold">LIVE{uptime.uptime ? ` (${uptime.uptime})` : ''}</span>
+        ) : (
+          <span className="text-gray-400">Offline</span>
+        )}
+        {uptime.live && !viewersLoading && !viewersError && typeof viewers === 'number' && (
+          <span className="text-cyan-400 ml-2">👁️ {viewers}</span>
+        )}
+        {uptime.live && !titleLoading && !titleError && typeof title === 'string' && title && (
+          <span className="ml-2 text-foreground/70 truncate max-w-[180px]">{title}</span>
+        )}
+      </div>
+    )
+  }
 
   return (
     <div
@@ -201,21 +258,7 @@ const DraggableLink = ({ link, index, moveLink, onDelete, onDrop, onEdit, isDrag
             </a>
           </div>
           {/* --- Twitch status/info for secondary Twitch links --- */}
-          {showTwitchInfo && !uptimeLoading && !uptimeError && uptime && typeof uptime === 'object' && 'live' in uptime && (
-            <div className="flex items-center gap-2 mt-1 text-xs">
-              {uptime.live ? (
-                <span className="text-green-500 font-semibold">LIVE{uptime.uptime ? ` (${uptime.uptime})` : ''}</span>
-              ) : (
-                <span className="text-gray-400">Offline</span>
-              )}
-              {uptime.live && !viewersLoading && !viewersError && typeof viewers === 'number' && (
-                <span className="text-cyan-400 ml-2">👁️ {viewers}</span>
-              )}
-              {uptime.live && !titleLoading && !titleError && typeof title === 'string' && title && (
-                <span className="ml-2 text-foreground/70 truncate max-w-[180px]">{title}</span>
-              )}
-            </div>
-          )}
+          {statusContent}
           {/* --- Show Stream button and expanded content for Twitch links --- */}
           {link.platform === 'twitch' && (
             <div className="mt-2">
@@ -645,9 +688,11 @@ const EmptyState = ({ onAddClick }: { onAddClick: () => void }) => {
   )
 }
 
-export function SocialLinksManagerV2({ initialLinks = [], twitchUserId, onLinksChange, iconStyle = 'colored', activeTheme }: {
+export function SocialLinksManagerV2({ initialLinks = [], twitchUserId, mainTwitchUsername, mainTwitchId, onLinksChange, iconStyle = 'colored', activeTheme }: {
   initialLinks: SocialLink[]
   twitchUserId: string
+  mainTwitchUsername: string
+  mainTwitchId: string
   onLinksChange?: (links: SocialLink[]) => void
   iconStyle?: IconStyle
   activeTheme?: ColorScheme | null
@@ -689,7 +734,7 @@ export function SocialLinksManagerV2({ initialLinks = [], twitchUserId, onLinksC
         channel = link.title?.toLowerCase() || ''
       }
       // If this is the main user's own Twitch link, only keep the first occurrence
-      if (channel === twitchUserId.toLowerCase()) {
+      if (mainTwitchUsername && channel === mainTwitchUsername.toLowerCase()) {
         return arr.findIndex(l => {
           let c = ''
           try {
@@ -698,12 +743,12 @@ export function SocialLinksManagerV2({ initialLinks = [], twitchUserId, onLinksC
           } catch {
             c = l.title?.toLowerCase() || ''
           }
-          return l.platform === 'twitch' && c === twitchUserId.toLowerCase()
+          return l.platform === 'twitch' && c === mainTwitchUsername.toLowerCase()
         }) === idx
       }
       return true
     })
-  }, [links, twitchUserId])
+  }, [links, mainTwitchUsername])
 
   // Update store when props change
   useEffect(() => {
@@ -887,6 +932,8 @@ export function SocialLinksManagerV2({ initialLinks = [], twitchUserId, onLinksC
                       activeTheme={activeTheme}
                       expanded={expandedLinkId === link.id}
                       onToggleExpand={() => setExpandedLinkId(expandedLinkId === link.id ? null : link.id)}
+                      mainTwitchUsername={mainTwitchUsername}
+                      mainTwitchId={mainTwitchId}
                     />
                   ))}
                 </AnimatePresence>

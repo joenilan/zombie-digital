@@ -742,6 +742,8 @@ export default function SocialLinksPage() {
                       onLinksChange={setLinks}
                       iconStyle={iconStyle}
                       activeTheme={activeTheme}
+                      mainTwitchUsername={twitchUser.username}
+                      mainTwitchId={twitchUser.id}
                     />
                   </CardContent>
                 </Card>
