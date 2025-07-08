@@ -3,7 +3,6 @@
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import UserMenu from "../UserMenu";
-import ThemeToggle from "../ThemeToggle";
 import { SiteNotification } from "../SiteNotification";
 import { DesktopNav } from "./DesktopNav";
 import { MobileNav } from "./MobileNav";
@@ -37,7 +36,6 @@ export function Navigation() {
             </div>
 
             <div className="flex items-center gap-3 pointer-events-auto">
-              <ThemeToggle />
               {user && <UserMenu user={user} />}
             </div>
           </div>

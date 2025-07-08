@@ -1,5 +1,4 @@
 import { Metadata } from "next"
-import { ThemeProvider } from "next-themes"
 import QueryProvider from "@/providers/query-provider"
 import { Toaster } from 'sonner'
 import { cn } from "@/lib/utils"
@@ -36,19 +35,11 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" suppressHydrationWarning className={cn(sofia.variable, sofiaCondensed.variable)}>
+    <html lang="en" suppressHydrationWarning className={cn("dark", sofia.variable, sofiaCondensed.variable)}>
       <head>
         <script
           dangerouslySetInnerHTML={{
             __html: `
-              try {
-                if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                  document.documentElement.classList.add('dark')
-                } else {
-                  document.documentElement.classList.remove('dark')
-                }
-              } catch (_) {}
-              
               // Suppress React DevTools warning in production
               if (typeof window !== 'undefined' && !window.location.hostname.includes('localhost')) {
                 window.__REACT_DEVTOOLS_GLOBAL_HOOK__ = { isDisabled: true };
@@ -58,22 +49,15 @@ export default function RootLayout({
         />
       </head>
       <body className={cn(
-        "min-h-screen antialiased transition-colors duration-300 ease-in-out",
+        "min-h-screen antialiased transition-colors duration-300 ease-in-out dark",
         sofia.className
       )}>
         <QueryProvider>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="dark"
-            enableSystem
-            disableTransitionOnChange
-          >
-            <LayoutWrapper>
-              <main>
-                {children}
-              </main>
-            </LayoutWrapper>
-          </ThemeProvider>
+          <LayoutWrapper>
+            <main>
+              {children}
+            </main>
+          </LayoutWrapper>
         </QueryProvider>
         <Toaster
           position="bottom-right"
