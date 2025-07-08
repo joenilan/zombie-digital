@@ -84,7 +84,7 @@ function useTwitchTitle(channel: string) {
   })
 }
 
-const DraggableLink = ({ link, index, moveLink, onDelete, onDrop, onEdit, isDragging, iconStyle = 'colored', activeTheme }: DraggableLinkProps) => {
+const DraggableLink = ({ link, index, moveLink, onDelete, onDrop, onEdit, isDragging, iconStyle = 'colored', activeTheme, expanded, onToggleExpand }: DraggableLinkProps & { expanded?: boolean, onToggleExpand?: () => void }) => {
   const ref = React.useRef<HTMLDivElement>(null)
   const Icon = getPlatformIcon(link.platform)
   const iconColor = getPlatformColor(link.platform)
@@ -213,6 +213,23 @@ const DraggableLink = ({ link, index, moveLink, onDelete, onDrop, onEdit, isDrag
               )}
               {uptime.live && !titleLoading && !titleError && typeof title === 'string' && title && (
                 <span className="ml-2 text-foreground/70 truncate max-w-[180px]">{title}</span>
+              )}
+            </div>
+          )}
+          {/* --- Show Stream button and expanded content for Twitch links --- */}
+          {link.platform === 'twitch' && (
+            <div className="mt-2">
+              <button
+                type="button"
+                className="px-3 py-1 rounded-lg bg-cyber-cyan/10 text-cyber-cyan hover:bg-cyber-cyan/20 transition"
+                onClick={onToggleExpand}
+              >
+                {expanded ? 'Hide Stream' : 'Show Stream'}
+              </button>
+              {expanded && (
+                <div className="mt-2 p-3 rounded-lg bg-glass/30 border border-cyber-cyan/20">
+                  Stream preview here (embed or info)
+                </div>
               )}
             </div>
           )}
@@ -657,6 +674,37 @@ export function SocialLinksManagerV2({ initialLinks = [], twitchUserId, onLinksC
   const queryClient = useQueryClient()
   const supabase = createClientComponentClient()
 
+  const [expandedLinkId, setExpandedLinkId] = useState<string | null>(null)
+
+  // Filter out duplicate Twitch links (main user's own Twitch link as secondary)
+  const filteredLinks = React.useMemo(() => {
+    return links.filter((link, idx, arr) => {
+      if (link.platform !== 'twitch') return true
+      // Extract channel name from URL
+      let channel = ''
+      try {
+        const url = new URL(link.url)
+        channel = url.pathname.replace(/^\//, '').toLowerCase()
+      } catch {
+        channel = link.title?.toLowerCase() || ''
+      }
+      // If this is the main user's own Twitch link, only keep the first occurrence
+      if (channel === twitchUserId.toLowerCase()) {
+        return arr.findIndex(l => {
+          let c = ''
+          try {
+            const u = new URL(l.url)
+            c = u.pathname.replace(/^\//, '').toLowerCase()
+          } catch {
+            c = l.title?.toLowerCase() || ''
+          }
+          return l.platform === 'twitch' && c === twitchUserId.toLowerCase()
+        }) === idx
+      }
+      return true
+    })
+  }, [links, twitchUserId])
+
   // Update store when props change
   useEffect(() => {
     setLinks(initialLinks)
@@ -793,7 +841,7 @@ export function SocialLinksManagerV2({ initialLinks = [], twitchUserId, onLinksC
     <DndProvider backend={HTML5Backend}>
       <div className="w-full">
         <div className="space-y-6">
-          {links.length === 0 ? (
+          {filteredLinks.length === 0 ? (
             <EmptyState onAddClick={() => openAddDialog()} />
           ) : (
             <>
@@ -825,7 +873,7 @@ export function SocialLinksManagerV2({ initialLinks = [], twitchUserId, onLinksC
 
               <div className="space-y-2">
                 <AnimatePresence>
-                  {links.map((link, index) => (
+                  {filteredLinks.map((link, index) => (
                     <DraggableLink
                       key={link.id}
                       link={link}
@@ -837,6 +885,8 @@ export function SocialLinksManagerV2({ initialLinks = [], twitchUserId, onLinksC
                       isDragging={isDraggingAny}
                       iconStyle={iconStyle}
                       activeTheme={activeTheme}
+                      expanded={expandedLinkId === link.id}
+                      onToggleExpand={() => setExpandedLinkId(expandedLinkId === link.id ? null : link.id)}
                     />
                   ))}
                 </AnimatePresence>
