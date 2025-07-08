@@ -16,7 +16,7 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectVa
 import { motion, AnimatePresence } from 'framer-motion'
 import { getPlatformIcon, getPlatformColor, platformIcons, platformUrlPatterns, getPlatformUrl } from '@/lib/icons'
 import { getIconStyle } from '@/lib/icon-utils'
-import { useSocialLinksManagerStore, type SocialLink } from '@/stores/useSocialLinksManagerStore'
+import { useSocialLinksManagerStore } from '@/stores/useSocialLinksManagerStore'
 import { type IconStyle } from '@/stores/useThemeStore'
 import { type ColorScheme } from '@/lib/theme-system'
 import { useQuery } from '@tanstack/react-query'
@@ -36,6 +36,17 @@ interface DraggableLinkProps {
   isDragging: boolean
   iconStyle?: IconStyle
   activeTheme?: ColorScheme | null
+}
+
+// Update SocialLink type to include twitch_channel
+export type SocialLink = {
+  id: string
+  user_id: string
+  platform: string
+  url: string
+  title?: string
+  order_index: number // required, not optional
+  twitch_channel?: string
 }
 
 // DecAPI hooks for Twitch info
@@ -153,18 +164,12 @@ const DraggableLink = ({ link, index, moveLink, onDelete, onDrop, onEdit, isDrag
   // --- Determine if this is the main user's own Twitch link ---
   let twitchChannel = ''
   if (link.platform === 'twitch') {
-    try {
-      const url = new URL(link.url)
-      twitchChannel = url.pathname.replace(/^\//, '').toLowerCase()
-    } catch {
-      twitchChannel = link.title?.toLowerCase() || ''
-    }
+    twitchChannel = link.twitch_channel || ''
   }
-  // Use mainTwitchUsername and mainTwitchId directly
-  const isMainUserTwitch = link.platform === 'twitch' && (
-    (mainTwitchUsername && twitchChannel === mainTwitchUsername.toLowerCase()) ||
-    (mainTwitchId && link.user_id === mainTwitchId)
-  )
+  const isMainUserTwitch = link.platform === 'twitch' &&
+    mainTwitchUsername && mainTwitchId &&
+    twitchChannel === mainTwitchUsername.toLowerCase() &&
+    link.user_id === mainTwitchId
 
   // --- Fetch status using the correct API ---
   let statusContent = null
@@ -725,30 +730,13 @@ export function SocialLinksManagerV2({ initialLinks = [], twitchUserId, mainTwit
   const filteredLinks = React.useMemo(() => {
     return links.filter((link, idx, arr) => {
       if (link.platform !== 'twitch') return true
-      // Extract channel name from URL
-      let channel = ''
-      try {
-        const url = new URL(link.url)
-        channel = url.pathname.replace(/^\//, '').toLowerCase()
-      } catch {
-        channel = link.title?.toLowerCase() || ''
-      }
-      // If this is the main user's own Twitch link, only keep the first occurrence
-      if (mainTwitchUsername && channel === mainTwitchUsername.toLowerCase()) {
-        return arr.findIndex(l => {
-          let c = ''
-          try {
-            const u = new URL(l.url)
-            c = u.pathname.replace(/^\//, '').toLowerCase()
-          } catch {
-            c = l.title?.toLowerCase() || ''
-          }
-          return l.platform === 'twitch' && c === mainTwitchUsername.toLowerCase()
-        }) === idx
+      const channel = link.twitch_channel || ''
+      if (mainTwitchUsername && mainTwitchId && channel === mainTwitchUsername.toLowerCase() && link.user_id === mainTwitchId) {
+        return arr.findIndex(l => l.platform === 'twitch' && (l.twitch_channel || '') === mainTwitchUsername.toLowerCase() && l.user_id === mainTwitchId) === idx
       }
       return true
     })
-  }, [links, mainTwitchUsername])
+  }, [links, mainTwitchUsername, mainTwitchId])
 
   // Update store when props change
   useEffect(() => {
@@ -837,16 +825,20 @@ export function SocialLinksManagerV2({ initialLinks = [], twitchUserId, mainTwit
       // Capitalize the first letter of the platform for the default title
       const defaultTitle = platform.charAt(0).toUpperCase() + platform.slice(1)
       const title = displayTitle || defaultTitle
-
-      const { data: newLink, error } = await supabase
+      // Set twitch_channel for Twitch links
+      const insertObj: any = {
+        user_id: twitchUserId,
+        platform,
+        url: finalUrl,
+        title: title,
+        order_index: links.length // Add at the end
+      }
+      if (platform === 'twitch') {
+        insertObj.twitch_channel = username.toLowerCase()
+      }
+      const { data: newLink, error }: { data: SocialLink | null, error: any } = await supabase
         .from('social_tree')
-        .insert([{
-          user_id: twitchUserId,
-          platform,
-          url: finalUrl,
-          title: title,
-          order_index: links.length // Add at the end
-        }])
+        .insert([insertObj])
         .select()
         .single()
 
@@ -876,7 +868,7 @@ export function SocialLinksManagerV2({ initialLinks = [], twitchUserId, mainTwit
           },
         },
       })
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error adding link:', error)
       toast.error('Failed to add link')
     }
