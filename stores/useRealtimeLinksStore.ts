@@ -10,6 +10,7 @@ export interface SocialLink {
   order_index: number
   created_at?: string
   updated_at?: string
+  twitch_channel?: string
 }
 
 export interface StreamInfo {

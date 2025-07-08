@@ -370,15 +370,15 @@ export function RealtimeLinks({ userId, initialLinks, isOwner, iconStyle }: Real
           {links.map((link, index) => {
             // Special handling for Twitch links
             if (link.platform.toLowerCase() === 'twitch') {
-              // Extract username from Twitch URL
-              const match = link.url.match(/twitch\.tv\/([^\/\?]+)/);
-              if (!match) {
-                console.error('Failed to extract username from URL:', link.url);
+              // Use twitch_channel if present, else parse from URL
+              const username = link.twitch_channel || (() => {
+                const match = link.url.match(/twitch\.tv\/([^\/\?]+)/)
+                return match ? match[1] : ''
+              })();
+              if (!username) {
+                console.error('Failed to extract username for Twitch link:', link)
                 return null;
               }
-
-              const username = match[1];
-
               try {
                 return (
                   <motion.div
