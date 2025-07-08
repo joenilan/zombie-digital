@@ -33,7 +33,6 @@ interface ProcessedEmoteData extends OriginalProcessedEmoteData {
 interface EmoteSettings {
     generateVariations: boolean
     variationCount: number
-    shine: boolean
 }
 
 // File validation helper
@@ -136,7 +135,6 @@ export default function EmoteStudioPage() {
     const [isDragging, setIsDragging] = useState(false)
     const [settings, setSettings] = useState<EmoteSettings>({
         generateVariations: false,
-        shine: false,
         variationCount: 12
     })
     const [userRole, setUserRole] = useState<string | null>(null)
@@ -189,12 +187,10 @@ export default function EmoteStudioPage() {
                 const options: ProcessingOptions & {
                     generateVariations?: boolean
                     variationCount?: number
-                    shine?: boolean
                     sizes?: typeof sizes
                 } = {
                     generateVariations: settings.generateVariations,
                     variationCount: settings.variationCount,
-                    shine: settings.shine,
                     sizes
                 }
                 const staticResults = await processBatchEmotes(staticFiles, options)
@@ -313,12 +309,10 @@ export default function EmoteStudioPage() {
                     const options: ProcessingOptions & {
                         generateVariations?: boolean;
                         variationCount?: number;
-                        shine?: boolean;
                         sizes?: typeof sizes;
                     } = {
                         generateVariations: settings.generateVariations,
                         variationCount: settings.variationCount,
-                        shine: settings.shine,
                         sizes
                     };
                     const staticResults = await processBatchEmotes(staticFiles, options);
@@ -519,67 +513,69 @@ export default function EmoteStudioPage() {
                             </Card>
 
                             {/* Settings */}
-                            <div className="flex items-center gap-4 mt-4">
-                                {/* Mode Toggle */}
-                                <div className="flex items-center bg-glass/30 border border-cyber-cyan rounded-full overflow-hidden mr-4">
-                                    <button
-                                        type="button"
-                                        className={`px-4 py-1 text-xs font-semibold transition-colors focus:outline-none ${mode === 'emote' ? 'bg-cyber-cyan text-white' : 'text-cyber-cyan'}`}
-                                        onClick={() => setMode('emote')}
-                                    >
-                                        Emote
-                                    </button>
-                                    <button
-                                        type="button"
-                                        className={`px-4 py-1 text-xs font-semibold transition-colors focus:outline-none ${mode === 'subbadge' ? 'bg-cyber-cyan text-white' : 'text-cyber-cyan'}`}
-                                        onClick={() => setMode('subbadge')}
-                                    >
-                                        Badge
-                                    </button>
+                            <Card className="bg-glass/50 backdrop-blur-xl border-white/5 p-6 mt-6">
+                                <div className="flex flex-col space-y-6">
+                                    {/* Type Selector */}
+                                    <div>
+                                        <label className="block text-xs text-gray-400 mb-2">Export for:</label>
+                                        <div className="flex w-full">
+                                            <button
+                                                type="button"
+                                                className={`flex-1 px-4 py-2 rounded-l-full text-xs font-semibold transition-colors focus:outline-none ${mode === 'emote' ? 'bg-cyber-cyan text-white' : 'bg-glass/30 text-cyber-cyan border border-cyber-cyan'}`}
+                                                onClick={() => setMode('emote')}
+                                            >
+                                                Emote
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className={`flex-1 px-4 py-2 rounded-r-full text-xs font-semibold transition-colors focus:outline-none ${mode === 'subbadge' ? 'bg-cyber-cyan text-white' : 'bg-glass/30 text-cyber-cyan border border-cyber-cyan'}`}
+                                                onClick={() => setMode('subbadge')}
+                                            >
+                                                Badge
+                                            </button>
+                                        </div>
+                                    </div>
+                                    {/* Color Variations */}
+                                    <div>
+                                        <button
+                                            type="button"
+                                            className={`w-full px-4 py-2 rounded-full font-semibold transition-colors border border-cyber-pink shadow-cyber focus:outline-none focus:ring-2 focus:ring-cyber-pink/50 ${settings.generateVariations ? 'bg-cyber-pink text-white' : 'bg-glass/30 text-cyber-pink'}`}
+                                            onClick={() => setSettings(prev => ({ ...prev, generateVariations: !prev.generateVariations }))}
+                                        >
+                                            Color Variations
+                                        </button>
+                                        {settings.generateVariations && (
+                                            <div className="flex items-center gap-4 mt-3 ml-1">
+                                                <label className="block text-xs text-gray-400">Number of variants</label>
+                                                <input
+                                                    type="range"
+                                                    min="2"
+                                                    max="50"
+                                                    value={settings.variationCount}
+                                                    onChange={e => setSettings(prev => ({ ...prev, variationCount: parseInt(e.target.value) }))}
+                                                    className="w-32"
+                                                />
+                                                <span className="text-lg font-medium text-white">{settings.variationCount}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                    {/* Process Button */}
+                                    <div>
+                                        <ActionButtonWithProvider
+                                            color="cyber-pink"
+                                            size="default"
+                                            tooltip={isProcessing ? "Processing your emotes..." : "Start processing uploaded images"}
+                                            onClick={processEmotes}
+                                            disabled={uploadedFiles.length === 0 || isProcessing}
+                                            className="w-full"
+                                            loading={isProcessing}
+                                            icon={<Settings className="w-4 h-4" />}
+                                        >
+                                            {isProcessing ? 'Processing...' : 'Process Emotes'}
+                                        </ActionButtonWithProvider>
+                                    </div>
                                 </div>
-                                <button
-                                    type="button"
-                                    className={`px-4 py-2 rounded-full font-semibold transition-colors border border-cyber-pink shadow-cyber focus:outline-none focus:ring-2 focus:ring-cyber-pink/50 ${settings.generateVariations ? 'bg-cyber-pink text-white' : 'bg-glass/30 text-cyber-pink'}`}
-                                    onClick={() => setSettings(prev => ({ ...prev, generateVariations: !prev.generateVariations }))}
-                                >
-                                    Color Variations
-                                </button>
-                                {userRole === 'admin' || userRole === 'owner' ? (
-                                    <button
-                                        type="button"
-                                        className={`px-4 py-2 rounded-full font-semibold transition-colors border border-cyber-cyan shadow-cyber focus:outline-none focus:ring-2 focus:ring-cyber-cyan/50 ${settings.shine ? 'bg-cyber-cyan text-white' : 'bg-glass/30 text-cyber-cyan'}`}
-                                        onClick={() => setSettings(prev => ({ ...prev, shine: !prev.shine }))}
-                                    >
-                                        Shine
-                                    </button>
-                                ) : null}
-                                <ActionButtonWithProvider
-                                    color="cyber-pink"
-                                    size="default"
-                                    tooltip={isProcessing ? "Processing your emotes..." : "Start processing uploaded images"}
-                                    onClick={processEmotes}
-                                    disabled={uploadedFiles.length === 0 || isProcessing}
-                                    className="ml-auto"
-                                    loading={isProcessing}
-                                    icon={<Settings className="w-4 h-4" />}
-                                >
-                                    {isProcessing ? 'Processing...' : 'Process Emotes'}
-                                </ActionButtonWithProvider>
-                            </div>
-                            {settings.generateVariations && (
-                                <div className="flex items-center gap-4 mt-2 ml-1">
-                                    <label className="block text-xs text-gray-400">Number of variants</label>
-                                    <input
-                                        type="range"
-                                        min="2"
-                                        max="50"
-                                        value={settings.variationCount}
-                                        onChange={e => setSettings(prev => ({ ...prev, variationCount: parseInt(e.target.value) }))}
-                                        className="w-32"
-                                    />
-                                    <span className="text-lg font-medium text-white">{settings.variationCount}</span>
-                                </div>
-                            )}
+                            </Card>
                         </motion.div>
 
                         {/* Results Panel */}
