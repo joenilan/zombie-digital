@@ -3,8 +3,6 @@ const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
   output: 'standalone',
-  basePath: '/zd',
-  assetPrefix: '/zd',
   experimental: {
     scrollRestoration: true,
   },
