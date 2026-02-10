@@ -25,9 +25,15 @@ function generateUUID() {
 }
 
 export async function GET(request: Request) {
-  // Always use an absolute URL for parsing
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+  // Always use an absolute URL for parsing and redirects.
+  // In proxied deployments request.url can resolve to an internal host (for example 0.0.0.0:3000).
+  const baseUrl =
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    process.env.NEXT_PUBLIC_APP_URL ||
+    process.env.NEXTAUTH_URL ||
+    "http://localhost:3000";
   const requestUrl = new URL(request.url, baseUrl);
+  const publicOrigin = new URL(baseUrl).origin;
   const code = requestUrl.searchParams.get("code");
 
   debug.auth("Auth callback request URL:", request.url);
@@ -47,7 +53,7 @@ export async function GET(request: Request) {
       hasServiceKey: !!supabaseServiceKey,
     });
     return NextResponse.redirect(
-      `${requestUrl.origin}/login?error=server_configuration`
+      `${publicOrigin}/login?error=server_configuration`
     );
   }
 
@@ -78,12 +84,12 @@ export async function GET(request: Request) {
 
       if (sessionError) {
         logError("Session error:", sessionError);
-        return NextResponse.redirect(`${requestUrl.origin}/?error=session`);
+        return NextResponse.redirect(`${publicOrigin}/?error=session`);
       }
 
       if (!session?.user) {
         logError("No session or user");
-        return NextResponse.redirect(`${requestUrl.origin}/?error=no_session`);
+        return NextResponse.redirect(`${publicOrigin}/?error=no_session`);
       }
 
       // Get user metadata from session
@@ -187,7 +193,7 @@ export async function GET(request: Request) {
           logError("Error managing user data (full error):", result.error);
           logError("userData that caused error:", userData);
           return NextResponse.redirect(
-            `${requestUrl.origin}/login?error=db_error&error_message=${encodeURIComponent(result.error.message)}`
+            `${publicOrigin}/login?error=db_error&error_message=${encodeURIComponent(result.error.message)}`
           );
         }
 
@@ -201,7 +207,7 @@ export async function GET(request: Request) {
         if (verifyError || !verifyUser) {
           logError("Error verifying user data:", verifyError);
           return NextResponse.redirect(
-            `${requestUrl.origin}/login?error=verification_failed`
+            `${publicOrigin}/login?error=verification_failed`
           );
         }
 
@@ -231,7 +237,7 @@ export async function GET(request: Request) {
 
         // Create response with redirect
         const response = NextResponse.redirect(
-          `${requestUrl.origin}/dashboard`
+          `${publicOrigin}/dashboard`
         );
 
         // Set cookie with session data
@@ -241,15 +247,15 @@ export async function GET(request: Request) {
       } catch (error) {
         logError("Error processing user data:", error);
         return NextResponse.redirect(
-          `${requestUrl.origin}/login?error=unknown`
+          `${publicOrigin}/login?error=unknown`
         );
       }
     } catch (error) {
       logError("Error processing user data:", error);
-      return NextResponse.redirect(`${requestUrl.origin}/login?error=unknown`);
+      return NextResponse.redirect(`${publicOrigin}/login?error=unknown`);
     }
   }
 
   debug.auth("No code provided in callback");
-  return NextResponse.redirect(`${requestUrl.origin}/login?error=no_code`);
+  return NextResponse.redirect(`${publicOrigin}/login?error=no_code`);
 }
